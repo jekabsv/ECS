@@ -23,8 +23,10 @@ public:
     ~Engine() = default;
 
     bool Initialize();
-    void Update(float deltaTime);
+    void Update();
     void Render();
+    
+    void run();
 
 
 #ifdef __EMSCRIPTEN__

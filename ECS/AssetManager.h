@@ -2,16 +2,7 @@
 #include <unordered_map>
 #include "Struct.h"
 #include <array>
-
-struct ArrayHash {
-    std::size_t operator()(const std::array<char, 16>& a) const 
-{
-        std::size_t h = 0;
-        for (char c : a)
-            h = h * 31 + static_cast<unsigned char>(c);
-        return h;
-    }
-};
+#include <string>
 
 class AssetManager
 {
@@ -19,11 +10,14 @@ public:
 	AssetManager() = default;
 	~AssetManager() = default;
 
-	void AddMesh(const char* name, const Mesh& mesh);
-    Mesh GetMesh(const char* name);
-    Mesh GetMesh(std::array<char, 16> name);
+	void AddMesh(int id, const Mesh& mesh);
+    Mesh& GetMesh(int id);
+
+	void LoadBMPTexture(int id, std::string filename, SDL_Renderer* renderer);
+	SDL_Texture* GetTexture(int id);
 
 private:
-    std::unordered_map<std::array<char, 16>, Mesh, ArrayHash> _meshes;
+    std::unordered_map<int, Mesh> _meshes;
+	std::unordered_map<int, SDL_Texture*> _textures;
 	//textures, fonts, sounds, etc.
 };

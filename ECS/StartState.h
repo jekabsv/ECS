@@ -10,7 +10,7 @@ public:
 
     void Init() override;
     void HandleInput() override {}
-    void Update() override {}
+    void Update() override;
     void Render() override;
 
 private:

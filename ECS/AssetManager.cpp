@@ -1,23 +1,37 @@
 #include "AssetManager.h"
 #include <iostream>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_surface.h>
 
-
-void AssetManager::AddMesh(const char* name, const Mesh& mesh) 
+void AssetManager::AddMesh(int id, const Mesh& mesh) 
 {
-    std::array<char, 16> key{};
-    strncpy_s(key.data(), key.size(), name, _TRUNCATE);
-    _meshes[key] = mesh;
+    _meshes[id] = mesh;
 }
 
-Mesh AssetManager::GetMesh(const char* name)
+Mesh& AssetManager::GetMesh(int id)
 {
-    std::array<char, 16> key{};
-    strncpy_s(key.data(), key.size(), name, _TRUNCATE);
-    return _meshes[key];
+    return _meshes[id];
 }
 
-Mesh AssetManager::GetMesh(std::array<char, 16> name)
+void AssetManager::LoadBMPTexture(int id, std::string filename, SDL_Renderer* renderer)
 {
-    return _meshes[name];
-    
+    SDL_Surface* surface = SDL_LoadBMP(filename.c_str());
+    if (!surface) {
+        SDL_Log("Failed to load BMP: %s", SDL_GetError());
+        return;
+    }
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+    if (!texture) {
+        SDL_Log("Failed to create texture: %s", SDL_GetError());
+        return;
+    }
+    _textures[id] = texture;
+    return;
+}
+
+SDL_Texture* AssetManager::GetTexture(int id)
+{
+    if(id == -1)
+        return nullptr;
+    return _textures[id];
 }

@@ -331,7 +331,8 @@ namespace ecs
                         auto accessor = [a, i](TypeId tid) -> void*
                         {
                             auto it = a->buffers.find(tid);
-                            if (it == a->buffers.end()) return nullptr;
+                            if (it == a->buffers.end()) 
+                                return nullptr;
                             return it->second.at(i);
                         };
                         fn(e, accessor);

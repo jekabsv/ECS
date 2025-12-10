@@ -50,7 +50,7 @@ bool Engine::Initialize()
 }
 
 
-void Engine::Update(float deltaTime)
+void Engine::Update()
 {
     _data->state.GetActiveState()->Update();
 }
@@ -59,4 +59,14 @@ void Engine::Update(float deltaTime)
 void Engine::Render()
 {
     _data->state.GetActiveState()->Render();
+}
+
+void Engine::run()
+{
+    while (!_data->quit)
+    {
+        Update();
+        Render();
+        SDL_Delay(16);
+    }
 }

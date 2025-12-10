@@ -11,6 +11,8 @@ struct SharedData
     SDL_Renderer* renderer = nullptr;
     StateMachine state;
     AssetManager assets;
+
+    bool quit = false;
 };
 
 typedef std::shared_ptr<SharedData> SharedDataRef;
