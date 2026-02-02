@@ -19,6 +19,9 @@
     <Filter Include="Header Files\State">
       <UniqueIdentifier>{13c84bc2-595c-4bba-8048-a57058c28694}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\InputSystem">
+      <UniqueIdentifier>{a84451c1-6bc9-4882-b5ce-a07abd0cf250}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ECS.cpp">
@@ -34,6 +37,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="StartState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InputAction.h">
+      <Filter>Header Files\InputSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="InputAction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -70,6 +79,12 @@
     </ClInclude>
     <ClInclude Include="SimpleSprite.h">
       <Filter>Header Files\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="InputSystem.h">
+      <Filter>Header Files\InputSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="InputDevice.h">
+      <Filter>Header Files\InputSystem</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

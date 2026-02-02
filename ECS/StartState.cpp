@@ -47,8 +47,8 @@ void StartState::Init()
     ecs.add_component(player, RenderComponent(true));
     ecs.add_component(player, SimpleSprite({100, 100, 100, 100}, {0, 0, 64, 64}, 2));
 
-    _data->assets.LoadBMPTexture(1, "C:/Users/jekabs.vidrusks/Downloads/images.bmp", _data->renderer);
-    _data->assets.LoadBMPTexture(2, "C:/Users/jekabs.vidrusks/Downloads/player.bmp", _data->renderer);
+    _data->assets.LoadBMPTexture(1, "../image.bmp", _data->renderer);
+    _data->assets.LoadBMPTexture(2, "../player.bmp", _data->renderer);
 
     RenderComponent& rc = ecs.get<RenderComponent>(e);
     rc.scale = { 10, 10 };
@@ -82,7 +82,6 @@ void StartState::Update()
 
     dx = 0;
     dy = 0;
-
     if (key_states[SDL_SCANCODE_W]) {
         dy -= 1;
     }
