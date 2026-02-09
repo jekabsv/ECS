@@ -167,3 +167,19 @@ The engine is designed to be modular, data-oriented, and suitable for both **run
 - Logging system.
 - Debug overlays (FPS, input states).
 - Runtime diagnostics and validation tools.
+
+
+## Technologies Used
+
+- **C++20**
+- **Visual Studio 2022**
+- **SDL 3**
+- **Emscripten** (WASM builds / preview workflow)
+- **JavaScript**
+- **ES Modules (mjs)**
+- **Node.js**
+- **TypeScript**
+- **React**
+- **Tailwind CSS**
+- **JSON**
+- **Git**
