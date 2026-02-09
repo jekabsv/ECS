@@ -4,6 +4,7 @@ C++ engine prototype built around a custom **archetype-based ECS (Entity Compone
 
 ---
 
+
 ## Features
 
 - Custom **archetype ECS**
@@ -20,7 +21,9 @@ C++ engine prototype built around a custom **archetype-based ECS (Entity Compone
   - BMP texture loading
 - Basic **input handling** (keyboard via SDL)
 
+![ECS](https://github.com/user-attachments/assets/ba19b2a9-07f9-490c-b543-6d781a573583)
 ---
+
 
 ## Requirements
 
@@ -31,6 +34,7 @@ C++ engine prototype built around a custom **archetype-based ECS (Entity Compone
   - Headers and libraries must be installed locally
 
 ---
+
 
 ## Roadmap
 
