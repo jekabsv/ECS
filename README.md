@@ -7,6 +7,15 @@
 
 ---
 
+## Table of Contents
+
+- [Description](#description)
+- [Features](#features)
+- [High-Level Architecture](#high-level-architecture)
+- [Requirements](#requirements)
+- [Technologies Used](#technologies-used)
+- [Roadmap](#roadmap)
+
 ## Description
 
 This project is a **desktop C++ game engine** built around a **custom archetype-based Entity Component System (ECS)**.  
