@@ -16,6 +16,7 @@ public:
 	void LoadBMPTexture(int id, std::string filename, SDL_Renderer* renderer);
 	SDL_Texture* GetTexture(int id);
 
+	
 private:
     std::unordered_map<int, Mesh> _meshes;
 	std::unordered_map<int, SDL_Texture*> _textures;

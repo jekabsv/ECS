@@ -1,8 +1,8 @@
 #include "InputAction.h"
 
-InputAction& InputAction::AddBinding(DeviceType type, int code)
+InputAction& InputAction::AddBinding(DeviceType dev, int code)
 {
-    Bindings.push_back({ type, code });
+    Bindings.push_back({ dev, code });
     return *this;
 }
 
@@ -12,26 +12,23 @@ InputAction& InputAction::AddProcessor(std::unique_ptr<InputProcessor> p)
     return *this;
 }
 
-void InputAction::Enable()
+void InputAction::Enable() { Enabled = true; }
+void InputAction::Disable() { Enabled = false; }
+
+InputAction& ActionMap::CreateAction(const std::string& name)
 {
-    Enabled = true;
-}
-void InputAction::Disable()
-{
-    Enabled = false;
+    return Actions[name];
 }
 
-InputAction& ActionMap::CreateAction(std::string ActionName)
+InputAction& ActionMap::GetAction(const std::string& name)
 {
-    actions[ActionName] = InputAction();
-    return actions[ActionName];
+    return Actions.at(name);
 }
 
-void ActionMap::Enable()
+void ActionMap::DeleteAction(const std::string& name)
 {
-    Enabled = true;
+    Actions.erase(name);
 }
-void ActionMap::Disable()
-{
-    Enabled = false;
-}
+
+void ActionMap::Enable() { Enabled = true; }
+void ActionMap::Disable() { Enabled = false; }

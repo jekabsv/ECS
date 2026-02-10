@@ -2,6 +2,7 @@
 #include <SDL3/SDL.h>
 #include "StateMachine.h"
 #include "AssetManager.h"
+#include "InputSystem.h"
 
 struct SharedData
 {
@@ -11,6 +12,7 @@ struct SharedData
     SDL_Renderer* renderer = nullptr;
     StateMachine state;
     AssetManager assets;
+    InputSystem inputs;
 
     bool quit = false;
 };
