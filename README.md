@@ -3,7 +3,7 @@
 **Author:** Jēkabs Vidrusks  
 **Format:** Desktop C++ application (Windows)
 
-![ECS](https://github.com/user-attachments/assets/ba19b2a9-07f9-490c-b543-6d781a573583)
+![ECS](https://github.com/jekabsv/ECS/blob/master/ECS.jpg)
 
 ---
 
