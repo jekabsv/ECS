@@ -16,10 +16,6 @@ float speedx;
 
 void StartState::Init()
 {
-    ActionMap& gameplay = _data->inputs.CreateActionMap("gameplay");
-    gameplay.CreateAction("jump").AddBinding(DeviceType::Keyboard, SDL_SCANCODE_SPACE);
-    _data->inputs.SubscribeUser(player, gameplay);
-    _data->inputs.AssignDevice(player, );
 
     Mesh triangleMesh = {
         {-1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f},
