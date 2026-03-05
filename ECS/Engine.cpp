@@ -32,7 +32,9 @@ bool Engine::InitializeWeb(const std::string& elementId)
 
 bool Engine::Initialize()
 {
-    
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS)) {
+    }
+
     _data->window = SDL_CreateWindow("window", _data->GAME_WIDTH, _data->GAME_HEIGHT, 0);
     if (!_data->window)
         return false;
@@ -42,11 +44,14 @@ bool Engine::Initialize()
     _data->renderer = SDL_CreateRenderer(_data->window, nullptr);
 
 
-
+    _data->inputs.Init();
     
     _data->state.AddState(StateRef(new StartState(_data)), 0);
     _data->state.ProcessStateChanges();
+
+    
     return _data->renderer != nullptr;
+    
 }
 
 
@@ -63,10 +68,27 @@ void Engine::Render()
 
 void Engine::run()
 {
+    const int TARGET_FPS = 60;
+    const float TARGET_FRAME_TIME = 1000.0f / TARGET_FPS;
+    uint64_t lastTicks = SDL_GetTicks();
+
     while (!_data->quit)
     {
+        uint64_t currentTicks = SDL_GetTicks();
+        float dt = (currentTicks - lastTicks) / 1000.0f;
+        lastTicks = currentTicks;
+        if (dt > 0.1f)
+            dt = 0.1f;
+
+        _data->inputs.Update(dt);
         Update();
         Render();
-        SDL_Delay(16);
+
+
+        uint64_t frameTicks = SDL_GetTicks() - currentTicks;
+        if (frameTicks < TARGET_FRAME_TIME)
+        {
+            SDL_Delay((uint32_t)(TARGET_FRAME_TIME - frameTicks));
+        }
     }
 }
