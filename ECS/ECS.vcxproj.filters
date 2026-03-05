@@ -22,6 +22,12 @@
     <Filter Include="Header Files\InputSystem">
       <UniqueIdentifier>{a84451c1-6bc9-4882-b5ce-a07abd0cf250}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\InputSystem">
+      <UniqueIdentifier>{3d0d5da9-bc2e-4816-ab46-7aa4b429b000}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\States">
+      <UniqueIdentifier>{47bdc6a3-7b1c-46f1-b73d-2054254f5b12}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ECS.cpp">
@@ -36,11 +42,11 @@
     <ClCompile Include="AssetManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StartState.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="InputSystem.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\InputSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="StartState.cpp">
+      <Filter>Source Files\States</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
