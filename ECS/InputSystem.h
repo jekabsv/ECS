@@ -69,86 +69,41 @@ namespace InputSystem
 		{
 			std::vector<bool> state;
 		public:
-			KeyboardDevice(int _id) : Device(_id, DeviceType::Keyboard) {
-				state.resize(SDL_SCANCODE_COUNT, false);
-			}
+			KeyboardDevice(int _id);
 
-			void SetState(int key, bool pressed)
-			{
-				if (key < state.size())
-					state[key] = pressed;
-			}
-
-			float IsPressed(int key) override
-			{
-				return (key >= 0 && key < state.size() && state[key]) ? 1.0f : 0.0f;
-			}
-			float GetAxis(int axis) override { return 0.0f; }
+			void SetState(int key, bool pressed);
+			float IsPressed(int key) override;
+			float GetAxis(int axis) override;
 		};
+
 		class MouseDevice : public Device {
 			std::vector<bool> buttons;
-			float axes[4] = { 0 }; // 0:X, 1:Y, 2:WheelX, 3:WheelY
+			float axes[4] = { 0 };
 		public:
-			MouseDevice(int _id) : Device(_id, DeviceType::Mouse)
-			{
-				buttons.resize(8, false);
-			}
+			MouseDevice(int _id);
+			void SetButton(int btn, bool pressed);
+			void SetAxis(int idx, float val);
+			float IsPressed(int key) override;
+			float GetAxis(int axis) override;
 
-			void SetButton(int btn, bool pressed)
-			{
-				if (btn < buttons.size())
-					buttons[btn] = pressed;
-			}
-			void SetAxis(int idx, float val)
-			{
-				if (idx < 4)
-					axes[idx] = val;
-			}
-
-			float IsPressed(int key) override
-			{
-				return (key >= 0 && key < buttons.size() && buttons[key]) ? 1.0f : 0.0f;
-			}
-			float GetAxis(int axis) override
-			{
-				return (axis >= 0 && axis < 4) ? axes[axis] : 0.0f;
-			}
 		};
-		class GamepadDevice : public Device {
+
+		class GamepadDevice : public Device
+		{
 			std::vector<bool> buttons;
 			std::vector<float> axes;
 		public:
-			GamepadDevice(int _id) : Device(_id, DeviceType::Gamepad)
-			{
-				buttons.resize(SDL_GAMEPAD_BUTTON_COUNT, false);
-				axes.resize(SDL_GAMEPAD_AXIS_COUNT, 0.0f);
-			}
-
-			void SetButton(int btn, bool pressed)
-			{
-				if (btn < buttons.size())
-					buttons[btn] = pressed;
-			}
-			void SetAxis(int idx, float val)
-			{
-				if (idx < axes.size())
-					axes[idx] = val;
-			}
-
-			float IsPressed(int key) override
-			{
-				return (key >= 0 && key < buttons.size() && buttons[key]) ? 1.0f : 0.0f;
-			}
-			float GetAxis(int axis) override
-			{
-				return (axis >= 0 && axis < axes.size()) ? axes[axis] : 0.0f;
-			}
+			GamepadDevice(int _id);
+			void SetButton(int btn, bool pressed);
+			void SetAxis(int idx, float val);
+			float IsPressed(int key) override;
+			float GetAxis(int axis) override;
 		};
 	}
 
-
 	class Processor {
 	public:
+		Processor(std::string _name) : name(_name) {};
 		std::string name;
 		virtual int Process(INPUT_DATA_4& data)
 		{
@@ -184,25 +139,19 @@ namespace InputSystem
 		}
 	};
 
-
-	class Keyboards
+	class KeyboardHub
 	{
-		static std::shared_ptr<Internals::Device> LastUsedKeyboard;
-		static std::vector<std::shared_ptr<Internals::Device>> keyboards;
-
+		static std::shared_ptr<Internals::Device> keyboard;
 	public:
-		static std::vector<std::shared_ptr<Internals::Device>>& All();
 		static std::shared_ptr<Internals::Device>& Current();
 	};
-	class Mice
+	class MouseHub
 	{
-		static std::shared_ptr<Internals::Device> LastUsedMouse;
-		static std::vector<std::shared_ptr<Internals::Device>> mice;
+		static std::shared_ptr<Internals::Device> mouse;
 	public:
-		static std::vector<std::shared_ptr<Internals::Device>>& All();
 		static std::shared_ptr<Internals::Device>& Current();
 	};
-	class Gamepads
+	class GamepadHub
 	{
 		static std::shared_ptr<Internals::Device> LastUsedGamepad;
 		static std::vector<std::shared_ptr<Internals::Device>> gamepads;
@@ -210,7 +159,6 @@ namespace InputSystem
 		static std::vector<std::shared_ptr<Internals::Device>>& All();
 		static std::shared_ptr<Internals::Device>& Current();
 	};
-
 
 	class Action
 	{
@@ -221,6 +169,9 @@ namespace InputSystem
 	public:
 		Action() = default;
 		Action& AddBinding(Bindings binding);
+		Action& AddBinding(BindingType bindingType, DeviceType device, int key);
+		Action& AddBinding(BindingType bindingType, DeviceType device, int key, int componentIndex);
+		Action& AddBinding(BindingType bindingType, DeviceType device, int key, int componentIndex, float scale);
 		Action& AddProcessor(std::unique_ptr<Processor> processor);
 		Action& AddInteraction(std::unique_ptr<Interaction> interaction);
 
@@ -265,9 +216,8 @@ namespace InputSystem
 		std::unordered_map<int, std::vector<std::shared_ptr<Internals::Device>>> PlayerMousePool;
 		std::unordered_map<int, std::vector<std::shared_ptr<Internals::Device>>> PlayerGamepadPool;
 
-		void Init(float dt);
+		void Init();
 
-		//default is on playerId -1
 		std::unordered_map<int, std::string> PlayerToMap;
 		std::unordered_map<int, std::unordered_map<std::string, Internals::ActionStateClass>> playerActionStates;
 
@@ -275,12 +225,13 @@ namespace InputSystem
 		ActionMap& AddActionMap(std::string ActionMapName);
 		int RemoveActionMap(std::string ActionMapName);
 
-		ActionState GetActionState(int player, std::string ActionName);
-		ActionState GetActionState(std::string ActionName); // return for default (-1)
+		ActionState GetActionState(std::string ActionName, int player = -1);
+		INPUT_DATA_4 GetActionAxis(std::string ActionName, int player = -1);
 
-		INPUT_DATA_4 GetActionAxis(int player, std::string ActionName);
-		INPUT_DATA_4 GetActionAxis(std::string ActionName); // return for default (-1)
-
+		bool IsHeld(std::string ActionName, int player = -1);
+		bool IsIdle(std::string ActionName, int player = -1);
+		bool IsPressed(std::string ActionName, int player = -1);
+		bool IsReleased(std::string ActionName, int player = -1);
 
 		int AssignMapToPlayer(int PlayerID, std::string Map);
 		int AssignDeviceToPlayer(int PlayerID, std::shared_ptr<Internals::Device> device);
