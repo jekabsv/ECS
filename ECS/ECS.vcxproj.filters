@@ -25,9 +25,6 @@
     <Filter Include="Source Files\InputSystem">
       <UniqueIdentifier>{3d0d5da9-bc2e-4816-ab46-7aa4b429b000}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\States">
-      <UniqueIdentifier>{47bdc6a3-7b1c-46f1-b73d-2054254f5b12}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ECS.cpp">
@@ -46,7 +43,7 @@
       <Filter>Source Files\InputSystem</Filter>
     </ClCompile>
     <ClCompile Include="StartState.cpp">
-      <Filter>Source Files\States</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -58,9 +55,6 @@
     </ClInclude>
     <ClInclude Include="RenderComponent.h">
       <Filter>Header Files\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="StartState.h">
-      <Filter>Header Files\State</Filter>
     </ClInclude>
     <ClInclude Include="State.h">
       <Filter>Header Files\State</Filter>
@@ -85,6 +79,9 @@
     </ClInclude>
     <ClInclude Include="InputSystem.h">
       <Filter>Header Files\InputSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="StartState.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

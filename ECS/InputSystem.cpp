@@ -11,7 +11,6 @@ std::vector<std::shared_ptr<Device>> GamepadHub::gamepads;
 
 void System::Init()
 {
-	SDL_PumpEvents();
 	Update(0.0f);
 
 	if (!KeyboardHub::Current()) {
@@ -21,16 +20,20 @@ void System::Init()
 		MouseHub::Current() = std::make_shared<MouseDevice>(0);
 	}
 
+	AssignDeviceToPlayer(KeyboardHub::Current());
+	AssignDeviceToPlayer(MouseHub::Current());
+
 	AddActionMap("default");
-	AssignMapToPlayer(-1, "default");
+	AssignMapToPlayer("default");
 	Update(0.0f);
 }
 
-ActionMap& System::GetActionMap(std::string ActionMapName)
+ActionMap* System::GetActionMap(const std::string& ActionMapName)
 {
-	return ActionMaps[ActionMapName];
+	auto it = ActionMaps.find(ActionMapName);
+	return it != ActionMaps.end() ? &it->second : nullptr;
 }
-int System::RemoveActionMap(std::string ActionMapName)
+int System::RemoveActionMap(const std::string& ActionMapName)
 {
 	auto it = ActionMaps.find(ActionMapName);
 	if (it == ActionMaps.end())
@@ -38,43 +41,83 @@ int System::RemoveActionMap(std::string ActionMapName)
 	ActionMaps.erase(it);
 	return 0;
 }
-ActionState System::GetActionState(std::string ActionName, int player)
+ActionState System::GetActionState(const std::string& ActionName, int player)
 {
-	return playerActionStates[player][ActionName].state;
+	auto playerIt = playerActionStates.find(player);
+	if (playerIt == playerActionStates.end())
+		return ActionState::Idle;
+
+	auto actionIt = playerIt->second.find(ActionName);
+	if (actionIt == playerIt->second.end())
+		return ActionState::Idle;
+
+	return actionIt->second.state;
 }
-INPUT_DATA_4 System::GetActionAxis(std::string ActionName, int player)
+INPUT_DATA_4 System::GetActionAxis(const std::string& ActionName, int player)
 {
-	return playerActionStates[player][ActionName].data;
+	auto playerIt = playerActionStates.find(player);
+	if (playerIt == playerActionStates.end())
+		return INPUT_DATA_4{ { 0, 0, 0, 0 } };
+
+	auto actionIt = playerIt->second.find(ActionName);
+	if (actionIt == playerIt->second.end())
+		return INPUT_DATA_4{ { 0, 0, 0, 0 } };
+
+	return actionIt->second.data;
 }
 
-bool System::IsHeld(std::string ActionName, int player)
+bool System::IsHeld(const std::string& ActionName, int player)
 {
-	return (playerActionStates[player][ActionName].state == Held);
+	auto playerIt = playerActionStates.find(player);
+	if (playerIt == playerActionStates.end())
+		return false;
+	auto actionIt = playerIt->second.find(ActionName);
+	if (actionIt == playerIt->second.end())
+		return false;
+	return actionIt->second.state == Held;
 }
-bool System::IsIdle(std::string ActionName, int player)
+bool System::IsIdle(const std::string& ActionName, int player)
 {
-	return (playerActionStates[player][ActionName].state == Idle);
+	auto playerIt = playerActionStates.find(player);
+	if (playerIt == playerActionStates.end())
+		return true;
+	auto actionIt = playerIt->second.find(ActionName);
+	if (actionIt == playerIt->second.end())
+		return true;
+	return actionIt->second.state == Idle;
 }
-bool System::IsReleased(std::string ActionName, int player)
+bool System::IsPressed(const std::string& ActionName, int player)
 {
-	return (playerActionStates[player][ActionName].state == Relesased);
+	auto playerIt = playerActionStates.find(player);
+	if (playerIt == playerActionStates.end())
+		return false;
+	auto actionIt = playerIt->second.find(ActionName);
+	if (actionIt == playerIt->second.end())
+		return false;
+	return actionIt->second.state == Pressed;
 }
-bool System::IsPressed(std::string ActionName, int player)
+bool System::IsReleased(const std::string& ActionName, int player)
 {
-	return (playerActionStates[player][ActionName].state == Pressed);
+	auto playerIt = playerActionStates.find(player);
+	if (playerIt == playerActionStates.end())
+		return false;
+	auto actionIt = playerIt->second.find(ActionName);
+	if (actionIt == playerIt->second.end())
+		return false;
+	return actionIt->second.state == Released;
 }
 
-ActionMap& System::AddActionMap(std::string ActionMapName)
+ActionMap& System::AddActionMap(const std::string& ActionMapName)
 {
 	return ActionMaps[ActionMapName];
 }
 
-int System::AssignMapToPlayer(int PlayerID, std::string Map)
+int System::AssignMapToPlayer(const std::string& Map, int PlayerID)
 {
 	PlayerToMap[PlayerID] = Map;
 	return 0;
 }
-int System::AssignDeviceToPlayer(int PlayerID, std::shared_ptr<Device> device)
+int System::AssignDeviceToPlayer(const std::shared_ptr<Device>& device, int PlayerID)
 {
 	if (!device)
 		return -1;
@@ -87,37 +130,47 @@ int System::AssignDeviceToPlayer(int PlayerID, std::shared_ptr<Device> device)
 		PlayerGamepadPool[PlayerID].push_back(device);
 	return 0;
 }
-int System::AssignDevicesToPlayer(int PlayerID, std::vector<std::shared_ptr<Device>> devices)
+int System::AssignDevicesToPlayer(const std::vector<std::shared_ptr<Device>>& devices, int PlayerID)
 {
 	for (auto& x : devices)
-		AssignDeviceToPlayer(PlayerID, x);
+		AssignDeviceToPlayer(x, PlayerID);
 	return 0;
 }
-int System::RemoveDeviceFromPlayer(int playerID, std::shared_ptr<Device> device)
-{
+
+
+int System::RemoveDeviceFromPlayer(const std::shared_ptr<Device>& device, int playerID) {
 	if (!device)
 		return -1;
-	PlayerKeyboardPool[playerID].clear();
-	PlayerMousePool[playerID].clear();
-	PlayerGamepadPool[playerID].erase(
-		std::remove(PlayerGamepadPool[playerID].begin(), PlayerGamepadPool[playerID].end(), device),
-		PlayerGamepadPool[playerID].end());
+
+	auto removeFrom = [&](auto& pool) {
+		auto it = pool.find(playerID);
+		if (it == pool.end()) return;
+		auto& vec = it->second;
+		vec.erase(std::remove(vec.begin(), vec.end(), device), vec.end());
+		};
+
+	removeFrom(PlayerKeyboardPool);
+	removeFrom(PlayerMousePool);
+	removeFrom(PlayerGamepadPool);
 	return 0;
 }
 
 std::vector<std::shared_ptr<Device>> System::GetDevicesOfType(int player, DeviceType type)
 {
-	if (type == Keyboard)
-		return PlayerKeyboardPool[player];
-	if (type == Mouse)
-		return PlayerMousePool[player];
-	if (type == Gamepad)
-		return PlayerGamepadPool[player];
-	return {};
+	const auto* pool = (type == Keyboard) ? &PlayerKeyboardPool
+		: (type == Mouse) ? &PlayerMousePool
+		: &PlayerGamepadPool;
+	auto it = pool->find(player);
+	if (it == pool->end())
+		return {};
+	return it->second;
 }
 
 void System::Update(float dt)
 {
+	if (MouseHub::Current())
+		static_cast<MouseDevice*>(MouseHub::Current().get())->ResetFrameAxes();
+
 	SDL_Event ev;
 	while (SDL_PollEvent(&ev)) {
 		switch (ev.type) {
@@ -138,6 +191,8 @@ void System::Update(float dt)
 				auto m = static_cast<MouseDevice*>(MouseHub::Current().get());
 				m->SetAxis(0, ev.motion.x);
 				m->SetAxis(1, ev.motion.y);
+				m->SetAxis(4, m->GetAxis(4) + ev.motion.xrel);
+				m->SetAxis(5, m->GetAxis(5) + ev.motion.yrel);
 			}
 			break;
 		case SDL_EVENT_GAMEPAD_ADDED:
@@ -149,28 +204,47 @@ void System::Update(float dt)
 		case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
 		case SDL_EVENT_GAMEPAD_BUTTON_UP:
 			for (auto& dev : GamepadHub::All())
-				if (dev->GetId() == ev.gbutton.which)
+				if (dev->GetId() == ev.gbutton.which) {
 					static_cast<GamepadDevice*>(dev.get())
-					->SetButton((int)ev.gbutton.button, ev.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN);
+						->SetButton((int)ev.gbutton.button, ev.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN);
+					GamepadHub::Current() = dev;
+				}
 			break;
 		case SDL_EVENT_GAMEPAD_AXIS_MOTION:
 			for (auto& dev : GamepadHub::All())
-				if (dev->GetId() == ev.gaxis.which)
+				if (dev->GetId() == ev.gaxis.which) {
 					static_cast<GamepadDevice*>(dev.get())
-					->SetAxis((int)ev.gaxis.axis, ev.gaxis.value / 32767.0f);
+						->SetAxis((int)ev.gaxis.axis, ev.gaxis.value / 32767.0f);
+					GamepadHub::Current() = dev;
+				}
+			break;
+		case SDL_EVENT_MOUSE_WHEEL:
+			if (MouseHub::Current()) {
+				auto m = static_cast<MouseDevice*>(MouseHub::Current().get());
+				m->SetAxis(2, m->GetAxis(2) + ev.wheel.x);
+				m->SetAxis(3, m->GetAxis(3) + ev.wheel.y);
+			}
 			break;
 		}
 	}
 
 	for (auto& [playerId, mapName] : PlayerToMap)
 	{
-		playerActionStates[playerId] = ActionMaps[mapName].GetAllActionStates(
+		auto mapIt = ActionMaps.find(mapName);
+		if (mapIt == ActionMaps.end())
+			continue;
+
+		static const std::vector<std::shared_ptr<Device>> emptyPool{};
+		auto kbIt = PlayerKeyboardPool.find(playerId);
+		auto mIt = PlayerMousePool.find(playerId);
+		auto gpIt = PlayerGamepadPool.find(playerId);
+
+		mapIt->second.UpdateAllActionStates(
 			dt,
-			playerId,
 			playerActionStates[playerId],
-			PlayerKeyboardPool[playerId],
-			PlayerMousePool[playerId],
-			PlayerGamepadPool[playerId]
+			kbIt != PlayerKeyboardPool.end() ? kbIt->second : emptyPool,
+			mIt != PlayerMousePool.end() ? mIt->second : emptyPool,
+			gpIt != PlayerGamepadPool.end() ? gpIt->second : emptyPool
 		);
 	}
 }
@@ -188,29 +262,35 @@ bool ActionMap::IsActive()
 	return active;
 }
 
-std::unordered_map<std::string, ActionStateClass> ActionMap::GetAllActionStates(float dt, int player,
-	std::unordered_map<std::string, ActionStateClass> previousActionState,
-	std::vector<std::shared_ptr<Device>>& PlayerKeyboardPool, std::vector<std::shared_ptr<Device>>& PlayerMousePool,
-	std::vector<std::shared_ptr<Device>>& PlayerGamepadPool)
+void ActionMap::UpdateAllActionStates(float dt,
+	std::unordered_map<std::string, ActionStateClass>& states,
+	const std::vector<std::shared_ptr<Device>>& PlayerKeyboardPool,
+	const std::vector<std::shared_ptr<Device>>& PlayerMousePool,
+	const std::vector<std::shared_ptr<Device>>& PlayerGamepadPool)
 {
-	std::unordered_map<std::string, ActionStateClass> actionmap;
-	for (auto& [name, action] : Actions)
-		actionmap[name] = action.GetActionState(dt, player, previousActionState[name], PlayerKeyboardPool, PlayerMousePool, PlayerGamepadPool);
-	return actionmap;
-}
+	if (!active) {
+		states.clear();
+		return;
+	}
 
-Action& ActionMap::AddAction(std::string name)
+	static const ActionStateClass defaultState{};
+	for (auto& [name, action] : Actions)
+	{
+		auto it = states.find(name);
+		const ActionStateClass& prev = (it != states.end()) ? it->second : defaultState;
+		states[name] = action.GetActionState(dt, prev, PlayerKeyboardPool, PlayerMousePool, PlayerGamepadPool);
+	}
+}
+Action& ActionMap::AddAction(const std::string& name)
 {
 	return Actions[name];
 }
-OptionalRef<Action> ActionMap::GetAction(std::string name)
+Action* ActionMap::GetAction(const std::string& name)
 {
 	auto it = Actions.find(name);
-	if (it == Actions.end())
-		return std::nullopt;
-	return it->second;
+	return it != Actions.end() ? &it->second : nullptr;
 }
-int ActionMap::RemoveAction(std::string name)
+int ActionMap::RemoveAction(const std::string& name)
 {
 	auto it = Actions.find(name);
 	if (it == Actions.end())
@@ -260,27 +340,21 @@ int Action::RemoveBinding(Bindings binding)
 		}
 	return -1;
 }
-int Action::RemoveProcessor(std::string name)
+int Action::RemoveProcessor(const std::string& name)
 {
-	for (auto it = processors.begin(); it < processors.end(); ++it)
-		if ((*it)->name == name)
-		{
-			std::swap(processors.back(), *it);
-			processors.pop_back();
-			return 0;
-		}
-	return -1;
+	auto it = std::find_if(processors.begin(), processors.end(),
+		[&](const auto& p) { return p->name == name; });
+	if (it == processors.end()) return -1;
+	processors.erase(it);
+	return 0;
 }
-int Action::RemoveInteraction(std::string name)
+int Action::RemoveInteraction(const std::string& name)
 {
-	for (auto it = interactions.begin(); it < interactions.end(); ++it)
-		if ((*it)->name == name)
-		{
-			std::swap(interactions.back(), *it);
-			interactions.pop_back();
-			return 0;
-		}
-	return -1;
+	auto it = std::find_if(interactions.begin(), interactions.end(),
+		[&](const auto& i) { return i->name == name; });
+	if (it == interactions.end()) return -1;
+	interactions.erase(it);
+	return 0;
 }
 
 bool Action::IsActive()
@@ -288,10 +362,12 @@ bool Action::IsActive()
 	return active;
 }
 
-ActionStateClass Action::GetActionState(float dt, int player, ActionStateClass previousState,
-	std::vector<std::shared_ptr<Device>> PlayerKeyboardPool,
-	std::vector<std::shared_ptr<Device>> PlayerMousePool,
-	std::vector<std::shared_ptr<Device>> PlayerGamepadPool)
+Internals::ActionStateClass InputSystem::Action::GetActionState(float dt,
+	const Internals::ActionStateClass& previousState,
+	const std::vector<std::shared_ptr<Internals::Device>>& PlayerKeyboardPool,
+	const std::vector<std::shared_ptr<Internals::Device>>& PlayerMousePool,
+	const std::vector<std::shared_ptr<Internals::Device>>& PlayerGamepadPool)
+
 {
 	if (!active)
 		return ActionStateClass{ ActionState::Idle, INPUT_DATA_4{{0, 0, 0, 0}} };
@@ -312,9 +388,10 @@ ActionStateClass Action::GetActionState(float dt, int player, ActionStateClass p
 				? device->IsPressed(binding.key)
 				: device->GetAxis(binding.key);
 
-			if (val != 0.0f) {
+			if (val != 0.0f && binding.componentIndex < 4 && binding.componentIndex >= 0) {
 				rawData[binding.componentIndex] += val * binding.scale;
-				isAnyBindingPressed = true;
+				if (binding.bindingType == Button)
+					isAnyBindingPressed = true;
 			}
 		}
 	}
@@ -327,7 +404,7 @@ ActionStateClass Action::GetActionState(float dt, int player, ActionStateClass p
 	if (isAnyBindingPressed)
 		currentRawState = (previousState.state == Held || previousState.state == Pressed) ? Held : Pressed;
 	else
-		currentRawState = (previousState.state == Idle || previousState.state == Relesased) ? Idle : Relesased;
+		currentRawState = (previousState.state == Idle || previousState.state == Released) ? Idle : Released;
 
 	for (auto& interaction : interactions)
 	{
@@ -347,11 +424,11 @@ void Action::Deactivate()
 	active = false;
 }
 
-DeviceType Device::GetType()
+DeviceType Device::GetType() const
 {
 	return type;
 }
-int Device::GetId()
+int Device::GetId() const
 {
 	return DeviceId;
 }
@@ -404,7 +481,7 @@ void InputSystem::Internals::MouseDevice::SetButton(int btn, bool pressed)
 }
 void InputSystem::Internals::MouseDevice::SetAxis(int idx, float val)
 {
-	if (idx < 4)
+	if (idx >= 0 && idx < 6)
 		axes[idx] = val;
 }
 float InputSystem::Internals::MouseDevice::IsPressed(int key)
@@ -412,9 +489,16 @@ float InputSystem::Internals::MouseDevice::IsPressed(int key)
 	return (key >= 0 && key < buttons.size() && buttons[key]) ? 1.0f : 0.0f;
 }
 float InputSystem::Internals::MouseDevice::GetAxis(int axis)
-
 {
-	return (axis >= 0 && axis < 4) ? axes[axis] : 0.0f;
+	return (axis >= 0 && axis < 6) ? axes[axis] : 0.0f;
+}
+
+void InputSystem::Internals::MouseDevice::ResetFrameAxes()
+{
+	axes[2] = 0.0f;  // scroll X
+	axes[3] = 0.0f;  // scroll Y
+	axes[4] = 0.0f;  // delta X
+	axes[5] = 0.0f;  // delta Y
 }
 
 InputSystem::Internals::GamepadDevice::GamepadDevice(int _id)

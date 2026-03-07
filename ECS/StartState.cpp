@@ -26,7 +26,6 @@ public:
         return 0;
     }
 };
-
 class ProcessQE : public InputSystem::Processor
 {
 public:
@@ -37,14 +36,10 @@ public:
         return 0;
     }
 };
-
 enum Mesh_names {
     TRIANGLE = 0,
     SQUARE = 1
 };
-
-ecs::Entity e;
-ecs::Entity player;
 
 void StartState::Init()
 {
@@ -85,25 +80,21 @@ void StartState::Init()
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_A, 1)
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_S, 2)
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_D, 3)
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_UP, 0)
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_LEFT, 1)
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_DOWN, 2)
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_RIGHT, 3)
         .AddProcessor(std::make_unique<ProcessWASD>("wasd"));
 
-    _data->inputs.AssignDeviceToPlayer(player, InputSystem::KeyboardHub::Current());
-    _data->inputs.AssignMapToPlayer(player, "gameplay");
+    _data->inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current(), player);
+    _data->inputs.AssignMapToPlayer("gameplay", player);
 
-    _data->inputs.GetActionMap("gameplay").AddAction("scale")
+    _data->inputs.GetActionMap("gameplay")->AddAction("scale")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_Q, 0)
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_E, 1)
         .AddProcessor(std::make_unique<ProcessQE>("qe"));
+
 }
-
-
-
-
-int TexX;
-int TexY;
-bool direction = 0;
-
-Uint32 start = SDL_GetTicks();
 
 void StartState::Update()
 {
@@ -156,15 +147,10 @@ void StartState::Update()
         }
     }
         
-
-
     SimpleSprite& ss = ecs.get<SimpleSprite>(player);
     ss.TextureRect.x = TexX * 64;
     ss.TextureRect.y = TexY * 64;
 }
-
-
-
 
 void StartState::Render()
 {

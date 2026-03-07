@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 #include <array> 
-#include <optional>
 #include <functional>
 #include <algorithm>
 #include "SDL3/SDL.h"
@@ -12,12 +11,9 @@
 namespace InputSystem
 {
 
-	template <typename T>
-	using OptionalRef = std::optional<std::reference_wrapper<T>>;
-
 	enum DeviceType { Keyboard, Mouse, Gamepad };
 	enum InteractionResult { None, Started, Performed, Canceled };
-	enum ActionState { Idle, Pressed, Relesased, Held, Error };
+	enum ActionState { Idle, Pressed, Released, Held, Error };
 	enum BindingType { Button, Axis };
 
 	using INPUT_DATA_4 = std::array<float, 4>;
@@ -59,8 +55,8 @@ namespace InputSystem
 			int DeviceId;
 		public:
 			Device(int _DeviceId, DeviceType _type) : type(_type), DeviceId(_DeviceId) {};
-			DeviceType GetType();
-			int GetId();
+			DeviceType GetType() const;
+			int GetId() const;
 			virtual float IsPressed(int key) = 0;
 			virtual float GetAxis(int axis) = 0;
 		};
@@ -78,14 +74,14 @@ namespace InputSystem
 
 		class MouseDevice : public Device {
 			std::vector<bool> buttons;
-			float axes[4] = { 0 };
+			float axes[6] = { 0 };
 		public:
 			MouseDevice(int _id);
 			void SetButton(int btn, bool pressed);
 			void SetAxis(int idx, float val);
 			float IsPressed(int key) override;
 			float GetAxis(int axis) override;
-
+			void ResetFrameAxes();
 		};
 
 		class GamepadDevice : public Device
@@ -176,15 +172,18 @@ namespace InputSystem
 		Action& AddInteraction(std::unique_ptr<Interaction> interaction);
 
 		int RemoveBinding(Bindings binding);
-		int RemoveProcessor(std::string name);
-		int RemoveInteraction(std::string name);
+		int RemoveProcessor(const std::string& name);
+		int RemoveInteraction(const std::string& name);
 
 		void Activate();
 		void Deactivate();
 		bool IsActive();
 
-		Internals::ActionStateClass GetActionState(float dt, int player, Internals::ActionStateClass previousState, std::vector<std::shared_ptr<Internals::Device>> PlayerKeyboardPool,
-			std::vector<std::shared_ptr<Internals::Device>> PlayerMousePool, std::vector<std::shared_ptr<Internals::Device>> PlayerGamepadPool);
+		Internals::ActionStateClass GetActionState(float dt,
+			const Internals::ActionStateClass& previousState,
+			const std::vector<std::shared_ptr<Internals::Device>>& PlayerKeyboardPool,
+			const std::vector<std::shared_ptr<Internals::Device>>& PlayerMousePool,
+			const std::vector<std::shared_ptr<Internals::Device>>& PlayerGamepadPool);
 	};
 	class ActionMap
 	{
@@ -193,50 +192,52 @@ namespace InputSystem
 
 	public:
 		ActionMap() = default;
-		Action& AddAction(std::string name);
-		OptionalRef<Action> GetAction(std::string name);
-		int RemoveAction(std::string name);
+		Action& AddAction(const std::string& name);
+		Action* GetAction(const std::string& name);
+		int RemoveAction(const std::string& name);
 
 		void Activate();
 		void Deactivate();
 		bool IsActive();
 
-		std::unordered_map<std::string, Internals::ActionStateClass> GetAllActionStates(float dt, int player, std::unordered_map<std::string, Internals::ActionStateClass>,
-			std::vector<std::shared_ptr<Internals::Device>>& PlayerKeyboardPool,
-			std::vector<std::shared_ptr<Internals::Device>>& PlayerMousePool, std::vector<std::shared_ptr<Internals::Device>>& PlayerGamepadPool);
+		void UpdateAllActionStates(float dt,
+			std::unordered_map<std::string, Internals::ActionStateClass>& states,
+			const std::vector<std::shared_ptr<Internals::Device>>& PlayerKeyboardPool,
+			const std::vector<std::shared_ptr<Internals::Device>>& PlayerMousePool,
+			const std::vector<std::shared_ptr<Internals::Device>>& PlayerGamepadPool);
 	};
 
 	class System
 	{
-	public:
-		System() = default;
-
 		std::unordered_map<std::string, ActionMap> ActionMaps;
 		std::unordered_map<int, std::vector<std::shared_ptr<Internals::Device>>> PlayerKeyboardPool;
 		std::unordered_map<int, std::vector<std::shared_ptr<Internals::Device>>> PlayerMousePool;
 		std::unordered_map<int, std::vector<std::shared_ptr<Internals::Device>>> PlayerGamepadPool;
 
-		void Init();
-
 		std::unordered_map<int, std::string> PlayerToMap;
 		std::unordered_map<int, std::unordered_map<std::string, Internals::ActionStateClass>> playerActionStates;
 
-		ActionMap& GetActionMap(std::string ActionMapName);
-		ActionMap& AddActionMap(std::string ActionMapName);
-		int RemoveActionMap(std::string ActionMapName);
+	public:
+		System() = default;
 
-		ActionState GetActionState(std::string ActionName, int player = -1);
-		INPUT_DATA_4 GetActionAxis(std::string ActionName, int player = -1);
+		void Init();
 
-		bool IsHeld(std::string ActionName, int player = -1);
-		bool IsIdle(std::string ActionName, int player = -1);
-		bool IsPressed(std::string ActionName, int player = -1);
-		bool IsReleased(std::string ActionName, int player = -1);
+		ActionMap* GetActionMap(const std::string& ActionMapName = "default");
+		ActionMap& AddActionMap(const std::string& ActionMapName);
+		int RemoveActionMap(const std::string& ActionMapName);
 
-		int AssignMapToPlayer(int PlayerID, std::string Map);
-		int AssignDeviceToPlayer(int PlayerID, std::shared_ptr<Internals::Device> device);
-		int AssignDevicesToPlayer(int PlayerID, std::vector<std::shared_ptr<Internals::Device>>);
-		int RemoveDeviceFromPlayer(int playerID, std::shared_ptr<Internals::Device> device);
+		ActionState GetActionState(const std::string& ActionName, int player = -1);
+		INPUT_DATA_4 GetActionAxis(const std::string& ActionName, int player = -1);
+
+		bool IsHeld(const std::string& ActionName, int player = -1);
+		bool IsIdle(const std::string& ActionName, int player = -1);
+		bool IsPressed(const std::string& ActionName, int player = -1);
+		bool IsReleased(const std::string& ActionName, int player = -1);
+
+		int AssignMapToPlayer(const std::string& Map, int PlayerID = -1);
+		int AssignDeviceToPlayer(const std::shared_ptr<Internals::Device>& device, int PlayerID = -1);
+		int AssignDevicesToPlayer(const std::vector<std::shared_ptr<Internals::Device>>&, int PlayerID = -1);
+		int RemoveDeviceFromPlayer(const std::shared_ptr<Internals::Device>& device, int playerID = -1);
 
 		std::vector<std::shared_ptr<Internals::Device>> GetDevicesOfType(int player, DeviceType type);
 

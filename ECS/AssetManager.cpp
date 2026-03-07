@@ -7,7 +7,6 @@ void AssetManager::AddMesh(int id, const Mesh& mesh)
 {
     _meshes[id] = mesh;
 }
-
 Mesh& AssetManager::GetMesh(int id)
 {
     return _meshes[id];
@@ -28,10 +27,10 @@ void AssetManager::LoadBMPTexture(int id, std::string filename, SDL_Renderer* re
     _textures[id] = texture;
     return;
 }
-
 SDL_Texture* AssetManager::GetTexture(int id)
 {
     if(id == -1)
         return nullptr;
     return _textures[id];
 }
+

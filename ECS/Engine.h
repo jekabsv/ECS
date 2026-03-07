@@ -11,8 +11,6 @@
 
 static bool mainLoopRegistered = false;
 
-
-
 class Engine
 {
 public:
