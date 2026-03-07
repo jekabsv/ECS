@@ -2,6 +2,7 @@
 #include <iostream>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_surface.h>
+#include "logger.h"
 
 int AssetManager::AddMesh(StringId meshName, const Mesh& mesh)
 {
@@ -20,12 +21,12 @@ int AssetManager::LoadBMPTexture(StringId TextureName, const std::string& filena
 {
     SDL_Surface* surface = SDL_LoadBMP(filename.c_str());
     if (!surface) {
-        SDL_Log("Failed to load BMP: %s", SDL_GetError());
+        LOG_ERROR(GlobalLogger(), "AssetManager", std::string("Failed to load BMP: ") + SDL_GetError());
         return 0;
     }
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
     if (!texture) {
-        SDL_Log("Failed to create texture: %s", SDL_GetError());
+        LOG_ERROR(GlobalLogger(), "AssetManager", std::string("Failed to create texture: ") + SDL_GetError());
         return 0;
     }
     _textures[TextureName] = texture;

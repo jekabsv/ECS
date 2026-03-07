@@ -32,12 +32,20 @@ bool Engine::InitializeWeb(const std::string& elementId)
 
 bool Engine::Initialize()
 {
+    GlobalLogger().AddSink(std::make_shared<ConsoleSink>());
+
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS)) {
+        LOG_ERROR(GlobalLogger(), "Engine", "SDL_Init failed");
     }
 
     _data->window = SDL_CreateWindow("window", _data->GAME_WIDTH, _data->GAME_HEIGHT, 0);
     if (!_data->window)
+    {
+        LOG_ERROR(GlobalLogger(), "Engine", std::string("SDL_CreateWindow failed: ") + SDL_GetError());
         return false;
+
+    }
+        
 
     SDL_GL_SetSwapInterval(1);
 
@@ -66,7 +74,7 @@ void Engine::Render()
 {
     if (!_data->SDLrenderer)
     {
-        std::cout << SDL_GetError() << '\n';
+        LOG_ERROR(GlobalLogger(), "Renderer", std::string("Render failed: ") + SDL_GetError());
         return;
     }
 

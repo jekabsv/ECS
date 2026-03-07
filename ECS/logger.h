@@ -45,6 +45,7 @@ private:
     std::vector<std::shared_ptr<LogInternals::Sink>> _sinks;
 };
 
+Logger& GlobalLogger();
 
 #ifdef NDEBUG
 #define LOG_DEBUG(logger, system, msg) ((void)0)

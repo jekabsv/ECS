@@ -85,3 +85,8 @@ void FileSink::Write(LogLevel level, std::string_view system, std::string_view m
     _file << FormatMessage(level, system, msg, file, line, func) << '\n';
     _file.flush();
 }
+
+Logger& GlobalLogger() {
+    static Logger instance;
+    return instance;
+}
