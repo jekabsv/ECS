@@ -1,5 +1,6 @@
 #include "StateMachine.h"
 #include <cassert>
+#include "logger.h"
 
 void StateMachine::AddState(StateRef newState, bool isreplacing)
 {
@@ -9,6 +10,10 @@ void StateMachine::AddState(StateRef newState, bool isreplacing)
 }
 void StateMachine::RemoveState()
 {
+	if (_states.empty()) {
+		LOG_WARN(GlobalLogger(), "StateMachine", "RemoveState called on empty stack"); return; 
+	}
+
 	_isRemoving = 1;
 }
 
@@ -33,11 +38,14 @@ void StateMachine::ProcessStateChanges()
 		}
 		_states.push(std::move(_newState));
 		this->_states.top()->Init();
+		LOG_DEBUG(GlobalLogger(), "StateMachine", "State transition completed");
 		_isAdding = 0;
 	}
 }
 
 StateRef& StateMachine::GetActiveState()
 {
+	if (_states.empty())
+		LOG_ERROR(GlobalLogger(), "StateMachine", "GetActiveState called on empty stack");
 	return _states.top();
 }

@@ -50,7 +50,8 @@ bool Engine::Initialize()
     SDL_GL_SetSwapInterval(1);
 
     _data->SDLrenderer = SDL_CreateRenderer(_data->window, nullptr);
-
+    if (!_data->SDLrenderer) 
+        LOG_ERROR(GlobalLogger(), "Engine", std::string("SDL_CreateRenderer failed: ") + SDL_GetError());
 
     _data->inputs.Init();
     _data->renderer.SDLrenderer = _data->SDLrenderer;

@@ -1,4 +1,5 @@
 #include "InputSystem.h"
+#include "logger.h"
 
 using namespace InputSystem;
 using namespace Internals;
@@ -21,23 +22,32 @@ void System::Init()
 	}
 
 	AssignDeviceToPlayer(KeyboardHub::Current());
+	LOG_DEBUG(GlobalLogger(), "InputSystem", "Default keyboard device initialized");
 	AssignDeviceToPlayer(MouseHub::Current());
+	LOG_DEBUG(GlobalLogger(), "InputSystem", "Default mouse device initialized");
 
 	AddActionMap("default");
 	AssignMapToPlayer("default");
+
 	Update(0.0f);
 }
 
 ActionMap* System::GetActionMap(StringId ActionMapName)
 {
 	auto it = ActionMaps.find(ActionMapName);
-	return it != ActionMaps.end() ? &it->second : nullptr;
+	if (it != ActionMaps.end())
+		return &it->second;
+	LOG_WARN(GlobalLogger(), "InputSystem", "ActionMap not found");
+	return nullptr;
 }
 int System::RemoveActionMap(StringId ActionMapName)
 {
 	auto it = ActionMaps.find(ActionMapName);
 	if (it == ActionMaps.end())
+	{
+		LOG_WARN(GlobalLogger(), "Input System", "No ActionMap to remove");
 		return -1;
+	}
 	ActionMaps.erase(it);
 	return 0;
 }
@@ -45,11 +55,17 @@ ActionState System::GetActionState(StringId ActionName, int player)
 {
 	auto playerIt = playerActionStates.find(player);
 	if (playerIt == playerActionStates.end())
+	{
+		LOG_WARN(GlobalLogger(), "Input System", "No player: " + std::to_string(player));
 		return ActionState::Idle;
+	}
 
 	auto actionIt = playerIt->second.find(ActionName);
 	if (actionIt == playerIt->second.end())
+	{
+		LOG_WARN(GlobalLogger(), "Input System", "No ActionMap for player: " + std::to_string(player));
 		return ActionState::Idle;
+	}
 
 	return actionIt->second.state;
 }
@@ -57,11 +73,17 @@ INPUT_DATA_4 System::GetActionAxis(StringId ActionName, int player)
 {
 	auto playerIt = playerActionStates.find(player);
 	if (playerIt == playerActionStates.end())
+	{
+		LOG_WARN(GlobalLogger(), "Input System", "No player: " + std::to_string(player));
 		return INPUT_DATA_4{ { 0, 0, 0, 0 } };
+	}
 
 	auto actionIt = playerIt->second.find(ActionName);
 	if (actionIt == playerIt->second.end())
+	{
+		LOG_WARN(GlobalLogger(), "Input System", "No ActionMap for player: " + std::to_string(player));
 		return INPUT_DATA_4{ { 0, 0, 0, 0 } };
+	}
 
 	return actionIt->second.data;
 }
@@ -70,40 +92,64 @@ bool System::IsHeld(StringId ActionName, int player)
 {
 	auto playerIt = playerActionStates.find(player);
 	if (playerIt == playerActionStates.end())
+	{
+		LOG_WARN(GlobalLogger(), "Input System", "No player: " + std::to_string(player));
 		return false;
+	}
 	auto actionIt = playerIt->second.find(ActionName);
 	if (actionIt == playerIt->second.end())
+	{
+		LOG_WARN(GlobalLogger(), "Input System", "No ActionMap for player: " + std::to_string(player));
 		return false;
+	}
 	return actionIt->second.state == Held;
 }
 bool System::IsIdle(StringId ActionName, int player)
 {
 	auto playerIt = playerActionStates.find(player);
 	if (playerIt == playerActionStates.end())
+	{
+		LOG_WARN(GlobalLogger(), "Input System", "No player: " + std::to_string(player));
 		return true;
+	}
 	auto actionIt = playerIt->second.find(ActionName);
 	if (actionIt == playerIt->second.end())
+	{
+		LOG_WARN(GlobalLogger(), "Input System", "No ActionMap for player: " + std::to_string(player));
 		return true;
+	}
 	return actionIt->second.state == Idle;
 }
 bool System::IsPressed(StringId ActionName, int player)
 {
 	auto playerIt = playerActionStates.find(player);
 	if (playerIt == playerActionStates.end())
+	{
+		LOG_WARN(GlobalLogger(), "Input System", "No player: " + std::to_string(player));
 		return false;
+	}
 	auto actionIt = playerIt->second.find(ActionName);
 	if (actionIt == playerIt->second.end())
+	{
+		LOG_WARN(GlobalLogger(), "Input System", "No ActionMap for player: " + std::to_string(player));
 		return false;
+	}
 	return actionIt->second.state == Pressed;
 }
 bool System::IsReleased(StringId ActionName, int player)
 {
 	auto playerIt = playerActionStates.find(player);
 	if (playerIt == playerActionStates.end())
+	{
+		LOG_WARN(GlobalLogger(), "Input System", "No player: " + std::to_string(player));
 		return false;
+	}
 	auto actionIt = playerIt->second.find(ActionName);
 	if (actionIt == playerIt->second.end())
+	{
+		LOG_WARN(GlobalLogger(), "Input System", "No ActionMap for player: " + std::to_string(player));
 		return false;
+	}
 	return actionIt->second.state == Released;
 }
 
@@ -114,13 +160,18 @@ ActionMap& System::AddActionMap(StringId ActionMapName)
 
 int System::AssignMapToPlayer(StringId Map, int PlayerID)
 {
+	if (!GetActionMap(Map)) 
+		LOG_WARN(GlobalLogger(), "InputSystem", "Assigned map does not exist");
 	PlayerToMap[PlayerID] = Map;
 	return 0;
 }
 int System::AssignDeviceToPlayer(const std::shared_ptr<Device>& device, int PlayerID)
 {
 	if (!device)
+	{
+		LOG_WARN(GlobalLogger(), "InputSystem", "AssignDeviceToPlayer called with null device");
 		return -1;
+	}
 	DeviceType type = device->GetType();
 	if (type == Keyboard)
 		PlayerKeyboardPool[PlayerID] = { device };
@@ -128,19 +179,35 @@ int System::AssignDeviceToPlayer(const std::shared_ptr<Device>& device, int Play
 		PlayerMousePool[PlayerID] = { device };
 	else if (type == Gamepad)
 		PlayerGamepadPool[PlayerID].push_back(device);
+	LOG_DEBUG(GlobalLogger(), "InputSystem", "Device assigned to player " + std::to_string(PlayerID));
 	return 0;
 }
 int System::AssignDevicesToPlayer(const std::vector<std::shared_ptr<Device>>& devices, int PlayerID)
 {
+	if (devices.empty())
+	{
+		return 0;
+		LOG_WARN(GlobalLogger(), "InputSystem", "AssignDevicesToPlayer called with no devices");
+	}
 	for (auto& x : devices)
+	{
+		if (!x)
+		{
+			LOG_WARN(GlobalLogger(), "InputSystem", "AssignDevicesToPlayer called with null devices");
+			continue;
+		}
 		AssignDeviceToPlayer(x, PlayerID);
+	}
 	return 0;
 }
 
 
 int System::RemoveDeviceFromPlayer(const std::shared_ptr<Device>& device, int playerID) {
 	if (!device)
+	{
 		return -1;
+		LOG_WARN(GlobalLogger(), "InputSystem", "Called RemoveDeviceFromPlayer with null device");
+	}
 
 	auto removeFrom = [&](auto& pool) {
 		auto it = pool.find(playerID);
@@ -152,6 +219,7 @@ int System::RemoveDeviceFromPlayer(const std::shared_ptr<Device>& device, int pl
 	removeFrom(PlayerKeyboardPool);
 	removeFrom(PlayerMousePool);
 	removeFrom(PlayerGamepadPool);
+	LOG_DEBUG(GlobalLogger(), "InputSystem", "Device removed from player " + std::to_string(playerID));
 	return 0;
 }
 
@@ -196,9 +264,11 @@ void System::Update(float dt)
 			}
 			break;
 		case SDL_EVENT_GAMEPAD_ADDED:
+			LOG_INFO(GlobalLogger(), "InputSystem", "Gamepad connected");
 			GamepadHub::All().push_back(std::make_shared<GamepadDevice>(ev.gdevice.which));
 			break;
 		case SDL_EVENT_GAMEPAD_REMOVED:
+			LOG_INFO(GlobalLogger(), "InputSystem", "Gamepad disconnected");
 			std::erase_if(GamepadHub::All(), [&](auto& d) { return d->GetId() == ev.gdevice.which; });
 			break;
 		case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
@@ -231,8 +301,12 @@ void System::Update(float dt)
 	for (auto& [playerId, mapName] : PlayerToMap)
 	{
 		auto mapIt = ActionMaps.find(mapName);
-		if (mapIt == ActionMaps.end())
-			continue;
+		if (mapIt == ActionMaps.end()) {
+			LOG_WARN(GlobalLogger(), "InputSystem", "Player " + std::to_string(playerId) +
+				" assigned to nonexistent map");
+			continue; 
+		}
+
 
 		static const std::vector<std::shared_ptr<Device>> emptyPool{};
 		auto kbIt = PlayerKeyboardPool.find(playerId);
@@ -338,13 +412,18 @@ int Action::RemoveBinding(Bindings binding)
 			bindings.pop_back();
 			return 0;
 		}
+	LOG_WARN(GlobalLogger(), "InputSystem", "RemoveBinding: binding not found");
 	return -1;
 }
 int Action::RemoveProcessor(StringId name)
 {
 	auto it = std::find_if(processors.begin(), processors.end(),
 		[&](const auto& p) { return p->name == name; });
-	if (it == processors.end()) return -1;
+	if (it == processors.end())
+	{
+		LOG_WARN(GlobalLogger(), "InputSystem", "RemoveProcessor: processor not found");
+		return -1;
+	}
 	processors.erase(it);
 	return 0;
 }
@@ -352,7 +431,11 @@ int Action::RemoveInteraction(StringId name)
 {
 	auto it = std::find_if(interactions.begin(), interactions.end(),
 		[&](const auto& i) { return i->name == name; });
-	if (it == interactions.end()) return -1;
+	if (it == interactions.end()) 
+	{
+		LOG_WARN(GlobalLogger(), "InputSystem", "RemoveInteraction: interaction not found");
+		return -1;
+	}
 	interactions.erase(it);
 	return 0;
 }
@@ -382,6 +465,9 @@ Internals::ActionStateClass InputSystem::Action::GetActionState(float dt,
 			targetPool = &PlayerMousePool;
 		else if (binding.device == Gamepad)
 			targetPool = &PlayerGamepadPool;
+
+		if (targetPool->empty()) 
+			LOG_WARN(GlobalLogger(), "InputSystem", "Action has bindings but no devices assigned to player");
 
 		for (auto& device : *targetPool) {
 			float val = binding.bindingType == Button
@@ -459,6 +545,8 @@ void InputSystem::Internals::KeyboardDevice::SetState(int key, bool pressed)
 {
 	if (key < state.size())
 		state[key] = pressed;
+	else
+		LOG_WARN(GlobalLogger(), "InputSystem", "SetState: key index out of range");
 }
 float InputSystem::Internals::KeyboardDevice::IsPressed(int key)
 {
@@ -478,11 +566,15 @@ void InputSystem::Internals::MouseDevice::SetButton(int btn, bool pressed)
 {
 	if (btn < buttons.size())
 		buttons[btn] = pressed;
+	else
+		LOG_WARN(GlobalLogger(), "InputSystem", "Mouse button index out of range");
 }
 void InputSystem::Internals::MouseDevice::SetAxis(int idx, float val)
 {
 	if (idx >= 0 && idx < 6)
 		axes[idx] = val;
+	else
+		LOG_WARN(GlobalLogger(), "InputSystem", "Mouse axis index out of range");
 }
 float InputSystem::Internals::MouseDevice::IsPressed(int key)
 {
@@ -511,11 +603,17 @@ void InputSystem::Internals::GamepadDevice::SetButton(int btn, bool pressed)
 {
 	if (btn < buttons.size())
 		buttons[btn] = pressed;
+	else
+		LOG_WARN(GlobalLogger(), "InputSystem", "Gamepad button index out of range");
+
 }
 void InputSystem::Internals::GamepadDevice::SetAxis(int idx, float val)
 {
 	if (idx < axes.size())
 		axes[idx] = val;
+	else 
+		LOG_WARN(GlobalLogger(), "InputSystem", "Gamepad axis index out of range");
+
 }
 float InputSystem::Internals::GamepadDevice::IsPressed(int key)
 {

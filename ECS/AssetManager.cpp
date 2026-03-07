@@ -13,7 +13,10 @@ const Mesh* AssetManager::GetMesh(StringId meshName) const
 {
     auto it = _meshes.find(meshName);
     if (it == _meshes.end())
+    {
+        LOG_WARN(GlobalLogger(), "AssetManager", "Mesh not found");
         return nullptr;
+    }
     return &it->second;
 }
 
@@ -37,7 +40,10 @@ const SDL_Texture* AssetManager::GetTexture(StringId TextureName) const
 {
     auto it = _textures.find(TextureName);
     if (it == _textures.end())
+    {
         return nullptr;
+        LOG_WARN(GlobalLogger(), "AssetManager", "Texture not found");
+    }
     return it->second;
 }
 
