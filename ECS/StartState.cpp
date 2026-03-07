@@ -153,15 +153,6 @@ void StartState::Update()
 void StartState::Render()
 {
 
-    if (!_data->SDLrenderer)
-    {
-        std::cout << SDL_GetError() << '\n';
-        return;
-    }
-
-    SDL_RenderClear(_data->SDLrenderer);
-
-
         ecs.for_each(ecs.CreateMask<RenderComponent>(), [this](ecs::Entity e, std::function<void* (ecs::TypeId)> getComponent)
             {
                 RenderComponent* rc = reinterpret_cast<RenderComponent*>(getComponent(ecs::getTypeId<RenderComponent>()));
@@ -209,7 +200,6 @@ void StartState::Render()
                 }
             });
 
-    SDL_RenderPresent(_data->SDLrenderer);
     return;
 }
 

@@ -64,7 +64,17 @@ void Engine::Update()
 
 void Engine::Render()
 {
+    if (!_data->SDLrenderer)
+    {
+        std::cout << SDL_GetError() << '\n';
+        return;
+    }
+
+    SDL_RenderClear(_data->SDLrenderer);
+
     _data->state.GetActiveState()->Render();
+
+    SDL_RenderPresent(_data->SDLrenderer);
 }
 
 void Engine::run()
