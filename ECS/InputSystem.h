@@ -7,6 +7,7 @@
 #include <functional>
 #include <algorithm>
 #include "SDL3/SDL.h"
+#include "Struct.h"
 
 namespace InputSystem
 {
@@ -99,8 +100,8 @@ namespace InputSystem
 
 	class Processor {
 	public:
-		Processor(std::string _name) : name(_name) {};
-		std::string name;
+		Processor(StringId _name) : name(_name) {};
+		StringId name;
 		virtual int Process(INPUT_DATA_4& data)
 		{
 			return 0;
@@ -109,9 +110,9 @@ namespace InputSystem
 
 	class Interaction {
 	public:
-		Interaction(std::string _name) : name(_name) {};
+		Interaction(StringId _name) : name(_name) {};
 		InteractionResult result = None;
-		std::string name;
+		StringId name;
 		std::function<void(INPUT_DATA_4)> OnStarted;
 		std::function<void(INPUT_DATA_4)> OnPerformed;
 		std::function<void(INPUT_DATA_4)> OnCanceled;
@@ -172,8 +173,8 @@ namespace InputSystem
 		Action& AddInteraction(std::unique_ptr<Interaction> interaction);
 
 		int RemoveBinding(Bindings binding);
-		int RemoveProcessor(const std::string& name);
-		int RemoveInteraction(const std::string& name);
+		int RemoveProcessor(StringId name);
+		int RemoveInteraction(StringId name);
 
 		void Activate();
 		void Deactivate();
@@ -188,20 +189,20 @@ namespace InputSystem
 	class ActionMap
 	{
 		bool active = true;
-		std::unordered_map<std::string, Action> Actions;
+		std::unordered_map<StringId, Action> Actions;
 
 	public:
 		ActionMap() = default;
-		Action& AddAction(const std::string& name);
-		Action* GetAction(const std::string& name);
-		int RemoveAction(const std::string& name);
+		Action& AddAction(StringId name);
+		Action* GetAction(StringId name);
+		int RemoveAction(StringId name);
 
 		void Activate();
 		void Deactivate();
 		bool IsActive();
 
 		void UpdateAllActionStates(float dt,
-			std::unordered_map<std::string, Internals::ActionStateClass>& states,
+			std::unordered_map<StringId, Internals::ActionStateClass>& states,
 			const std::vector<std::shared_ptr<Internals::Device>>& PlayerKeyboardPool,
 			const std::vector<std::shared_ptr<Internals::Device>>& PlayerMousePool,
 			const std::vector<std::shared_ptr<Internals::Device>>& PlayerGamepadPool);
@@ -209,32 +210,32 @@ namespace InputSystem
 
 	class System
 	{
-		std::unordered_map<std::string, ActionMap> ActionMaps;
+		std::unordered_map<StringId, ActionMap> ActionMaps;
 		std::unordered_map<int, std::vector<std::shared_ptr<Internals::Device>>> PlayerKeyboardPool;
 		std::unordered_map<int, std::vector<std::shared_ptr<Internals::Device>>> PlayerMousePool;
 		std::unordered_map<int, std::vector<std::shared_ptr<Internals::Device>>> PlayerGamepadPool;
 
-		std::unordered_map<int, std::string> PlayerToMap;
-		std::unordered_map<int, std::unordered_map<std::string, Internals::ActionStateClass>> playerActionStates;
+		std::unordered_map<int, StringId> PlayerToMap;
+		std::unordered_map<int, std::unordered_map<StringId, Internals::ActionStateClass>> playerActionStates;
 
 	public:
 		System() = default;
 
 		void Init();
 
-		ActionMap* GetActionMap(const std::string& ActionMapName = "default");
-		ActionMap& AddActionMap(const std::string& ActionMapName);
-		int RemoveActionMap(const std::string& ActionMapName);
+		ActionMap* GetActionMap(StringId ActionMapName = "default");
+		ActionMap& AddActionMap(StringId ActionMapName);
+		int RemoveActionMap(StringId ActionMapName);
 
-		ActionState GetActionState(const std::string& ActionName, int player = -1);
-		INPUT_DATA_4 GetActionAxis(const std::string& ActionName, int player = -1);
+		ActionState GetActionState(StringId ActionName, int player = -1);
+		INPUT_DATA_4 GetActionAxis(StringId ActionName, int player = -1);
 
-		bool IsHeld(const std::string& ActionName, int player = -1);
-		bool IsIdle(const std::string& ActionName, int player = -1);
-		bool IsPressed(const std::string& ActionName, int player = -1);
-		bool IsReleased(const std::string& ActionName, int player = -1);
+		bool IsHeld(StringId ActionName, int player = -1);
+		bool IsIdle(StringId ActionName, int player = -1);
+		bool IsPressed(StringId ActionName, int player = -1);
+		bool IsReleased(StringId ActionName, int player = -1);
 
-		int AssignMapToPlayer(const std::string& Map, int PlayerID = -1);
+		int AssignMapToPlayer(StringId Map, int PlayerID = -1);
 		int AssignDeviceToPlayer(const std::shared_ptr<Internals::Device>& device, int PlayerID = -1);
 		int AssignDevicesToPlayer(const std::vector<std::shared_ptr<Internals::Device>>&, int PlayerID = -1);
 		int RemoveDeviceFromPlayer(const std::shared_ptr<Internals::Device>& device, int playerID = -1);

@@ -13,75 +13,90 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\Components">
+    <Filter Include="Source Files\Internals">
+      <UniqueIdentifier>{6403b305-1e92-46c0-91f2-b9ebe18ad8bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Internals\InputSystem">
+      <UniqueIdentifier>{3d0d5da9-bc2e-4816-ab46-7aa4b429b000}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Internals\StateMachine">
+      <UniqueIdentifier>{932b1bbb-e0b8-4849-ad8a-eb4b6e3284b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Internals\AssetManager">
+      <UniqueIdentifier>{c80056cd-5938-4fba-8e95-92110b03d881}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Internals">
+      <UniqueIdentifier>{be81bd6d-9f83-48cc-9b3e-9c446afb88a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Internals\Components">
       <UniqueIdentifier>{323f651f-256e-4008-af26-d63bc4d5dbfa}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\State">
-      <UniqueIdentifier>{13c84bc2-595c-4bba-8048-a57058c28694}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\InputSystem">
+    <Filter Include="Header Files\Internals\InputSystem">
       <UniqueIdentifier>{a84451c1-6bc9-4882-b5ce-a07abd0cf250}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\InputSystem">
-      <UniqueIdentifier>{3d0d5da9-bc2e-4816-ab46-7aa4b429b000}</UniqueIdentifier>
+    <Filter Include="Header Files\Internals\State">
+      <UniqueIdentifier>{13c84bc2-595c-4bba-8048-a57058c28694}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Internals\AssetManager">
+      <UniqueIdentifier>{1f5894ac-d3ca-4447-9edf-0dd48a3d0850}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ECS.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="StateMachine.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="AssetManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="InputSystem.cpp">
-      <Filter>Source Files\InputSystem</Filter>
+      <Filter>Source Files\Internals\InputSystem</Filter>
     </ClCompile>
     <ClCompile Include="StartState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files\Internals</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine.cpp">
+      <Filter>Source Files\Internals</Filter>
+    </ClCompile>
+    <ClCompile Include="StateMachine.cpp">
+      <Filter>Source Files\Internals\StateMachine</Filter>
+    </ClCompile>
+    <ClCompile Include="AssetManager.cpp">
+      <Filter>Source Files\Internals\AssetManager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ECS.h">
-      <Filter>Header Files\Components</Filter>
+      <Filter>Header Files\Internals\Components</Filter>
     </ClInclude>
     <ClInclude Include="RenderComponent.h">
-      <Filter>Header Files\Components</Filter>
+      <Filter>Header Files\Internals\Components</Filter>
     </ClInclude>
     <ClInclude Include="State.h">
-      <Filter>Header Files\State</Filter>
+      <Filter>Header Files\Internals\State</Filter>
     </ClInclude>
     <ClInclude Include="StateMachine.h">
-      <Filter>Header Files\State</Filter>
-    </ClInclude>
-    <ClInclude Include="Struct.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SharedDataRef.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AssetManager.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Internals\State</Filter>
     </ClInclude>
     <ClInclude Include="MeshComponent.h">
-      <Filter>Header Files\Components</Filter>
+      <Filter>Header Files\Internals\Components</Filter>
     </ClInclude>
     <ClInclude Include="SimpleSprite.h">
-      <Filter>Header Files\Components</Filter>
+      <Filter>Header Files\Internals\Components</Filter>
     </ClInclude>
     <ClInclude Include="InputSystem.h">
-      <Filter>Header Files\InputSystem</Filter>
+      <Filter>Header Files\Internals\InputSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetManager.h">
+      <Filter>Header Files\Internals\AssetManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine.h">
+      <Filter>Header Files\Internals</Filter>
     </ClInclude>
     <ClInclude Include="StartState.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Struct.h">
+      <Filter>Header Files\Internals</Filter>
+    </ClInclude>
+    <ClInclude Include="SharedDataRef.h">
+      <Filter>Header Files\Internals</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

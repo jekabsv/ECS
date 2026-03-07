@@ -1,11 +1,11 @@
 #pragma once
-
+#include "Struct.h"
 
 
 struct MeshComponent
 {
-	MeshComponent(int _meshId, int _TextureId) 
-		: meshId(_meshId), TextureId(_TextureId) {};
-	int meshId = -1;
-	int TextureId = -1;
+	MeshComponent(StringId _MeshName, StringId _TextureName)
+		: MeshName(_MeshName), TextureName(_TextureName) {};
+	StringId MeshName = "";
+	StringId TextureName = "";
 };

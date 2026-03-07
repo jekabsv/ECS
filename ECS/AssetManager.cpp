@@ -3,34 +3,40 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_surface.h>
 
-void AssetManager::AddMesh(int id, const Mesh& mesh) 
+int AssetManager::AddMesh(StringId meshName, const Mesh& mesh)
 {
-    _meshes[id] = mesh;
+    _meshes[meshName] = mesh;
+    return 1;
 }
-Mesh& AssetManager::GetMesh(int id)
+const Mesh* AssetManager::GetMesh(StringId meshName) const
 {
-    return _meshes[id];
+    auto it = _meshes.find(meshName);
+    if (it == _meshes.end())
+        return nullptr;
+    return &it->second;
 }
 
-void AssetManager::LoadBMPTexture(int id, std::string filename, SDL_Renderer* renderer)
+int AssetManager::LoadBMPTexture(StringId TextureName, const std::string& filename, SDL_Renderer* renderer)
 {
     SDL_Surface* surface = SDL_LoadBMP(filename.c_str());
     if (!surface) {
         SDL_Log("Failed to load BMP: %s", SDL_GetError());
-        return;
+        return 0;
     }
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
     if (!texture) {
         SDL_Log("Failed to create texture: %s", SDL_GetError());
-        return;
+        return 0;
     }
-    _textures[id] = texture;
-    return;
+    _textures[TextureName] = texture;
+    return 1;
 }
-SDL_Texture* AssetManager::GetTexture(int id)
+
+const SDL_Texture* AssetManager::GetTexture(StringId TextureName) const
 {
-    if(id == -1)
+    auto it = _textures.find(TextureName);
+    if (it == _textures.end())
         return nullptr;
-    return _textures[id];
+    return it->second;
 }
 

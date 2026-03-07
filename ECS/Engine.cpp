@@ -41,16 +41,17 @@ bool Engine::Initialize()
 
     SDL_GL_SetSwapInterval(1);
 
-    _data->renderer = SDL_CreateRenderer(_data->window, nullptr);
+    _data->SDLrenderer = SDL_CreateRenderer(_data->window, nullptr);
 
 
     _data->inputs.Init();
-    
+    _data->renderer.SDLrenderer = _data->SDLrenderer;
+
     _data->state.AddState(StateRef(new StartState(_data)), 0);
     _data->state.ProcessStateChanges();
 
     
-    return _data->renderer != nullptr;
+    return _data->SDLrenderer != nullptr;
     
 }
 

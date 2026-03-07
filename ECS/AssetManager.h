@@ -10,15 +10,15 @@ public:
 	AssetManager() = default;
 	~AssetManager() = default;
 
-	void AddMesh(int id, const Mesh& mesh);
-    Mesh& GetMesh(int id);
+	int AddMesh(StringId meshName, const Mesh& mesh);
+	const Mesh* GetMesh(StringId meshName) const;
 
-	void LoadBMPTexture(int id, std::string filename, SDL_Renderer* renderer);
-	SDL_Texture* GetTexture(int id);
+	int LoadBMPTexture(StringId TextureName, const std::string& filename, SDL_Renderer* renderer);
+	const SDL_Texture* GetTexture(StringId TextureName) const;
 
 	
 private:
-    std::unordered_map<int, Mesh> _meshes;
-	std::unordered_map<int, SDL_Texture*> _textures;
+    std::unordered_map<StringId, Mesh> _meshes;
+	std::unordered_map<StringId, SDL_Texture*> _textures;
 	//textures, fonts, sounds, etc.
 };

@@ -28,12 +28,12 @@ void System::Init()
 	Update(0.0f);
 }
 
-ActionMap* System::GetActionMap(const std::string& ActionMapName)
+ActionMap* System::GetActionMap(StringId ActionMapName)
 {
 	auto it = ActionMaps.find(ActionMapName);
 	return it != ActionMaps.end() ? &it->second : nullptr;
 }
-int System::RemoveActionMap(const std::string& ActionMapName)
+int System::RemoveActionMap(StringId ActionMapName)
 {
 	auto it = ActionMaps.find(ActionMapName);
 	if (it == ActionMaps.end())
@@ -41,7 +41,7 @@ int System::RemoveActionMap(const std::string& ActionMapName)
 	ActionMaps.erase(it);
 	return 0;
 }
-ActionState System::GetActionState(const std::string& ActionName, int player)
+ActionState System::GetActionState(StringId ActionName, int player)
 {
 	auto playerIt = playerActionStates.find(player);
 	if (playerIt == playerActionStates.end())
@@ -53,7 +53,7 @@ ActionState System::GetActionState(const std::string& ActionName, int player)
 
 	return actionIt->second.state;
 }
-INPUT_DATA_4 System::GetActionAxis(const std::string& ActionName, int player)
+INPUT_DATA_4 System::GetActionAxis(StringId ActionName, int player)
 {
 	auto playerIt = playerActionStates.find(player);
 	if (playerIt == playerActionStates.end())
@@ -66,7 +66,7 @@ INPUT_DATA_4 System::GetActionAxis(const std::string& ActionName, int player)
 	return actionIt->second.data;
 }
 
-bool System::IsHeld(const std::string& ActionName, int player)
+bool System::IsHeld(StringId ActionName, int player)
 {
 	auto playerIt = playerActionStates.find(player);
 	if (playerIt == playerActionStates.end())
@@ -76,7 +76,7 @@ bool System::IsHeld(const std::string& ActionName, int player)
 		return false;
 	return actionIt->second.state == Held;
 }
-bool System::IsIdle(const std::string& ActionName, int player)
+bool System::IsIdle(StringId ActionName, int player)
 {
 	auto playerIt = playerActionStates.find(player);
 	if (playerIt == playerActionStates.end())
@@ -86,7 +86,7 @@ bool System::IsIdle(const std::string& ActionName, int player)
 		return true;
 	return actionIt->second.state == Idle;
 }
-bool System::IsPressed(const std::string& ActionName, int player)
+bool System::IsPressed(StringId ActionName, int player)
 {
 	auto playerIt = playerActionStates.find(player);
 	if (playerIt == playerActionStates.end())
@@ -96,7 +96,7 @@ bool System::IsPressed(const std::string& ActionName, int player)
 		return false;
 	return actionIt->second.state == Pressed;
 }
-bool System::IsReleased(const std::string& ActionName, int player)
+bool System::IsReleased(StringId ActionName, int player)
 {
 	auto playerIt = playerActionStates.find(player);
 	if (playerIt == playerActionStates.end())
@@ -107,12 +107,12 @@ bool System::IsReleased(const std::string& ActionName, int player)
 	return actionIt->second.state == Released;
 }
 
-ActionMap& System::AddActionMap(const std::string& ActionMapName)
+ActionMap& System::AddActionMap(StringId ActionMapName)
 {
 	return ActionMaps[ActionMapName];
 }
 
-int System::AssignMapToPlayer(const std::string& Map, int PlayerID)
+int System::AssignMapToPlayer(StringId Map, int PlayerID)
 {
 	PlayerToMap[PlayerID] = Map;
 	return 0;
@@ -263,7 +263,7 @@ bool ActionMap::IsActive()
 }
 
 void ActionMap::UpdateAllActionStates(float dt,
-	std::unordered_map<std::string, ActionStateClass>& states,
+	std::unordered_map<StringId, ActionStateClass>& states,
 	const std::vector<std::shared_ptr<Device>>& PlayerKeyboardPool,
 	const std::vector<std::shared_ptr<Device>>& PlayerMousePool,
 	const std::vector<std::shared_ptr<Device>>& PlayerGamepadPool)
@@ -281,16 +281,16 @@ void ActionMap::UpdateAllActionStates(float dt,
 		states[name] = action.GetActionState(dt, prev, PlayerKeyboardPool, PlayerMousePool, PlayerGamepadPool);
 	}
 }
-Action& ActionMap::AddAction(const std::string& name)
+Action& ActionMap::AddAction(StringId name)
 {
 	return Actions[name];
 }
-Action* ActionMap::GetAction(const std::string& name)
+Action* ActionMap::GetAction(StringId name)
 {
 	auto it = Actions.find(name);
 	return it != Actions.end() ? &it->second : nullptr;
 }
-int ActionMap::RemoveAction(const std::string& name)
+int ActionMap::RemoveAction(StringId name)
 {
 	auto it = Actions.find(name);
 	if (it == Actions.end())
@@ -340,7 +340,7 @@ int Action::RemoveBinding(Bindings binding)
 		}
 	return -1;
 }
-int Action::RemoveProcessor(const std::string& name)
+int Action::RemoveProcessor(StringId name)
 {
 	auto it = std::find_if(processors.begin(), processors.end(),
 		[&](const auto& p) { return p->name == name; });
@@ -348,7 +348,7 @@ int Action::RemoveProcessor(const std::string& name)
 	processors.erase(it);
 	return 0;
 }
-int Action::RemoveInteraction(const std::string& name)
+int Action::RemoveInteraction(StringId name)
 {
 	auto it = std::find_if(interactions.begin(), interactions.end(),
 		[&](const auto& i) { return i->name == name; });

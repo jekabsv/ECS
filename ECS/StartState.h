@@ -15,11 +15,11 @@ public:
 
 private:
     SharedDataRef _data;
-    int TexX;
-    int TexY;
+    int TexX = 0;
+    int TexY = 0;
     bool direction = 0;
-    ecs::Entity e;
-    ecs::Entity player;
+    ecs::Entity e = 0;
+    ecs::Entity player = 0;
     Uint64 start = SDL_GetTicks();
 };
 

@@ -6,7 +6,7 @@
 class ProcessWASD : public InputSystem::Processor
 {
 public:
-    ProcessWASD(std::string _name) : InputSystem::Processor(_name) {};
+    ProcessWASD(StringId _name) : InputSystem::Processor(_name) {};
     int Process(InputSystem::INPUT_DATA_4& data) override
     {
         float x = data[3] - data[1];
@@ -29,17 +29,14 @@ public:
 class ProcessQE : public InputSystem::Processor
 {
 public:
-    ProcessQE(std::string _name) : InputSystem::Processor(_name) {};
+    ProcessQE(StringId _name) : InputSystem::Processor(_name) {};
     int Process(InputSystem::INPUT_DATA_4& data) override
     {
         data[0] -= data[1];
         return 0;
     }
 };
-enum Mesh_names {
-    TRIANGLE = 0,
-    SQUARE = 1
-};
+
 
 void StartState::Init()
 {
@@ -48,6 +45,7 @@ void StartState::Init()
         {1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f},
         {0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f} 
     };
+
     Mesh squareMesh = {
     {{-1,  1}, {1.0f, 0.0f, 0.0f, 1.0f}},
     {{-1, -1}, {0.0f, 1.0f, 0.0f, 1.0f}},
@@ -59,20 +57,20 @@ void StartState::Init()
     };
 
 
-    _data->assets.AddMesh(TRIANGLE, triangleMesh);
-    _data->assets.AddMesh(SQUARE, squareMesh);
+    _data->assets.AddMesh("Triangle", triangleMesh);
+    _data->assets.AddMesh("square", squareMesh);
 
-    _data->assets.LoadBMPTexture(1, "../image.bmp", _data->renderer);
-    _data->assets.LoadBMPTexture(2, "../player.bmp", _data->renderer);
+    _data->assets.LoadBMPTexture("test", "../image.bmp", _data->SDLrenderer);
+    _data->assets.LoadBMPTexture("player", "../player.bmp", _data->SDLrenderer);
 
     e = ecs.create_entity();
     player = ecs.create_entity();
 
     ecs.add_component(e, RenderComponent(false));
-    ecs.add_component(e, MeshComponent(TRIANGLE, -1));
+    ecs.add_component(e, MeshComponent("triangle", ""));
     
     ecs.add_component(player, RenderComponent(true, Vec2(10, 10), Vec2(1, 1)));
-    ecs.add_component(player, SimpleSprite({100, 100, 100, 100}, {0, 0, 64, 64}, 2));
+    ecs.add_component(player, SimpleSprite({100, 100, 100, 100}, {0, 0, 64, 64}, "player"));
 
 
     _data->inputs.AddActionMap("gameplay").AddAction("move")
@@ -155,13 +153,13 @@ void StartState::Update()
 void StartState::Render()
 {
 
-    if (!_data->renderer)
+    if (!_data->SDLrenderer)
     {
         std::cout << SDL_GetError() << '\n';
         return;
     }
 
-    SDL_RenderClear(_data->renderer);
+    SDL_RenderClear(_data->SDLrenderer);
 
 
         ecs.for_each(ecs.CreateMask<RenderComponent>(), [this](ecs::Entity e, std::function<void* (ecs::TypeId)> getComponent)
@@ -178,17 +176,17 @@ void StartState::Render()
                         RectToDraw.x += rc->position.x;
                         RectToDraw.y += rc->position.y;
 
-                        if(!ss->TextureRect.h || !ss->TextureRect.w)
-                            SDL_RenderTexture(_data->renderer, _data->assets.GetTexture(ss->TextureId), nullptr, &RectToDraw);
+                        if (!ss->TextureRect.h || !ss->TextureRect.w)
+                            _data->renderer.Render(_data->assets.GetTexture(ss->TextureName), nullptr, &RectToDraw);
                         else
-                            SDL_RenderTexture(_data->renderer, _data->assets.GetTexture(ss->TextureId), &ss->TextureRect, &RectToDraw);
+                            _data->renderer.Render(_data->assets.GetTexture(ss->TextureName), &ss->TextureRect, &RectToDraw);
                     }
                     else
                     {
                         MeshComponent* mc = reinterpret_cast<MeshComponent*>(getComponent(ecs::getTypeId<MeshComponent>()));
                         if (mc)
                         {
-                            Mesh mesh_toDraw = _data->assets.GetMesh(mc->meshId);
+                            Mesh mesh_toDraw = *_data->assets.GetMesh(mc->MeshName);
                             for (int i = 0; i < mesh_toDraw.size(); i++)
                             {
                                 mesh_toDraw[i].position.x *= rc->scale.x;
@@ -200,7 +198,7 @@ void StartState::Render()
                                 mesh_toDraw[i].color;
                                 mesh_toDraw[i].tex_coord;
                             }
-                            SDL_RenderGeometry(_data->renderer, _data->assets.GetTexture(mc->TextureId), mesh_toDraw.data(), mesh_toDraw.size(), nullptr, 0);
+                            SDL_RenderGeometry(_data->SDLrenderer, std::_Const_cast(_data->assets.GetTexture(mc->TextureName)), mesh_toDraw.data(), mesh_toDraw.size(), nullptr, 0);
                         }
                     }
                     
@@ -211,7 +209,7 @@ void StartState::Render()
                 }
             });
 
-    SDL_RenderPresent(_data->renderer);
+    SDL_RenderPresent(_data->SDLrenderer);
     return;
 }
 
