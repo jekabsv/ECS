@@ -136,6 +136,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AssetManager.cpp" />
+    <ClCompile Include="logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="InputSystem.cpp" />
@@ -147,6 +148,7 @@
     <ClInclude Include="ECS.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="InputSystem.h" />
+    <ClInclude Include="logger.h" />
     <ClInclude Include="MeshComponent.h" />
     <ClInclude Include="RenderComponent.h" />
     <ClInclude Include="SharedDataRef.h" />

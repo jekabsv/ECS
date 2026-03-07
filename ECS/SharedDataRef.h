@@ -16,6 +16,7 @@ struct SharedData
     InputSystem::System inputs;
     Renderer renderer;
     bool quit = false;
+    
 };
 
 typedef std::shared_ptr<SharedData> SharedDataRef;

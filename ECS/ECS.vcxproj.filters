@@ -60,6 +60,9 @@
     <ClCompile Include="AssetManager.cpp">
       <Filter>Source Files\Internals\AssetManager</Filter>
     </ClCompile>
+    <ClCompile Include="logger.cpp">
+      <Filter>Source Files\Internals</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECS.h">
@@ -96,6 +99,9 @@
       <Filter>Header Files\Internals</Filter>
     </ClInclude>
     <ClInclude Include="SharedDataRef.h">
+      <Filter>Header Files\Internals</Filter>
+    </ClInclude>
+    <ClInclude Include="logger.h">
       <Filter>Header Files\Internals</Filter>
     </ClInclude>
   </ItemGroup>
