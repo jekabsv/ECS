@@ -208,7 +208,7 @@ namespace InputSystem
 			const std::vector<std::shared_ptr<Internals::Device>>& PlayerGamepadPool);
 	};
 
-	class System
+	struct ActionData
 	{
 		std::unordered_map<StringId, ActionMap> ActionMaps;
 		std::unordered_map<int, std::vector<std::shared_ptr<Internals::Device>>> PlayerKeyboardPool;
@@ -216,12 +216,24 @@ namespace InputSystem
 		std::unordered_map<int, std::vector<std::shared_ptr<Internals::Device>>> PlayerGamepadPool;
 
 		std::unordered_map<int, StringId> PlayerToMap;
+	};
+
+
+	class System
+	{
+		std::unordered_map<StringId, ActionMap>* ActionMaps;
+		std::unordered_map<int, std::vector<std::shared_ptr<Internals::Device>>>* PlayerKeyboardPool;
+		std::unordered_map<int, std::vector<std::shared_ptr<Internals::Device>>>* PlayerMousePool;
+		std::unordered_map<int, std::vector<std::shared_ptr<Internals::Device>>>* PlayerGamepadPool;
+
+		std::unordered_map<int, StringId>* PlayerToMap;
+	public:
 		std::unordered_map<int, std::unordered_map<StringId, Internals::ActionStateClass>> playerActionStates;
 
-	public:
+
 		System() = default;
 
-		void Init();
+		void Init(ActionData& data);
 
 		ActionMap* GetActionMap(StringId ActionMapName = "default");
 		ActionMap& AddActionMap(StringId ActionMapName);

@@ -1,5 +1,6 @@
 #pragma once
 #include "ECS.h"
+#include "InputSystem.h"
 
 class State
 {
@@ -15,4 +16,5 @@ public:
 	virtual void Resume() {};
 
 	ECS::World ecs;
+	InputSystem::System inputs;
 };

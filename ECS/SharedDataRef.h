@@ -13,7 +13,7 @@ struct SharedData
     SDL_Renderer* SDLrenderer = nullptr;
     StateMachine state;
     AssetManager assets;
-    InputSystem::System inputs;
+    InputSystem::ActionData Actions;
     Renderer renderer;
     bool quit = false;
 };

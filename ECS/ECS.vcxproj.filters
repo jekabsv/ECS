@@ -74,9 +74,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ECS.h">
-      <Filter>Header Files\Internals\Components</Filter>
-    </ClInclude>
     <ClInclude Include="RenderComponent.h">
       <Filter>Header Files\Internals\Components</Filter>
     </ClInclude>
@@ -104,14 +101,20 @@
     <ClInclude Include="StartState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Struct.h">
-      <Filter>Header Files\Internals</Filter>
-    </ClInclude>
     <ClInclude Include="SharedDataRef.h">
       <Filter>Header Files\Internals</Filter>
     </ClInclude>
     <ClInclude Include="logger.h">
       <Filter>Header Files\Internals\logger</Filter>
+    </ClInclude>
+    <ClInclude Include="Struct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS.h">
+      <Filter>Header Files\Internals\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="InputComponent.h">
+      <Filter>Header Files\Internals\Components</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

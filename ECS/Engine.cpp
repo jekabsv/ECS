@@ -53,13 +53,12 @@ bool Engine::Initialize()
     if (!_data->SDLrenderer) 
         LOG_ERROR(GlobalLogger(), "Engine", std::string("SDL_CreateRenderer failed: ") + SDL_GetError());
 
-    _data->inputs.Init();
+    
     _data->renderer.SDLrenderer = _data->SDLrenderer;
 
     _data->state.AddState(StateRef(new StartState(_data)), 0);
     _data->state.ProcessStateChanges();
 
-    
     return _data->SDLrenderer != nullptr;
     
 }
@@ -100,7 +99,7 @@ void Engine::run()
         if (dt > 0.1f)
             dt = 0.1f;
 
-        _data->inputs.Update(dt);
+        
         Update(dt);
         Render(dt);
 
