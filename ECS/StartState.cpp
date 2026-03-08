@@ -74,7 +74,7 @@ void StartState::Init()
     
     ecs.Add<RenderComponent>(player, RenderComponent(true, Vec2(10, 10), Vec2(1, 1)));
     ecs.Add<SimpleSprite>(player, SimpleSprite({100, 100, 100, 100}, {0, 0, 64, 64}, "player"));
-    ecs.Add<InputComponent>(player, InputComponent(0, inputs));
+    ecs.Add<InputComponent>(player, InputComponent(5));
 
 
     inputs.AddActionMap("gameplay").AddAction("move")
@@ -88,8 +88,8 @@ void StartState::Init()
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_RIGHT, 3)
         .AddProcessor(std::make_unique<ProcessWASD>("wasd"));
 
-    inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current(), player);
-    inputs.AssignMapToPlayer("gameplay", 0);
+    inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current(), 5);
+    inputs.AssignMapToPlayer("gameplay", 5);
 
     inputs.GetActionMap("gameplay")->AddAction("scale")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_Q, 0)
@@ -102,8 +102,8 @@ void StartState::Init()
             auto& rc = context.Get<RenderComponent>();
             auto& ss = context.Get<SimpleSprite>();
             auto& ic = context.Get<InputComponent>();
-            InputSystem::INPUT_DATA_4 dMove = ic.GetActionAxis("move");
-            InputSystem::INPUT_DATA_4 dScale = ic.GetActionAxis("scale");
+            InputSystem::INPUT_DATA_4 dMove = inputs.GetActionAxis("move", ic.PlayerID);
+            InputSystem::INPUT_DATA_4 dScale = inputs.GetActionAxis("scale", ic.PlayerID);
             
             rc.position.x += 1000 * dMove[0] * dt;
             rc.position.y += 1000 * dMove[1] * dt;
