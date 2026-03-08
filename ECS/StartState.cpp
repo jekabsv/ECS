@@ -63,14 +63,14 @@ void StartState::Init()
     _data->assets.LoadBMPTexture("test", "../image.bmp", _data->SDLrenderer);
     _data->assets.LoadBMPTexture("player", "../player.bmp", _data->SDLrenderer);
 
-    e = ecs.create_entity();
-    player = ecs.create_entity();
+    e = ecs.Create();
+    player = ecs.Create();
 
-    ecs.add_component(e, RenderComponent(false));
-    ecs.add_component(e, MeshComponent("triangle", ""));
+    ecs.Add<RenderComponent>(e, RenderComponent(false));
+    ecs.Add<MeshComponent>(e, MeshComponent("triangle", ""));
     
-    ecs.add_component(player, RenderComponent(true, Vec2(10, 10), Vec2(1, 1)));
-    ecs.add_component(player, SimpleSprite({100, 100, 100, 100}, {0, 0, 64, 64}, "player"));
+    ecs.Add<RenderComponent>(player, RenderComponent(true, Vec2(10, 10), Vec2(1, 1)));
+    ecs.Add<SimpleSprite>(player, SimpleSprite({100, 100, 100, 100}, {0, 0, 64, 64}, "player"));
 
 
     _data->inputs.AddActionMap("gameplay").AddAction("move")
@@ -92,114 +92,92 @@ void StartState::Init()
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_E, 1)
         .AddProcessor(std::make_unique<ProcessQE>("qe"));
 
-}
-
-void StartState::Update()
-{
-    RenderComponent& rc = ecs.get<RenderComponent>(player);
-
-    InputSystem::INPUT_DATA_4 dMove = _data->inputs.GetActionAxis("move", player);
-    InputSystem::INPUT_DATA_4 dScale = _data->inputs.GetActionAxis("scale", player);
-
-    rc.position.x += 10 * dMove[0];
-    rc.position.y += 10 * dMove[1];
-
-    rc.scale.x += dScale[0];
-    rc.scale.y += dScale[0];
-
-
-    if (dMove[0] < 0)
-        direction = 1;
-    if (dMove[0] > 0)
-        direction = 0;
-    
-    
-    if (!dMove[0])
-    {
-        if (!direction)
+    ecs.RegisterSystem<RenderComponent, SimpleSprite>("move",
+        [this](ECS::Entity entity, ECS::ComponentContext context, float dt)
         {
-            TexX = 3;
-            TexY = 1;
-        }
-        if (direction)
-        {
-            TexX = 3;
-            TexY = 3;
-        }
-    }
-    else
-    {
-        if (!direction)
-        {
-            TexY = 0;
-        }
-        if (direction)
-        {
-            TexY = 2;
-        }
-        if (SDL_GetTicks() - start > 100)
-        {
-            TexX++;
-            start = SDL_GetTicks();
-            TexX %= 8;
-        }
-    }
-        
-    SimpleSprite& ss = ecs.get<SimpleSprite>(player);
-    ss.TextureRect.x = TexX * 64;
-    ss.TextureRect.y = TexY * 64;
-}
+            InputSystem::INPUT_DATA_4 dMove = _data->inputs.GetActionAxis("move", player);
+            InputSystem::INPUT_DATA_4 dScale = _data->inputs.GetActionAxis("scale", player);
+            auto& rc = context.Get<RenderComponent>();
+            auto& ss = context.Get<SimpleSprite>();
+            rc.position.x += 1000 * dMove[0] * dt;
+            rc.position.y += 1000 * dMove[1] * dt;
+            rc.scale.x += dScale[0] * dt * 5;
+            rc.scale.y += dScale[0] * dt * 5;
 
-void StartState::Render()
-{
+            int TexX = ss.TextureRect.x / 64;
+            int TexY = ss.TextureRect.y / 64;
 
-        ecs.for_each(ecs.CreateMask<RenderComponent>(), [this](ecs::Entity e, std::function<void* (ecs::TypeId)> getComponent)
+            if (dMove[0] < 0)
+                direction = 1;
+            if (dMove[0] > 0)
+                direction = 0;
+
+
+            if (!dMove[0])
             {
-                RenderComponent* rc = reinterpret_cast<RenderComponent*>(getComponent(ecs::getTypeId<RenderComponent>()));
-                if (rc->render)
+                if (!direction)
                 {
-                    SimpleSprite* ss = reinterpret_cast<SimpleSprite*>(getComponent(ecs::getTypeId<SimpleSprite>()));
-                    if (ss)
-                    {
-                        SDL_FRect RectToDraw = ss->rect;
-                        RectToDraw.h *= rc->scale.y;
-                        RectToDraw.w *= rc->scale.x;
-                        RectToDraw.x += rc->position.x;
-                        RectToDraw.y += rc->position.y;
-
-                        if (!ss->TextureRect.h || !ss->TextureRect.w)
-                            _data->renderer.Render(_data->assets.GetTexture(ss->TextureName), nullptr, &RectToDraw);
-                        else
-                            _data->renderer.Render(_data->assets.GetTexture(ss->TextureName), &ss->TextureRect, &RectToDraw);
-                    }
-                    else
-                    {
-                        MeshComponent* mc = reinterpret_cast<MeshComponent*>(getComponent(ecs::getTypeId<MeshComponent>()));
-                        if (mc)
-                        {
-                            Mesh mesh_toDraw = *_data->assets.GetMesh(mc->MeshName);
-                            for (int i = 0; i < mesh_toDraw.size(); i++)
-                            {
-                                mesh_toDraw[i].position.x *= rc->scale.x;
-                                mesh_toDraw[i].position.x += rc->position.x;
-
-                                mesh_toDraw[i].position.y *= rc->scale.y;
-                                mesh_toDraw[i].position.y += rc->position.y;
-
-                                mesh_toDraw[i].color;
-                                mesh_toDraw[i].tex_coord;
-                            }
-                            SDL_RenderGeometry(_data->SDLrenderer, std::_Const_cast(_data->assets.GetTexture(mc->TextureName)), mesh_toDraw.data(), mesh_toDraw.size(), nullptr, 0);
-                        }
-                    }
-                    
-
-                    
-                    
-
+                    TexX = 3;
+                    TexY = 1;
                 }
-            });
+                if (direction)
+                {
+                    TexX = 3;
+                    TexY = 3;
+                }
+            }
+            else
+            {
+                if (!direction)
+                {
+                    TexY = 0;
+                }
+                if (direction)
+                {
+                    TexY = 2;
+                }
+                if (SDL_GetTicks() - start > 100)
+                {
+                    TexX++;
+                    start = SDL_GetTicks();
+                    TexX %= 8;
+                }
+            }
 
+            ss.TextureRect.x = TexX * 64;
+            ss.TextureRect.y = TexY * 64;
+        },
+        ECS::SystemGroup::Update);
+
+    ecs.RegisterSystem<RenderComponent, SimpleSprite>("renderSprite",
+        [this](ECS::Entity entity, ECS::ComponentContext context, float dt)
+        {
+            auto& rc = context.Get<RenderComponent>();
+            auto& ss = context.Get<SimpleSprite>();
+
+            SDL_FRect RectToDraw = ss.rect;
+            RectToDraw.h *= rc.scale.y;
+            RectToDraw.w *= rc.scale.x;
+            RectToDraw.x += rc.position.x;
+            RectToDraw.y += rc.position.y;
+
+            if (!ss.TextureRect.h || !ss.TextureRect.w)
+                _data->renderer.Render(_data->assets.GetTexture(ss.TextureName), nullptr, &RectToDraw);
+            else
+                _data->renderer.Render(_data->assets.GetTexture(ss.TextureName), &ss.TextureRect, &RectToDraw);
+        },
+        ECS::SystemGroup::Render);
+
+}
+
+void StartState::Update(float dt)
+{
+    ecs.Run(ECS::SystemGroup::Update, dt);
+}
+
+void StartState::Render(float dt)
+{
+    ecs.Run(ECS::SystemGroup::Render, dt);
     return;
 }
 

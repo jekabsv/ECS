@@ -7,12 +7,12 @@ public:
 	virtual ~State() = default;
 	virtual void Init() {};
 	virtual void HandleInput() {};
-	virtual void Update() {};
-	virtual void Render() {};
+	virtual void Update(float dt) {};
+	virtual void Render(float dt) {};
 
 
 	virtual void Pause() {};
 	virtual void Resume() {};
 
-	ecs::ECS ecs;
+	ECS::World ecs;
 };

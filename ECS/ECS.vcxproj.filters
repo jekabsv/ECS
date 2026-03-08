@@ -40,6 +40,12 @@
     <Filter Include="Header Files\Internals\AssetManager">
       <UniqueIdentifier>{1f5894ac-d3ca-4447-9edf-0dd48a3d0850}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Internals\logger">
+      <UniqueIdentifier>{13ed9c35-c5f6-43e6-8015-ef231785f2cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Internals\logger">
+      <UniqueIdentifier>{9ce3ce95-b1ae-440c-b985-4c5d6878244c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="InputSystem.cpp">
@@ -61,7 +67,10 @@
       <Filter>Source Files\Internals\AssetManager</Filter>
     </ClCompile>
     <ClCompile Include="logger.cpp">
-      <Filter>Source Files\Internals</Filter>
+      <Filter>Source Files\Internals\logger</Filter>
+    </ClCompile>
+    <ClCompile Include="ECS.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -102,7 +111,7 @@
       <Filter>Header Files\Internals</Filter>
     </ClInclude>
     <ClInclude Include="logger.h">
-      <Filter>Header Files\Internals</Filter>
+      <Filter>Header Files\Internals\logger</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

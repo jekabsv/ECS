@@ -1,344 +1,346 @@
 #pragma once
+#include <cstddef>
+#include <vector>
+#include <memory>
 #include <cstdint>
 #include <unordered_map>
-#include <vector>
 #include <functional>
-#include <memory>
-#include <cstring>
+#include <string_view>
 #include <cassert>
+#include <cstring>
+#include "Struct.h"
 
-namespace ecs
+namespace ECS
 {
-    using Entity = std::uint32_t;
-    constexpr Entity INVALID_ENTITY = static_cast<Entity>(-1);
+    using Entity = uint64_t;
+    using ComponentId = uint32_t;
+    using ComponentMask = uint64_t;
 
-    constexpr size_t MAX_COMPONENTS = 64;
-    using TypeId = std::uint64_t;
-    inline TypeId next_type_id() noexcept
+    constexpr std::size_t CHUNK_SIZE = 16 * 1024;
+
+    constexpr uint32_t EntityId(Entity e) { return (uint32_t)(e >> 32); }
+    constexpr uint32_t EntityGeneration(Entity e) { return (uint32_t)(e & 0xFFFFFFFF); }
+    constexpr Entity   MakeEntity(uint32_t id, uint32_t gen) { return ((uint64_t)id << 32) | gen; }
+
+    inline ComponentId AllocComponentId() noexcept
     {
-        static TypeId counter = 0;
+        static ComponentId counter = 0;
         return counter++;
     }
 
     template<typename T>
-    inline TypeId getTypeId() noexcept
+    ComponentId GetComponentId() noexcept
     {
-        static const TypeId id = next_type_id();
+        static const ComponentId id = AllocComponentId();
         return id;
     }
 
-    struct ComponentBuffer
+    template<typename T>
+    ComponentMask ComponentBit() noexcept
     {
-        std::size_t stride = 0;
-        std::vector<std::uint8_t> data;
+        return ComponentMask(1) << GetComponentId<T>();
+    }
 
-        void reserve(std::size_t count)
-        {
-            data.reserve(count * stride);
-        }
+    template<typename... Ts>
+    ComponentMask MakeMask() noexcept
+    {
+        return (ComponentBit<Ts>() | ... | ComponentMask(0));
+    }
 
-        void push_back_raw(const void* src)
-        {
-            std::size_t old = data.size();
-            data.resize(old + stride);
-            std::memcpy(data.data() + old, src, stride);
-        }
+    inline ComponentMask MakeMaskFromId(ComponentId id) noexcept
+    {
+        return ComponentMask(1) << id;
+    }
 
-        void swap_erase(std::size_t index)
-        {
-            std::size_t last = size() - 1;
-            if (index != last)
-                std::memcpy(data.data() + index * stride, data.data() + last * stride, stride);
-            data.resize(last * stride);
-        }
 
-        void* at(std::size_t index)
-        {
-            return data.data() + index * stride;
-        }
-
-        const void* at(std::size_t index) const
-        {
-            return data.data() + index * stride;
-        }
-
-        std::size_t size() const
-        {
-            return stride == 0 ? 0 : data.size() / stride;
-        }
+    struct ColumnDesc
+    {
+        ComponentId id;
+        std::size_t size;
+        std::size_t offset;
+    };
+    struct ComponentInfo
+    {
+        ComponentId id;
+        std::size_t size;
     };
 
-    struct Archetype
+    class Chunk
     {
-        std::uint64_t signature = 0;
-        std::vector<Entity> entities;
-        std::unordered_map<TypeId, ComponentBuffer> buffers;
-
-        Archetype(std::uint64_t sig = 0) : signature(sig) {}
-
-        std::size_t size() const { return entities.size(); }
-
-        template<typename T>
-        void ensure_buffer()
-        {
-            auto& buf = buffers[getTypeId<T>()];
-            if (buf.stride == 0) buf.stride = sizeof(T);
-        }
-
-        template<typename T>
-        void push_component(const T& comp)
-        {
-            ensure_buffer<T>();
-            buffers[getTypeId<T>()].push_back_raw(&comp);
-        }
-
-        template<typename T>
-        T& get_component(std::size_t index)
-        {
-            auto& buf = buffers[getTypeId<T>()];
-            return *static_cast<T*>(buf.at(index));
-        }
-
-        void swap_remove_entity(std::size_t index)
-        {
-            std::size_t last = entities.size() - 1;
-            if (index != last)
-            {
-                entities[index] = entities[last];
-                for (auto& kv : buffers)
-                {
-                    auto& buf = kv.second;
-                    std::memcpy(buf.at(index), buf.at(last), buf.stride);
-                    buf.data.resize((buf.size() - 1) * buf.stride);
-                }
-            }
-            else
-            {
-                for (auto& kv : buffers)
-                {
-                    auto& buf = kv.second;
-                    buf.data.resize((buf.size() - 1) * buf.stride);
-                }
-            }
-            entities.resize(last);
-        }
-    };
-
-    struct EntityLocation
-    {
-        Archetype* archetype = nullptr;
-        std::size_t index = 0;
-    };
-
-    class EntityManager
-    {
-        std::vector<Entity> freeList;
-        Entity nextId = 0;
     public:
-        Entity create()
+        alignas(64) std::byte buffer[CHUNK_SIZE];
+        const std::vector<ColumnDesc>* cols = nullptr;
+        std::size_t capacity = 0;
+        std::size_t count = 0;
+
+        Entity* Entities();
+        Entity& EntityAt(std::size_t row);
+        void SetEntity(std::size_t row, Entity e);
+
+        void* ColumnPtr(const ColumnDesc& col);
+        void* RowPtr(const ColumnDesc& col, std::size_t row);
+        const void* RowPtr(const ColumnDesc& col, std::size_t row) const;
+
+        void CopyRow(std::size_t src_row, Chunk& dst, std::size_t dst_row, const std::vector<ColumnDesc>& descs);
+        void MoveLastRowTo(std::size_t dst_row, Chunk& dst, const std::vector<ColumnDesc>& descs);
+
+        template<typename T>
+        T* GetArray(ComponentId id)
         {
-            if (!freeList.empty())
-            {
-                Entity e = freeList.back();
-                freeList.pop_back();
-                return e;
-            }
-            return nextId++;
-        }
-
-        void destroy(Entity e) { freeList.push_back(e); }
-    };
-
-    class ECS
-    {
-        EntityManager em;
-        std::unordered_map<std::uint64_t, std::unique_ptr<Archetype>> archetypes;
-        std::vector<EntityLocation> locations;
-
-        Archetype* get_or_create_archetype(std::uint64_t signature)
-        {
-            auto it = archetypes.find(signature);
-            if (it != archetypes.end())
-            {
-                it->second->signature = signature;
-                return it->second.get();
-            }
-            auto ptr = std::make_unique<Archetype>(signature);
-            Archetype* p = ptr.get();
-            archetypes.emplace(signature, std::move(ptr));
-            return p;
-        }
-
-        void ensure_locations_size(Entity e)
-        {
-            if (e >= locations.size()) locations.resize(e + 1);
+            for (auto& col : *cols)
+                if (col.id == id)
+                    return reinterpret_cast<T*>(buffer + col.offset);
+            return nullptr;
         }
 
         template<typename T>
-        inline std::uint64_t bit_for() const
+        T& Get(std::size_t row)
         {
-            TypeId tid = getTypeId<T>();
-            assert(tid < MAX_COMPONENTS && "Exceeded MAX_COMPONENTS");
-            return (std::uint64_t)1 << tid;
+            return *GetArray<T>(GetComponentId<T>());
         }
+
+        bool Full() const noexcept;
+        bool Empty() const noexcept;
+    };
+    class Archetype
+    {
+    public:
+        ComponentMask mask;
+        std::vector<ColumnDesc> descs;
+        std::size_t chunk_capacity = 0;
+        std::vector<Chunk> chunks;
+
+        std::unordered_map<ComponentId, Archetype*> add_edge;
+        std::unordered_map<ComponentId, Archetype*> remove_edge;
+
+        Archetype(ComponentMask mask, const std::vector<ComponentInfo>& components);
+
+        const ColumnDesc* GetDesc(ComponentId id) const;
+        bool HasComponent(ComponentId id) const;
+        bool HasComponents(ComponentMask m) const;
+
+        void* GetPtr(std::size_t chunk_idx, std::size_t row, ComponentId id);
+        Entity& GetEntity(std::size_t chunk_idx, std::size_t row);
+        void Write(std::size_t chunk_idx, std::size_t row, ComponentId id, const void* src);
+
+        template<typename T>
+        T& Get(std::size_t chunk_idx, std::size_t row)
+        {
+            return *static_cast<T*>(GetPtr(chunk_idx, row, GetComponentId<T>()));
+        }
+
+        template<typename T>
+        void Set(std::size_t chunk_idx, std::size_t row, const T& val)
+        {
+            static_assert(std::is_trivially_copyable_v<T>);
+            Write(chunk_idx, row, GetComponentId<T>(), &val);
+        }
+
+        Chunk& GetOrAddChunk();
+        std::size_t ChunkCount() const noexcept;
+        std::size_t EntityCount() const noexcept;
+        std::pair<std::size_t, std::size_t> LastSlot() const;
+
+        std::pair<std::size_t, std::size_t> AllocateSlot();
+        Entity SwapRemove(std::size_t chunk_idx, std::size_t row);
+        std::pair<std::size_t, std::size_t> MigrateEntityTo(std::size_t chunk_idx, std::size_t row, Archetype& dst);
+
+        void ForEachChunk(const std::function<void(Chunk&, std::size_t)>& fn);
+        void ForEachEntity(const std::function<void(Entity, std::size_t, std::size_t)>& fn);
+    };
+
+
+    enum class SystemGroup { Update, Render };
+
+    struct EntityRecord
+    {
+        Archetype* arch = nullptr;
+        std::size_t chunk_idx = 0;
+        std::size_t row = 0;
+        uint32_t generation = 0;
+    };
+    struct ComponentContext
+    {
+        Archetype* arch = nullptr;
+        std::size_t chunk_idx = 0;
+        std::size_t row = 0;
+
+        template<typename T>
+        T& Get() { return arch->Get<T>(chunk_idx, row); }
+
+        template<typename T>
+        T* TryGet()
+        {
+            if (!arch->HasComponent(GetComponentId<T>())) return nullptr;
+            return &arch->Get<T>(chunk_idx, row);
+        }
+
+        template<typename T>
+        bool Has() { return arch->HasComponent(GetComponentId<T>()); }
+    };
+    using SystemFn = std::function<void(Entity, ComponentContext&, float)>;
+    struct SystemEntry
+    {
+        StringId name;
+        ComponentMask mask;
+        SystemFn fn;
+        bool enabled = true;
+    };
+
+
+    class World
+    {
+        std::vector<EntityRecord> records_;
+        std::vector<uint32_t> free_;
+        uint32_t next_ = 0;
+
+        std::unordered_map<ComponentMask, std::unique_ptr<Archetype>> archetypes_;
+
+        std::vector<SystemEntry> update_systems_;
+        std::vector<SystemEntry> render_systems_;
+
+        Archetype& GetOrCreateArchetype(ComponentMask mask, const std::vector<ComponentInfo>& info);
+        Archetype& GetOrCreateEdge(Archetype& arch, ComponentId id, std::size_t size, bool adding);
+        void GrowRecords(uint32_t id);
+        void RunSystems(std::vector<SystemEntry>& systems, float dt);
 
     public:
-        template<typename... Components>
-        inline std::uint64_t CreateMask() const
-        {
-            std::uint64_t mask = 0;
-            ((mask |= (std::uint64_t(1) << getTypeId<Components>())), ...);
-            return mask;
-        }
+        World();
 
-        Entity create_entity()
-        {
-            Entity e = em.create();
-            ensure_locations_size(e);
-            Archetype* a = get_or_create_archetype(0);
-            locations[e] = { a, a->entities.size() };
-            a->entities.push_back(e);
-            return e;
-        }
+        Entity Create();
+        void Destroy(Entity e);
+        bool Alive(Entity e) const noexcept;
 
-        void destroy_entity(Entity e)
+        template<typename T>
+        void Add(Entity e, T value = T{});
+
+        template<typename T1, typename T2, typename... Ts>
+        void Add(Entity e, T1 v1, T2 v2, Ts... values)
         {
-            assert(e < locations.size() && "Invalid entity");
-            auto loc = locations[e];
-            if (loc.archetype == nullptr) 
-                return;
-            Archetype* a = loc.archetype;
-            std::size_t idx = loc.index;
-            Entity moved = a->entities.back();
-            a->swap_remove_entity(idx);
-            if (moved != e) 
-                locations[moved].index = idx;
-            locations[e] = { nullptr, 0 };
-            em.destroy(e);
+            Add<T1>(e, v1);
+            Add<T2>(e, v2);
+            (Add<Ts>(e, values), ...);
         }
 
         template<typename T>
-        void add_component(Entity e, const T& comp)
+        void Remove(Entity e);
+
+        template<typename T1, typename T2, typename... Ts>
+        void Remove(Entity e)
         {
-            assert(e < locations.size() && "Invalid entity");
-            auto oldLoc = locations[e];
-            Archetype* oldAr = oldLoc.archetype;
-            std::uint64_t oldSig = oldAr ? oldAr->signature : 0;
-            std::uint64_t bit = bit_for<T>();
-
-            if (oldSig & bit)
-            {
-                std::size_t idx = oldLoc.index;
-                oldAr->get_component<T>(idx) = comp;
-                return;
-            }
-
-            std::uint64_t newSig = oldSig | bit;
-            Archetype* newAr = get_or_create_archetype(newSig);
-
-            std::size_t newIndex = newAr->entities.size();
-            newAr->entities.push_back(e);
-
-            if (oldAr)
-            {
-                for (auto& kv : oldAr->buffers)
-                {
-                    TypeId tid = kv.first;
-                    const ComponentBuffer& oldBuf = kv.second;
-                    auto& newBuf = newAr->buffers[tid];
-                    if (newBuf.stride == 0) newBuf.stride = oldBuf.stride;
-                    newBuf.data.resize(newBuf.data.size() + newBuf.stride);
-                    std::memcpy(newBuf.data.data() + (newBuf.size() - 1) * newBuf.stride,
-                        oldBuf.at(oldLoc.index), newBuf.stride);
-                }
-
-                newAr->ensure_buffer<T>();
-                newAr->push_component<T>(comp);
-
-                Entity moved = oldAr->entities.back();
-                oldAr->swap_remove_entity(oldLoc.index);
-                if (moved != e) 
-                    locations[moved].index = oldLoc.index;
-            }
-            else
-            {
-                newAr->ensure_buffer<T>();
-                newAr->push_component<T>(comp);
-            }
-
-            locations[e].archetype = newAr;
-            locations[e].index = newIndex;
+            Remove<T1>(e);
+            Remove<T2>(e);
+            (Remove<Ts>(e), ...);
         }
 
         template<typename T>
-        void remove_component(Entity e)
-        {
-            assert(e < locations.size() && "Invalid entity");
-            auto oldLoc = locations[e];
-            Archetype* oldAr = oldLoc.archetype;
-            std::uint64_t oldSig = oldAr ? oldAr->signature : 0;
-            std::uint64_t bit = bit_for<T>();
-            if (!(oldSig & bit)) 
-                return;
-
-            std::uint64_t newSig = oldSig & ~bit;
-            Archetype* newAr = get_or_create_archetype(newSig);
-
-            std::size_t newIndex = newAr->entities.size();
-            newAr->entities.push_back(e);
-
-            for (auto& kv : oldAr->buffers)
-            {
-                TypeId tid = kv.first;
-                if (tid == getTypeId<T>()) 
-                    continue;
-                const ComponentBuffer& oldBuf = kv.second;
-                auto& newBuf = newAr->buffers[tid];
-                if (newBuf.stride == 0) 
-                    newBuf.stride = oldBuf.stride;
-                newBuf.data.resize(newBuf.data.size() + newBuf.stride);
-                std::memcpy(newBuf.data.data() + (newBuf.size() - 1) * newBuf.stride,
-                    oldBuf.at(oldLoc.index), newBuf.stride);
-            }
-
-            Entity moved = oldAr->entities.back();
-            oldAr->swap_remove_entity(oldLoc.index);
-            if (moved != e) 
-                locations[moved].index = oldLoc.index;
-
-            locations[e].archetype = newAr;
-            locations[e].index = newIndex;
-        }
+        T& Get(Entity e);
 
         template<typename T>
-        T& get(Entity e)
-        {
-            auto loc = locations[e];
-            assert(loc.archetype && "Entity has no archetype");
-            return loc.archetype->get_component<T>(loc.index);
-        }
+        T* TryGet(Entity e) noexcept;
 
-        void for_each(std::uint64_t hasMask, const std::function<void(Entity, std::function<void* (TypeId)>)>& fn)
-        {
-            for (auto& kv : archetypes)
-            {
-                Archetype* a = kv.second.get();
-                if ((a->signature & hasMask) == hasMask)
-                {
-                    for (std::size_t i = 0; i < a->entities.size();i++)
-                    {
-                        Entity e = a->entities[i];
-                        auto accessor = [a, i](TypeId tid) -> void*
-                        {
-                            auto it = a->buffers.find(tid);
-                            if (it == a->buffers.end()) 
-                                return nullptr;
-                            return it->second.at(i);
-                        };
-                        fn(e, accessor);
-                    }
-                }
-            }
-        }
+        template<typename T>
+        bool Has(Entity e) const noexcept;
+
+        template<typename... Ts>
+        void RegisterSystem(StringId name, SystemFn fn, SystemGroup group = SystemGroup::Update);
+
+        void EnableSystem(StringId name);
+        void DisableSystem(StringId name);
+
+        void Run(SystemGroup group, float dt);
     };
+
+    template<typename T>
+    void World::Add(Entity e, T value)
+    {
+        static_assert(std::is_trivially_copyable_v<T>);
+        assert(Alive(e));
+
+        uint32_t eid = EntityId(e);
+        auto& rec = records_[eid];
+        ComponentId id = GetComponentId<T>();
+
+        if (rec.arch->HasComponent(id))
+        {
+            rec.arch->Set<T>(rec.chunk_idx, rec.row, value);
+            return;
+        }
+
+        Archetype& dst = GetOrCreateEdge(*rec.arch, id, sizeof(T), true);
+        auto [dst_ci, dst_row] = rec.arch->MigrateEntityTo(rec.chunk_idx, rec.row, dst);
+        dst.GetEntity(dst_ci, dst_row) = e;
+        dst.Set<T>(dst_ci, dst_row, value);
+
+        Entity moved = rec.arch->SwapRemove(rec.chunk_idx, rec.row);
+        if (moved != e)
+        {
+            uint32_t moved_id = EntityId(moved);
+            records_[moved_id].arch = rec.arch;
+            records_[moved_id].chunk_idx = rec.chunk_idx;
+            records_[moved_id].row = rec.row;
+        }
+
+        records_[eid] = { &dst, dst_ci, dst_row, records_[eid].generation };
+    }
+
+    template<typename T>
+    void World::Remove(Entity e)
+    {
+        assert(Alive(e));
+        uint32_t eid = EntityId(e);
+        auto& rec = records_[eid];
+        ComponentId id = GetComponentId<T>();
+        if (!rec.arch->HasComponent(id)) return;
+
+        Archetype& dst = GetOrCreateEdge(*rec.arch, id, 0, false);
+        auto [dst_ci, dst_row] = rec.arch->MigrateEntityTo(rec.chunk_idx, rec.row, dst);
+        dst.GetEntity(dst_ci, dst_row) = e;
+
+        Entity moved = rec.arch->SwapRemove(rec.chunk_idx, rec.row);
+        if (moved != e)
+        {
+            uint32_t moved_id = EntityId(moved);
+            records_[moved_id].arch = rec.arch;
+            records_[moved_id].chunk_idx = rec.chunk_idx;
+            records_[moved_id].row = rec.row;
+        }
+
+        records_[eid] = { &dst, dst_ci, dst_row, records_[eid].generation };
+    }
+
+    template<typename T>
+    T& World::Get(Entity e)
+    {
+        assert(Alive(e));
+        uint32_t eid = EntityId(e);
+        return records_[eid].arch->Get<T>(records_[eid].chunk_idx, records_[eid].row);
+    }
+
+    template<typename T>
+    T* World::TryGet(Entity e) noexcept
+    {
+        if (!Alive(e)) return nullptr;
+        uint32_t eid = EntityId(e);
+        auto& rec = records_[eid];
+        if (!rec.arch->HasComponent(GetComponentId<T>())) return nullptr;
+        return &rec.arch->Get<T>(rec.chunk_idx, rec.row);
+    }
+
+    template<typename T>
+    bool World::Has(Entity e) const noexcept
+    {
+        if (!Alive(e)) return false;
+        uint32_t eid = EntityId(e);
+        return records_[eid].arch->HasComponent(GetComponentId<T>());
+    }
+
+    template<typename... Ts>
+    void World::RegisterSystem(StringId name, SystemFn fn, SystemGroup group)
+    {
+        if (group == SystemGroup::Update)
+            update_systems_.push_back({ name, MakeMask<Ts...>(), std::move(fn) });
+        else
+            render_systems_.push_back({ name, MakeMask<Ts...>(), std::move(fn) });
+    }
 }

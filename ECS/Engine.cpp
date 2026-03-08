@@ -65,13 +65,13 @@ bool Engine::Initialize()
 }
 
 
-void Engine::Update()
+void Engine::Update(float dt)
 {
-    _data->state.GetActiveState()->Update();
+    _data->state.GetActiveState()->Update(dt);
 }
 
 
-void Engine::Render()
+void Engine::Render(float dt)
 {
     if (!_data->SDLrenderer)
     {
@@ -81,7 +81,7 @@ void Engine::Render()
 
     SDL_RenderClear(_data->SDLrenderer);
 
-    _data->state.GetActiveState()->Render();
+    _data->state.GetActiveState()->Render(dt);
 
     SDL_RenderPresent(_data->SDLrenderer);
 }
@@ -101,8 +101,8 @@ void Engine::run()
             dt = 0.1f;
 
         _data->inputs.Update(dt);
-        Update();
-        Render();
+        Update(dt);
+        Render(dt);
 
 
         uint64_t frameTicks = SDL_GetTicks() - currentTicks;

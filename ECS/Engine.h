@@ -21,8 +21,8 @@ public:
     ~Engine() = default;
 
     bool Initialize();
-    void Update();
-    void Render();
+    void Update(float dt);
+    void Render(float dt);
     
     void run();
 
