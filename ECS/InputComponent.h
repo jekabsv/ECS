@@ -1,16 +1,18 @@
 #pragma once
-#include <vector>
-#include <unordered_map>
-#include <string>
+#include "InputSystem.h"
+#include "Struct.h"
 
 struct InputComponent
 {
-    struct ActionState 
+    uint32_t PlayerID;
+    InputSystem::System* system;
+    InputComponent(InputSystem::System* _system, uint32_t _player = -1) : system(_system), PlayerID(_player) {};
+    InputSystem::INPUT_DATA_4 GetActionAxis(StringId ActionName)
     {
-        bool IsPressed;   
-        bool IsHeld;
-        bool IsReleased;
-        bool IsIdle;
-    };
-    std::unordered_map<std::string, ActionState> actions;
+        return system->GetActionAxis(ActionName, PlayerID);
+    }
+    InputSystem::ActionState GetActionState(StringId ActionName)
+    {
+        return system->GetActionState(ActionName, PlayerID);
+    }
 };

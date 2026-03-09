@@ -2,6 +2,7 @@
 #include "RenderComponent.h"
 #include "MeshComponent.h"
 #include "SimpleSprite.h"
+#include "InputComponent.h"
 
 class ProcessWASD : public InputSystem::Processor
 {
@@ -35,6 +36,15 @@ public:
         data[0] -= data[1];
         return 0;
     }
+};
+
+struct PlayerComponent
+{
+    PlayerComponent(uint64_t _start) :start(_start) {};
+    int direction = 0;
+    int TexX;
+    int TexY;
+    uint64_t start;
 };
 
 
@@ -71,7 +81,8 @@ void StartState::Init()
     
     ecs.Add<RenderComponent>(player, RenderComponent(true, Vec2(10, 10), Vec2(1, 1)));
     ecs.Add<SimpleSprite>(player, SimpleSprite({100, 100, 100, 100}, {0, 0, 64, 64}, "player"));
-
+    ecs.Add<InputComponent>(player, InputComponent(&_data->inputs, 5));
+    ecs.Add<PlayerComponent>(player, PlayerComponent(SDL_GetTicks()));
 
     _data->inputs.AddActionMap("gameplay").AddAction("move")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_W, 0)
@@ -84,68 +95,69 @@ void StartState::Init()
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_RIGHT, 3)
         .AddProcessor(std::make_unique<ProcessWASD>("wasd"));
 
-    _data->inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current(), player);
-    _data->inputs.AssignMapToPlayer("gameplay", player);
+    _data->inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current(), 5);
+    _data->inputs.AssignMapToPlayer("gameplay", 5);
 
     _data->inputs.GetActionMap("gameplay")->AddAction("scale")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_Q, 0)
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_E, 1)
         .AddProcessor(std::make_unique<ProcessQE>("qe"));
 
-    ecs.RegisterSystem<RenderComponent, SimpleSprite>("move",
-        [this](ECS::Entity entity, ECS::ComponentContext context, float dt)
+    ecs.RegisterSystem<RenderComponent, SimpleSprite, InputComponent, PlayerComponent>("move",
+        [](ECS::Entity entity, ECS::ComponentContext context, float dt)
         {
-            InputSystem::INPUT_DATA_4 dMove = _data->inputs.GetActionAxis("move", player);
-            InputSystem::INPUT_DATA_4 dScale = _data->inputs.GetActionAxis("scale", player);
             auto& rc = context.Get<RenderComponent>();
             auto& ss = context.Get<SimpleSprite>();
+            auto& ic = context.Get<InputComponent>();
+            auto& pc = context.Get<PlayerComponent>();
+
+            InputSystem::INPUT_DATA_4 dMove = ic.GetActionAxis("move");
+            InputSystem::INPUT_DATA_4 dScale = ic.GetActionAxis("scale");
+            
             rc.position.x += 1000 * dMove[0] * dt;
             rc.position.y += 1000 * dMove[1] * dt;
             rc.scale.x += dScale[0] * dt * 5;
             rc.scale.y += dScale[0] * dt * 5;
 
-            int TexX = ss.TextureRect.x / 64;
-            int TexY = ss.TextureRect.y / 64;
-
             if (dMove[0] < 0)
-                direction = 1;
+                pc.direction = 1;
             if (dMove[0] > 0)
-                direction = 0;
+                pc.direction = 0;
 
 
             if (!dMove[0])
             {
-                if (!direction)
+                if (!pc.direction)
                 {
-                    TexX = 3;
-                    TexY = 1;
+                    pc.TexX = 3;
+                    pc.TexY = 1;
                 }
-                if (direction)
+                if (pc.direction)
                 {
-                    TexX = 3;
-                    TexY = 3;
+                    pc.TexX = 3;
+                    pc.TexY = 3;
                 }
             }
             else
             {
-                if (!direction)
+                if (!pc.direction)
                 {
-                    TexY = 0;
+                    pc.TexY = 0;
                 }
-                if (direction)
+                if (pc.direction)
                 {
-                    TexY = 2;
+                    pc.TexY = 2;
                 }
-                if (SDL_GetTicks() - start > 100)
+                if (SDL_GetTicks() - pc.start > 100)
                 {
-                    TexX++;
-                    start = SDL_GetTicks();
-                    TexX %= 8;
+                    pc.TexX++;
+                    pc.start = SDL_GetTicks();
+                    pc.TexX %= 8;
                 }
             }
 
-            ss.TextureRect.x = TexX * 64;
-            ss.TextureRect.y = TexY * 64;
+            ss.TextureRect.x = pc.TexX * 64;
+            ss.TextureRect.y = pc.TexY * 64;
         },
         ECS::SystemGroup::Update);
 
