@@ -4,6 +4,7 @@
 #include "AssetManager.h"
 #include "InputSystem.h"
 #include "logger.h"
+#include "Blackboard.h"
 
 struct SharedData
 {
@@ -16,6 +17,7 @@ struct SharedData
     InputSystem::System inputs;
     Renderer renderer;
     bool quit = false;
+    Blackboard session;
 };
 
 typedef std::shared_ptr<SharedData> SharedDataRef;

@@ -1,7 +1,6 @@
 #pragma once
-#include "StateMachine.h"
-#include <iostream>
 #include "SharedDataRef.h"
+#include "State.h"
 
 class StartState : public State
 {

@@ -146,6 +146,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetManager.h" />
+    <ClInclude Include="Blackboard.h" />
     <ClInclude Include="ECS.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="InputComponent.h" />

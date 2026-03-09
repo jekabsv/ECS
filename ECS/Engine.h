@@ -1,13 +1,9 @@
 #pragma once
 #include "ECS.h"
+#include "SharedDataRef.h"
 #include <string>
 #include <SDL3\SDL.h>
-#include "RenderComponent.h"
-#include "StateMachine.h"
 #include "StartState.h"
-#include <iostream>
-#include "SharedDataRef.h"
-#include "AssetManager.h"
 
 static bool mainLoopRegistered = false;
 

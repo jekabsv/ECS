@@ -1,7 +1,5 @@
 #pragma once
 #include "Struct.h"
-#include <vector>
-#include <array>
 
 struct RenderComponent
 {
