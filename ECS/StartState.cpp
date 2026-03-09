@@ -42,9 +42,9 @@ struct PlayerComponent
 {
     PlayerComponent(uint64_t _start) :start(_start) {};
     int direction = 0;
-    int TexX;
-    int TexY;
-    uint64_t start;
+    int TexX = 0;
+    int TexY = 0;
+    uint64_t start = 0;
 };
 
 
@@ -66,6 +66,7 @@ void StartState::Init()
     {{ 1,  1}, {0.0f, 0.0f, 1.0f, 1.0f}}
     };
 
+    ecs.Tie(_data);
 
     _data->assets.AddMesh("Triangle", triangleMesh);
     _data->assets.AddMesh("square", squareMesh);
@@ -74,15 +75,15 @@ void StartState::Init()
     _data->assets.LoadBMPTexture("player", "../player.bmp", _data->SDLrenderer);
 
     e = ecs.Create();
-    player = ecs.Create();
+    playerEntity = ecs.Create();
 
     ecs.Add<RenderComponent>(e, RenderComponent(false));
     ecs.Add<MeshComponent>(e, MeshComponent("triangle", ""));
     
-    ecs.Add<RenderComponent>(player, RenderComponent(true, Vec2(10, 10), Vec2(1, 1)));
-    ecs.Add<SimpleSprite>(player, SimpleSprite({100, 100, 100, 100}, {0, 0, 64, 64}, "player"));
-    ecs.Add<InputComponent>(player, InputComponent(&_data->inputs, 5));
-    ecs.Add<PlayerComponent>(player, PlayerComponent(SDL_GetTicks()));
+    ecs.Add<RenderComponent>(playerEntity, RenderComponent(true, Vec2(10, 10)));
+    ecs.Add<SimpleSprite>(playerEntity, SimpleSprite({100, 100, 100, 100}, {0, 0, 64, 64}, "player"));
+    ecs.Add<InputComponent>(playerEntity, InputComponent());
+    ecs.Add<PlayerComponent>(playerEntity, PlayerComponent(SDL_GetTicks()));
 
     _data->inputs.AddActionMap("gameplay").AddAction("move")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_W, 0)
@@ -95,8 +96,8 @@ void StartState::Init()
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_RIGHT, 3)
         .AddProcessor(std::make_unique<ProcessWASD>("wasd"));
 
-    _data->inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current(), 5);
-    _data->inputs.AssignMapToPlayer("gameplay", 5);
+    _data->inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current());
+    _data->inputs.AssignMapToPlayer("gameplay");
 
     _data->inputs.GetActionMap("gameplay")->AddAction("scale")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_Q, 0)
@@ -104,15 +105,14 @@ void StartState::Init()
         .AddProcessor(std::make_unique<ProcessQE>("qe"));
 
     ecs.RegisterSystem<RenderComponent, SimpleSprite, InputComponent, PlayerComponent>("move",
-        [](ECS::Entity entity, ECS::ComponentContext context, float dt)
+        [](ECS::Entity entity, ECS::ComponentContext context, float dt, SharedDataRef _data)
         {
             auto& rc = context.Get<RenderComponent>();
             auto& ss = context.Get<SimpleSprite>();
-            auto& ic = context.Get<InputComponent>();
             auto& pc = context.Get<PlayerComponent>();
 
-            InputSystem::INPUT_DATA_4 dMove = ic.GetActionAxis("move");
-            InputSystem::INPUT_DATA_4 dScale = ic.GetActionAxis("scale");
+            InputSystem::INPUT_DATA_4 dMove = _data->inputs.GetActionAxis("move");
+            InputSystem::INPUT_DATA_4 dScale = _data->inputs.GetActionAxis("scale");
             
             rc.position.x += 1000 * dMove[0] * dt;
             rc.position.y += 1000 * dMove[1] * dt;
@@ -162,7 +162,7 @@ void StartState::Init()
         ECS::SystemGroup::Update);
 
     ecs.RegisterSystem<RenderComponent, SimpleSprite>("renderSprite",
-        [this](ECS::Entity entity, ECS::ComponentContext context, float dt)
+        [](ECS::Entity entity, ECS::ComponentContext context, float dt, SharedDataRef _data)
         {
             auto& rc = context.Get<RenderComponent>();
             auto& ss = context.Get<SimpleSprite>();
@@ -181,15 +181,3 @@ void StartState::Init()
         ECS::SystemGroup::Render);
 
 }
-
-void StartState::Update(float dt)
-{
-    ecs.Run(ECS::SystemGroup::Update, dt);
-}
-
-void StartState::Render(float dt)
-{
-    ecs.Run(ECS::SystemGroup::Render, dt);
-    return;
-}
-

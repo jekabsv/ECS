@@ -10,6 +10,9 @@
 #include <cstring>
 #include "Struct.h"
 
+struct SharedData;
+typedef std::shared_ptr<SharedData> SharedDataRef;
+
 namespace ECS
 {
     using Entity = uint64_t;
@@ -178,7 +181,7 @@ namespace ECS
         template<typename T>
         bool Has() { return arch->HasComponent(GetComponentId<T>()); }
     };
-    using SystemFn = std::function<void(Entity, ComponentContext&, float)>;
+    using SystemFn = std::function<void(Entity, ComponentContext&, float, SharedDataRef)>;
     struct SystemEntry
     {
         StringId name;
@@ -204,12 +207,21 @@ namespace ECS
         void GrowRecords(uint32_t id);
         void RunSystems(std::vector<SystemEntry>& systems, float dt);
 
+        SharedDataRef _data;
+
     public:
+
+
+
         World();
 
         Entity Create();
         void Destroy(Entity e);
         bool Alive(Entity e) const noexcept;
+
+        void Tie(SharedDataRef data) {
+            _data = data;
+        }
 
         template<typename T>
         void Add(Entity e, T value = T{});

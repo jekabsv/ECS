@@ -5,16 +5,11 @@
 
 struct RenderComponent
 {
-     RenderComponent(bool _render)
-         : render(_render) { };
-     RenderComponent(bool _render, Vec2 pos)
-         : render(_render), position(pos) { };
-     RenderComponent(bool _render, Vec2 pos, Vec2 _scale)
-         : render(_render), position(pos), scale(_scale) { };
+     RenderComponent(bool _render = false, Vec2 _pos = {0.0f, 0.0f}, Vec2 _scale = {1.0f, 1.0f})
+         : render(_render), position(_pos), scale(_scale) { };
     RenderComponent() = default;
     ~RenderComponent() = default;
-
-    bool render = false;
-    Vec2 position = { 0.0f, 0.0f };
-    Vec2 scale = { 1.0f, 1.0f };  
+    bool render;
+    Vec2 position;
+    Vec2 scale;  
 };
