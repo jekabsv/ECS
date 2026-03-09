@@ -37,9 +37,9 @@ void StateMachine::ProcessStateChanges()
 			_states.top()->Pause();
 		}
 		_states.push(std::move(_newState));
-		this->_states.top()->Init();
-		LOG_DEBUG(GlobalLogger(), "StateMachine", "State transition completed");
 		_isAdding = 0;
+		this->_states.top()->Init();
+		LOG_DEBUG(GlobalLogger(), "StateMachine", "State transition completed");		
 	}
 }
 

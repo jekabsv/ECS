@@ -101,6 +101,7 @@ void Engine::run()
         if (dt > 0.1f)
             dt = 0.1f;
 
+        _data->state.ProcessStateChanges();
         _data->inputs.Update(dt);
         Update(dt);
         Render(dt);

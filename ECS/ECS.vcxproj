@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="ECS.cpp" />
+    <ClCompile Include="Level1.cpp" />
     <ClCompile Include="logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine.cpp" />
@@ -151,6 +152,7 @@
     <ClInclude Include="Engine.h" />
     <ClInclude Include="InputComponent.h" />
     <ClInclude Include="InputSystem.h" />
+    <ClInclude Include="Level1.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="MeshComponent.h" />
     <ClInclude Include="RenderComponent.h" />
