@@ -10,15 +10,8 @@ std::shared_ptr<Device> MouseHub::mouse = nullptr;
 std::shared_ptr<Device> GamepadHub::LastUsedGamepad = nullptr;
 std::vector<std::shared_ptr<Device>> GamepadHub::gamepads;
 
-void System::Init(ActionData &data)
+void System::Init()
 {
-	ActionMaps = &data.ActionMaps;
-	PlayerKeyboardPool = &data.PlayerKeyboardPool;
-	PlayerMousePool = &data.PlayerMousePool;
-	PlayerGamepadPool = &data.PlayerGamepadPool;
-	PlayerToMap = &data.PlayerToMap;
-
-
 	Update(0.0f);
 
 	if (!KeyboardHub::Current()) {
@@ -41,21 +34,21 @@ void System::Init(ActionData &data)
 
 ActionMap* System::GetActionMap(StringId ActionMapName)
 {
-	auto it = ActionMaps->find(ActionMapName);
-	if (it != ActionMaps->end())
+	auto it = ActionMaps.find(ActionMapName);
+	if (it != ActionMaps.end())
 		return &it->second;
 	LOG_WARN(GlobalLogger(), "InputSystem", "ActionMap not found");
 	return nullptr;
 }
 int System::RemoveActionMap(StringId ActionMapName)
 {
-	auto it = ActionMaps->find(ActionMapName);
-	if (it == ActionMaps->end())
+	auto it = ActionMaps.find(ActionMapName);
+	if (it == ActionMaps.end())
 	{
 		LOG_WARN(GlobalLogger(), "Input System", "No ActionMap to remove");
 		return -1;
 	}
-	ActionMaps->erase(it);
+	ActionMaps.erase(it);
 	return 0;
 }
 ActionState System::GetActionState(StringId ActionName, int player)
@@ -162,14 +155,14 @@ bool System::IsReleased(StringId ActionName, int player)
 
 ActionMap& System::AddActionMap(StringId ActionMapName)
 {
-	return (*ActionMaps)[ActionMapName];
+	return ActionMaps[ActionMapName];
 }
 
 int System::AssignMapToPlayer(StringId Map, int PlayerID)
 {
 	if (!GetActionMap(Map)) 
 		LOG_WARN(GlobalLogger(), "InputSystem", "Assigned map does not exist");
-	(*PlayerToMap)[PlayerID] = Map;
+	PlayerToMap[PlayerID] = Map;
 	return 0;
 }
 int System::AssignDeviceToPlayer(const std::shared_ptr<Device>& device, int PlayerID)
@@ -181,11 +174,11 @@ int System::AssignDeviceToPlayer(const std::shared_ptr<Device>& device, int Play
 	}
 	DeviceType type = device->GetType();
 	if (type == Keyboard)
-		(*PlayerKeyboardPool)[PlayerID] = { device };
+		PlayerKeyboardPool[PlayerID] = { device };
 	else if (type == Mouse)
-		(*PlayerMousePool)[PlayerID] = { device };
+		PlayerMousePool[PlayerID] = { device };
 	else if (type == Gamepad)
-		(*PlayerGamepadPool)[PlayerID].push_back(device);
+		PlayerGamepadPool[PlayerID].push_back(device);
 	LOG_DEBUG(GlobalLogger(), "InputSystem", "Device assigned to player " + std::to_string(PlayerID));
 	return 0;
 }
@@ -217,8 +210,8 @@ int System::RemoveDeviceFromPlayer(const std::shared_ptr<Device>& device, int pl
 	}
 
 	auto removeFrom = [&](auto& pool) {
-		auto it = pool->find(playerID);
-		if (it == pool->end()) return;
+		auto it = pool.find(playerID);
+		if (it == pool.end()) return;
 		auto& vec = it->second;
 		vec.erase(std::remove(vec.begin(), vec.end(), device), vec.end());
 		};
@@ -232,9 +225,9 @@ int System::RemoveDeviceFromPlayer(const std::shared_ptr<Device>& device, int pl
 
 std::vector<std::shared_ptr<Device>> System::GetDevicesOfType(int player, DeviceType type)
 {
-	const auto* pool = (type == Keyboard) ? PlayerKeyboardPool
-		: (type == Mouse) ? PlayerMousePool
-		: PlayerGamepadPool;
+	const auto* pool = (type == Keyboard) ? &PlayerKeyboardPool
+		: (type == Mouse) ? &PlayerMousePool
+		: &PlayerGamepadPool;
 	auto it = pool->find(player);
 	if (it == pool->end())
 		return {};
@@ -305,10 +298,10 @@ void System::Update(float dt)
 		}
 	}
 
-	for (auto& [playerId, mapName] : *PlayerToMap)
+	for (auto& [playerId, mapName] : PlayerToMap)
 	{
-		auto mapIt = ActionMaps->find(mapName);
-		if (mapIt == ActionMaps->end()) {
+		auto mapIt = ActionMaps.find(mapName);
+		if (mapIt == ActionMaps.end()) {
 			LOG_WARN(GlobalLogger(), "InputSystem", "Player " + std::to_string(playerId) +
 				" assigned to nonexistent map");
 			continue; 
@@ -316,16 +309,16 @@ void System::Update(float dt)
 
 
 		static const std::vector<std::shared_ptr<Device>> emptyPool{};
-		auto kbIt = PlayerKeyboardPool->find(playerId);
-		auto mIt = PlayerMousePool->find(playerId);
-		auto gpIt = PlayerGamepadPool->find(playerId);
+		auto kbIt = PlayerKeyboardPool.find(playerId);
+		auto mIt = PlayerMousePool.find(playerId);
+		auto gpIt = PlayerGamepadPool.find(playerId);
 
 		mapIt->second.UpdateAllActionStates(
 			dt,
 			playerActionStates[playerId],
-			kbIt != PlayerKeyboardPool->end() ? kbIt->second : emptyPool,
-			mIt != PlayerMousePool->end() ? mIt->second : emptyPool,
-			gpIt != PlayerGamepadPool->end() ? gpIt->second : emptyPool
+			kbIt != PlayerKeyboardPool.end() ? kbIt->second : emptyPool,
+			mIt != PlayerMousePool.end() ? mIt->second : emptyPool,
+			gpIt != PlayerGamepadPool.end() ? gpIt->second : emptyPool
 		);
 	}
 }

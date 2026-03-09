@@ -2,7 +2,6 @@
 #include "RenderComponent.h"
 #include "MeshComponent.h"
 #include "SimpleSprite.h"
-#include "InputComponent.h"
 
 class ProcessWASD : public InputSystem::Processor
 {
@@ -41,8 +40,6 @@ public:
 
 void StartState::Init()
 {
-    inputs.Init(_data->Actions);
-    
     Mesh triangleMesh = {
         {-1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f},
         {1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f},
@@ -74,10 +71,9 @@ void StartState::Init()
     
     ecs.Add<RenderComponent>(player, RenderComponent(true, Vec2(10, 10), Vec2(1, 1)));
     ecs.Add<SimpleSprite>(player, SimpleSprite({100, 100, 100, 100}, {0, 0, 64, 64}, "player"));
-    ecs.Add<InputComponent>(player, InputComponent(0, inputs));
 
 
-    inputs.AddActionMap("gameplay").AddAction("move")
+    _data->inputs.AddActionMap("gameplay").AddAction("move")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_W, 0)
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_A, 1)
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_S, 2)
@@ -88,23 +84,21 @@ void StartState::Init()
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_RIGHT, 3)
         .AddProcessor(std::make_unique<ProcessWASD>("wasd"));
 
-    inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current(), player);
-    inputs.AssignMapToPlayer("gameplay", 0);
+    _data->inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current(), player);
+    _data->inputs.AssignMapToPlayer("gameplay", player);
 
-    inputs.GetActionMap("gameplay")->AddAction("scale")
+    _data->inputs.GetActionMap("gameplay")->AddAction("scale")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_Q, 0)
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_E, 1)
         .AddProcessor(std::make_unique<ProcessQE>("qe"));
 
-    ecs.RegisterSystem<RenderComponent, SimpleSprite, InputComponent>("move",
+    ecs.RegisterSystem<RenderComponent, SimpleSprite>("move",
         [this](ECS::Entity entity, ECS::ComponentContext context, float dt)
         {
+            InputSystem::INPUT_DATA_4 dMove = _data->inputs.GetActionAxis("move", player);
+            InputSystem::INPUT_DATA_4 dScale = _data->inputs.GetActionAxis("scale", player);
             auto& rc = context.Get<RenderComponent>();
             auto& ss = context.Get<SimpleSprite>();
-            auto& ic = context.Get<InputComponent>();
-            InputSystem::INPUT_DATA_4 dMove = ic.GetActionAxis("move");
-            InputSystem::INPUT_DATA_4 dScale = ic.GetActionAxis("scale");
-            
             rc.position.x += 1000 * dMove[0] * dt;
             rc.position.y += 1000 * dMove[1] * dt;
             rc.scale.x += dScale[0] * dt * 5;
@@ -178,12 +172,12 @@ void StartState::Init()
 
 void StartState::Update(float dt)
 {
-    inputs.Update(dt);
     ecs.Run(ECS::SystemGroup::Update, dt);
 }
 
 void StartState::Render(float dt)
 {
     ecs.Run(ECS::SystemGroup::Render, dt);
+    return;
 }
 

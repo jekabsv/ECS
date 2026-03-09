@@ -148,7 +148,6 @@
     <ClInclude Include="AssetManager.h" />
     <ClInclude Include="ECS.h" />
     <ClInclude Include="Engine.h" />
-    <ClInclude Include="InputComponent.h" />
     <ClInclude Include="InputSystem.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="MeshComponent.h" />
