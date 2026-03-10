@@ -76,6 +76,9 @@ void StartState::Init()
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_RIGHT, 3)
         .AddProcessor(std::make_unique<ProcessWASD>("wasd"));
 
+    _data->inputs.GetActionMap("gameplay")->AddAction("next")
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_SPACE);
+
     _data->inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current());
     _data->inputs.AssignMapToPlayer("gameplay");
 

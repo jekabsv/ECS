@@ -9,6 +9,7 @@ public:
 
     void Init() override;
     void HandleInput() override {}
+    void Update(float dt) override;
 
 private:
     SharedDataRef _data;

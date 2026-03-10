@@ -313,7 +313,7 @@ void World::RunSystems(std::vector<SystemEntry>& systems, float dt)
                 continue;
             arch_ptr->ForEachEntity([&](Entity e, std::size_t ci, std::size_t row)
                 {
-                    ComponentContext ctx{ arch_ptr.get(), ci, row };
+                    ComponentContext ctx{ arch_ptr.get(), ci, row, this };
                     sys.fn(e, ctx, dt, _data);
                 });
         }

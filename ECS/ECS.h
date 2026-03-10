@@ -155,6 +155,8 @@ namespace ECS
 
     enum class SystemGroup { Update, Render };
 
+    class World;
+
     struct EntityRecord
     {
         Archetype* arch = nullptr;
@@ -167,6 +169,7 @@ namespace ECS
         Archetype* arch = nullptr;
         std::size_t chunk_idx = 0;
         std::size_t row = 0;
+        World* world = nullptr;
 
         template<typename T>
         T& Get() { return arch->Get<T>(chunk_idx, row); }
@@ -180,6 +183,9 @@ namespace ECS
 
         template<typename T>
         bool Has() { return arch->HasComponent(GetComponentId<T>()); }
+
+        template<typename... Ts, typename Fn>
+        void Query(Fn&& fn);
     };
     using SystemFn = std::function<void(Entity, ComponentContext&, float, SharedDataRef)>;
     struct SystemEntry
@@ -218,6 +224,22 @@ namespace ECS
         Entity Create();
         void Destroy(Entity e);
         bool Alive(Entity e) const noexcept;
+
+
+        template<typename... Ts, typename Fn>
+        void Query(Fn&& fn)
+        {
+            ComponentMask mask = MakeMask<Ts...>();
+            for (auto& [m, arch] : archetypes_)
+            {
+                if (!arch->HasComponents(mask)) continue;
+                arch->ForEachEntity([&](Entity e, std::size_t ci, std::size_t row)
+                    {
+                        fn(e, arch->Get<Ts>(ci, row)...);
+                    });
+            }
+        }
+
 
         void Tie(SharedDataRef data) {
             _data = data;
@@ -262,6 +284,13 @@ namespace ECS
 
         void Run(SystemGroup group, float dt);
     };
+
+    template<typename... Ts, typename Fn>
+    void ComponentContext::Query(Fn&& fn)
+    {
+        assert(world && "ComponentContext has no world pointer");
+        world->Query<Ts...>(std::forward<Fn>(fn));
+    }
 
     template<typename T>
     void World::Add(Entity e, T value)

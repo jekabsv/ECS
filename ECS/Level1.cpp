@@ -3,7 +3,7 @@
 #include "MeshComponent.h"
 #include "SimpleSprite.h"
 #include "InputComponent.h"
-
+#include "NBody.h"
 
 struct PlayerComponent
 {
@@ -107,4 +107,10 @@ void Level1::Init()
         ECS::SystemGroup::Render);
 
 
+}
+
+void Level1::Update(float dt)
+{
+    if(_data->inputs.GetActionState("next") == InputSystem::Pressed)
+        _data->state.AddState(StateRef(new NBody(_data)), 1);
 }
