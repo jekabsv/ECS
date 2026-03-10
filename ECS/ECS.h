@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cstring>
 #include "Struct.h"
+#include <span>
 
 struct SharedData;
 typedef std::shared_ptr<SharedData> SharedDataRef;
@@ -164,30 +165,27 @@ namespace ECS
         std::size_t row = 0;
         uint32_t generation = 0;
     };
-    struct ComponentContext
+    struct ArchetypeContext
     {
         Archetype* arch = nullptr;
         std::size_t chunk_idx = 0;
-        std::size_t row = 0;
         World* world = nullptr;
 
         template<typename T>
-        T& Get() { return arch->Get<T>(chunk_idx, row); }
-
-        template<typename T>
-        T* TryGet()
+        std::span<T> Slice()
         {
-            if (!arch->HasComponent(GetComponentId<T>())) return nullptr;
-            return &arch->Get<T>(chunk_idx, row);
+            auto& chunk = arch->chunks[chunk_idx];
+            if constexpr (std::is_same_v<T, Entity>)
+                return std::span<Entity>(chunk.Entities(), chunk.count);
+            else
+                return std::span<T>(chunk.GetArray<T>(GetComponentId<T>()), chunk.count);
         }
 
-        template<typename T>
-        bool Has() { return arch->HasComponent(GetComponentId<T>()); }
-
-        template<typename... Ts, typename Fn>
-        void Query(Fn&& fn);
+        template<typename... Ts>
+        std::vector<ArchetypeContext> View();
     };
-    using SystemFn = std::function<void(Entity, ComponentContext&, float, SharedDataRef)>;
+
+    using SystemFn = std::function<void(ArchetypeContext&, float, SharedDataRef)>;
     struct SystemEntry
     {
         StringId name;
@@ -283,14 +281,23 @@ namespace ECS
         void DisableSystem(StringId name);
 
         void Run(SystemGroup group, float dt);
-    };
 
-    template<typename... Ts, typename Fn>
-    void ComponentContext::Query(Fn&& fn)
-    {
-        assert(world && "ComponentContext has no world pointer");
-        world->Query<Ts...>(std::forward<Fn>(fn));
-    }
+        template<typename... Ts>
+        std::vector<ArchetypeContext> View()
+        {
+            ComponentMask mask = MakeMask<Ts...>();
+            std::vector<ArchetypeContext> result;
+            for (auto& [m, arch_ptr] : archetypes_)
+            {
+                if (!arch_ptr->HasComponents(mask)) 
+                    continue;
+                for (std::size_t i = 0; i < arch_ptr->chunks.size(); i++)
+                    if (!arch_ptr->chunks[i].Empty())
+                        result.push_back({ arch_ptr.get(), i, this });
+            }
+            return result;
+        }
+    };
 
     template<typename T>
     void World::Add(Entity e, T value)
@@ -324,7 +331,7 @@ namespace ECS
 
         records_[eid] = { &dst, dst_ci, dst_row, records_[eid].generation };
     }
-
+        
     template<typename T>
     void World::Remove(Entity e)
     {
@@ -384,4 +391,12 @@ namespace ECS
         else
             render_systems_.push_back({ name, MakeMask<Ts...>(), std::move(fn) });
     }
+
+    template<typename... Ts>
+    std::vector<ArchetypeContext> ArchetypeContext::View()
+    {
+        assert(world && "ArchetypeContext has no world pointer");
+        return world->View<Ts...>();
+    }
+
 }

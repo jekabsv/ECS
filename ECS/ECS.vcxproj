@@ -136,6 +136,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AssetManager.cpp" />
+    <ClCompile Include="BenchmarkState.cpp" />
     <ClCompile Include="ECS.cpp" />
     <ClCompile Include="Level1.cpp" />
     <ClCompile Include="logger.cpp" />
@@ -148,6 +149,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AssetManager.h" />
+    <ClInclude Include="BenchmarkState.h" />
     <ClInclude Include="Blackboard.h" />
     <ClInclude Include="ECS.h" />
     <ClInclude Include="Engine.h" />
