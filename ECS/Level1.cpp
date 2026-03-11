@@ -5,6 +5,7 @@
 #include "InputComponent.h"
 #include "NBody.h"
 #include "BenchmarkState.h"
+#include "FusionBenchmark.h"
 
 struct PlayerComponent
 {
@@ -107,5 +108,5 @@ void Level1::Init()
 void Level1::Update(float dt)
 {
     if(_data->inputs.GetActionState("next") == InputSystem::Pressed)
-        _data->state.AddState(StateRef(new BenchmarkState(_data)), 1);
+        _data->state.AddState(StateRef(new FusionBenchmark(_data)), 1);
 }

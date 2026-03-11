@@ -289,33 +289,65 @@ bool World::Alive(Entity e) const noexcept
 void World::EnableSystem(StringId name)
 {
     for (auto& s : update_systems_)
-        if (s.name == name) { s.enabled = true; return; }
+        if (s.name == name) { s.enabled = true; systems_dirty_ = true; return; }
     for (auto& s : render_systems_)
-        if (s.name == name) { s.enabled = true; return; }
+        if (s.name == name) { s.enabled = true; systems_dirty_ = true; return; }
 }
 void World::DisableSystem(StringId name)
 {
     for (auto& s : update_systems_)
-        if (s.name == name) { s.enabled = false; return; }
+        if (s.name == name) { s.enabled = false; systems_dirty_ = true; return; }
     for (auto& s : render_systems_)
-        if (s.name == name) { s.enabled = false; return; }
+        if (s.name == name) { s.enabled = false; systems_dirty_ = true; return; }
 }
 
-void World::RunSystems(std::vector<SystemEntry>& systems, float dt)
+// Walks systems in registration order. A system joins the current group if it has no
+// RAW (read-after-write), WAW (write-after-write), or WAR (write-after-read) conflict
+// with the group's accumulated masks. Otherwise it flushes and starts a new group.
+void World::RebuildFusedGroups(std::vector<SystemEntry>& systems, std::vector<FusedGroup>& groups)
 {
+    groups.clear();
+
     for (auto& sys : systems)
     {
-        if (!sys.enabled)
-            continue;
+        if (!sys.enabled) continue;
+
+        bool fits = !groups.empty();
+        if (fits)
+        {
+            const auto& last = groups.back();
+            if ((sys.write_mask & last.read_mask) != 0) fits = false; // WAR
+            if ((sys.write_mask & last.write_mask) != 0) fits = false; // WAW
+            if ((sys.read_mask & last.write_mask) != 0) fits = false; // RAW
+        }
+
+        if (!fits)
+            groups.emplace_back();
+
+        auto& grp = groups.back();
+        grp.systems.push_back(&sys);
+        grp.read_mask |= sys.read_mask;
+        grp.write_mask |= sys.write_mask;
+    }
+}
+
+// For each fused group: iterate all archetypes and chunks once, running every matching
+// system in the group before moving to the next chunk. Keeps chunk data hot in cache.
+void World::RunSystems(std::vector<FusedGroup>& groups, float dt)
+{
+    for (auto& group : groups)
+    {
         for (auto& [mask, arch_ptr] : archetypes_)
         {
-            if (!arch_ptr->HasComponents(sys.mask))
-                continue;
             for (std::size_t i = 0; i < arch_ptr->chunks.size(); i++)
             {
                 if (arch_ptr->chunks[i].Empty()) continue;
-                ArchetypeContext ctx{ arch_ptr.get(), i, this };
-                sys.fn(ctx, dt, _data);
+                for (auto* sys : group.systems)
+                {
+                    if (!arch_ptr->HasComponents(sys->mask)) continue;
+                    ArchetypeContext ctx{ arch_ptr.get(), i, this };
+                    sys->fn(ctx, dt, _data);
+                }
             }
         }
     }
@@ -323,8 +355,15 @@ void World::RunSystems(std::vector<SystemEntry>& systems, float dt)
 
 void World::Run(SystemGroup group, float dt)
 {
+    if (systems_dirty_)
+    {
+        RebuildFusedGroups(update_systems_, update_fused_);
+        RebuildFusedGroups(render_systems_, render_fused_);
+        systems_dirty_ = false;
+    }
+
     if (group == SystemGroup::Update)
-        RunSystems(update_systems_, dt);
+        RunSystems(update_fused_, dt);
     else
-        RunSystems(render_systems_, dt);
+        RunSystems(render_fused_, dt);
 }

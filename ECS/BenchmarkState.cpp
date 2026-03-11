@@ -17,7 +17,7 @@ struct AllComponents
 
 
 
-void BenchmarkState::Init()
+/*void BenchmarkState::Init()
 {
     _freq = SDL_GetPerformanceFrequency();
     if (_freq == 0) 
@@ -77,12 +77,15 @@ void BenchmarkState::Init()
             }
         }, ECS::SystemGroup::Render);
 
-}
+}*/
 
 
-/*
+
 void BenchmarkState::Init()
 {
+    _freq = SDL_GetPerformanceFrequency();
+    if (_freq == 0)
+        _freq = 1;
     ecs.Tie(_data);
 
     const float W = (float)_data->GAME_WIDTH;
@@ -104,6 +107,8 @@ void BenchmarkState::Init()
             255 });
     }
 
+    // Group 1: integrate only.
+    // friction cannot join — it writes Velocity which integrate reads (WAR).
     ecs.RegisterSystem<Position, Velocity>("integrate",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
         {
@@ -114,8 +119,12 @@ void BenchmarkState::Init()
                 pos[i].x += vel[i].vx * dt;
                 pos[i].y += vel[i].vy * dt;
             }
-        }, ECS::SystemGroup::Update);
+        }, ECS::SystemGroup::Update)
+        .Read<Velocity>()
+        .Write<Position>();
 
+    // Group 2: friction + healthRegen + lifetime — no conflicts between the three.
+    // boundsCheck cannot join — it writes Velocity which friction reads (WAR).
     ecs.RegisterSystem<Velocity>("friction",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef)
         {
@@ -125,7 +134,9 @@ void BenchmarkState::Init()
                 v.vx *= (1.0f - 0.5f * dt);
                 v.vy *= (1.0f - 0.5f * dt);
             }
-        }, ECS::SystemGroup::Update);
+        }, ECS::SystemGroup::Update)
+        .Read<Velocity>()
+        .Write<Velocity>();
 
     ecs.RegisterSystem<Health>("healthRegen",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef)
@@ -133,7 +144,9 @@ void BenchmarkState::Init()
             auto health = ctx.Slice<Health>();
             for (auto& h : health)
                 h.hp = std::min(h.maxHp, h.hp + h.regenRate * dt);
-        }, ECS::SystemGroup::Update);
+        }, ECS::SystemGroup::Update)
+        .Read<Health>()
+        .Write<Health>();
 
     ecs.RegisterSystem<Lifetime>("lifetime",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef)
@@ -141,8 +154,11 @@ void BenchmarkState::Init()
             auto lifetimes = ctx.Slice<Lifetime>();
             for (auto& l : lifetimes)
                 l.remaining -= dt;
-        }, ECS::SystemGroup::Update);
+        }, ECS::SystemGroup::Update)
+        .Write<Lifetime>();
 
+    // Group 3: boundsCheck only.
+    // renderEntities cannot join — it reads Position which boundsCheck writes (RAW).
     ecs.RegisterSystem<Position, Velocity>("boundsCheck",
         [](ECS::ArchetypeContext ctx, float, SharedDataRef data)
         {
@@ -157,8 +173,13 @@ void BenchmarkState::Init()
                 if (pos[i].y < 0) { pos[i].y = 0; vel[i].vy = std::abs(vel[i].vy); }
                 if (pos[i].y > H) { pos[i].y = H; vel[i].vy = -std::abs(vel[i].vy); }
             }
-        }, ECS::SystemGroup::Update);
+        }, ECS::SystemGroup::Update)
+        .Read<Position>()
+        .Write<Position>()
+        .Read<Velocity>()
+        .Write<Velocity>();
 
+    // Group 4: renderEntities only (render group, separate from update).
     ecs.RegisterSystem<Position, DrawColor, Health>("renderEntities",
         [](ECS::ArchetypeContext ctx, float, SharedDataRef data)
         {
@@ -175,13 +196,14 @@ void BenchmarkState::Init()
                 SDL_FRect rect = { pos[i].x - 2, pos[i].y - 2, 4, 4 };
                 SDL_RenderFillRect(data->SDLrenderer, &rect);
             }
-        }, ECS::SystemGroup::Render);
+        }, ECS::SystemGroup::Render)
+        .Read<Position>()
+        .Read<DrawColor>()
+        .Read<Health>();
 
-    // BenchmarkState.cpp Init()
     _freq = SDL_GetPerformanceFrequency();
-
 }
-*/
+
 void BenchmarkState::Update(float dt)
 {
     uint64_t start = SDL_GetPerformanceCounter();

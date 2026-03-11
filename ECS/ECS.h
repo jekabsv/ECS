@@ -106,6 +106,7 @@ namespace ECS
         bool Full() const noexcept;
         bool Empty() const noexcept;
     };
+
     class Archetype
     {
     public:
@@ -165,6 +166,7 @@ namespace ECS
         std::size_t row = 0;
         uint32_t generation = 0;
     };
+
     struct ArchetypeContext
     {
         Archetype* arch = nullptr;
@@ -186,12 +188,63 @@ namespace ECS
     };
 
     using SystemFn = std::function<void(ArchetypeContext&, float, SharedDataRef)>;
+
+    // read_mask and write_mask default to all-bits-set: undeclared access conflicts with everything.
+    // Use SystemBuilder::Read<T>() / Write<T>() to declare intent and enable fusing.
     struct SystemEntry
     {
         StringId name;
         ComponentMask mask;
         SystemFn fn;
         bool enabled = true;
+        ComponentMask read_mask = ~ComponentMask(0);
+        ComponentMask write_mask = ~ComponentMask(0);
+    };
+
+    // Systems with no RAW/WAW/WAR conflicts between them are collapsed into a FusedGroup.
+    // A single group iterates archetypes and chunks once, running all member systems per chunk.
+    struct FusedGroup
+    {
+        std::vector<SystemEntry*> systems;
+        ComponentMask read_mask = 0;
+        ComponentMask write_mask = 0;
+    };
+
+    // Returned by RegisterSystem. Chain .Read<T>() and .Write<T>() to declare component access.
+    // The first declaration clears the "conflicts with everything" default on both masks.
+    class SystemBuilder
+    {
+        SystemEntry& entry_;
+        bool declared_ = false;
+
+        void EnsureDeclared()
+        {
+            if (!declared_)
+            {
+                declared_ = true;
+                entry_.read_mask = 0;
+                entry_.write_mask = 0;
+            }
+        }
+
+    public:
+        SystemBuilder(SystemEntry& entry) : entry_(entry) {}
+
+        template<typename T>
+        SystemBuilder& Read()
+        {
+            EnsureDeclared();
+            entry_.read_mask |= ComponentBit<T>();
+            return *this;
+        }
+
+        template<typename T>
+        SystemBuilder& Write()
+        {
+            EnsureDeclared();
+            entry_.write_mask |= ComponentBit<T>();
+            return *this;
+        }
     };
 
 
@@ -206,23 +259,25 @@ namespace ECS
         std::vector<SystemEntry> update_systems_;
         std::vector<SystemEntry> render_systems_;
 
+        std::vector<FusedGroup> update_fused_;
+        std::vector<FusedGroup> render_fused_;
+        bool systems_dirty_ = true;
+
         Archetype& GetOrCreateArchetype(ComponentMask mask, const std::vector<ComponentInfo>& info);
         Archetype& GetOrCreateEdge(Archetype& arch, ComponentId id, std::size_t size, bool adding);
         void GrowRecords(uint32_t id);
-        void RunSystems(std::vector<SystemEntry>& systems, float dt);
+        void RebuildFusedGroups(std::vector<SystemEntry>& systems, std::vector<FusedGroup>& groups);
+        void RunSystems(std::vector<FusedGroup>& groups, float dt);
 
         SharedDataRef _data;
 
     public:
-
-
 
         World();
 
         Entity Create();
         void Destroy(Entity e);
         bool Alive(Entity e) const noexcept;
-
 
         template<typename... Ts, typename Fn>
         void Query(Fn&& fn)
@@ -237,7 +292,6 @@ namespace ECS
                     });
             }
         }
-
 
         void Tie(SharedDataRef data) {
             _data = data;
@@ -274,8 +328,11 @@ namespace ECS
         template<typename T>
         bool Has(Entity e) const noexcept;
 
+        // Returns a SystemBuilder for chaining .Read<T>() / .Write<T>() access declarations.
+        // Systems with compatible declared access within the same group will be fused into
+        // a single chunk pass. Undeclared systems (no Read/Write calls) conflict with everything.
         template<typename... Ts>
-        void RegisterSystem(StringId name, SystemFn fn, SystemGroup group = SystemGroup::Update);
+        SystemBuilder RegisterSystem(StringId name, SystemFn fn, SystemGroup group = SystemGroup::Update);
 
         void EnableSystem(StringId name);
         void DisableSystem(StringId name);
@@ -289,7 +346,7 @@ namespace ECS
             std::vector<ArchetypeContext> result;
             for (auto& [m, arch_ptr] : archetypes_)
             {
-                if (!arch_ptr->HasComponents(mask)) 
+                if (!arch_ptr->HasComponents(mask))
                     continue;
                 for (std::size_t i = 0; i < arch_ptr->chunks.size(); i++)
                     if (!arch_ptr->chunks[i].Empty())
@@ -331,7 +388,7 @@ namespace ECS
 
         records_[eid] = { &dst, dst_ci, dst_row, records_[eid].generation };
     }
-        
+
     template<typename T>
     void World::Remove(Entity e)
     {
@@ -384,12 +441,12 @@ namespace ECS
     }
 
     template<typename... Ts>
-    void World::RegisterSystem(StringId name, SystemFn fn, SystemGroup group)
+    SystemBuilder World::RegisterSystem(StringId name, SystemFn fn, SystemGroup group)
     {
-        if (group == SystemGroup::Update)
-            update_systems_.push_back({ name, MakeMask<Ts...>(), std::move(fn) });
-        else
-            render_systems_.push_back({ name, MakeMask<Ts...>(), std::move(fn) });
+        auto& vec = (group == SystemGroup::Update) ? update_systems_ : render_systems_;
+        vec.push_back({ name, MakeMask<Ts...>(), std::move(fn), true, ~ComponentMask(0), ~ComponentMask(0) });
+        systems_dirty_ = true;
+        return SystemBuilder(vec.back());
     }
 
     template<typename... Ts>
