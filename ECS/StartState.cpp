@@ -88,4 +88,9 @@ void StartState::Init()
         .AddProcessor(std::make_unique<ProcessQE>("qe"));
 
     _data->state.AddState(StateRef(new Level1(_data)), 1);
+
+    _data->animation.AddClip("player_idle_right", { "player", 64, 64, 192, 192, 1, 0.1f });
+    _data->animation.AddClip("player_idle_left", { "player", 64, 64, 192, 192, 3, 0.1f });
+    _data->animation.AddClip("player_run_right", { "player", 64, 64, 0,   448, 0, 0.08f });
+    _data->animation.AddClip("player_run_left", { "player", 64, 64, 0,   448, 2, 0.08f });
 }

@@ -16,19 +16,23 @@ void NBody::Init()
     {
         ECS::Entity e = ecs.Create();
         StarComponent star;
-        //Position pos;
-        //Velocity vel;
-        star.x = (float)(rand() % (int)W);
-        star.y = (float)(rand() % (int)H);
-        star.vx = ((rand() % 400) - 200) * 0.3f;
-        star.vy = ((rand() % 400) - 200) * 0.3f;
+        Position pos;
+        Velocity vel;
+        pos.x = (float)(rand() % (int)W);
+        pos.y = (float)(rand() % (int)H);
+        vel.vx = ((rand() % 400) - 200) * 0.3f;
+        vel.vy = ((rand() % 400) - 200) * 0.3f;
+        //pos.x = (float)(rand() % (int)W);
+        //star.y = (float)(rand() % (int)H);
+       // star.vx = ((rand() % 400) - 200) * 0.3f;
+       // star.vy = ((rand() % 400) - 200) * 0.3f;
         star.mass = 80.0f + (float)(rand() % 120);
         ecs.Add<StarComponent>(e, star);
-       /* ecs.Add<Position>(e, pos);
-        ecs.Add<Velocity>(e, vel);*/
+        ecs.Add<Position>(e, pos);
+        ecs.Add<Velocity>(e, vel);
     }
 
-    ecs.RegisterSystem<StarComponent>("applyGravity",
+   /* ecs.RegisterSystem<StarComponent>("applyGravity",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
         {
             auto stars = ctx.Slice<StarComponent>();
@@ -90,9 +94,8 @@ void NBody::Init()
                 SDL_SetRenderDrawColor(data->SDLrenderer, 0, 0, 0, 0);
             }
         },
-        ECS::SystemGroup::Render);
-    /*
-
+        ECS::SystemGroup::Render);*/
+    
 
     ecs.RegisterSystem<StarComponent, Position, Velocity>("applyGravity",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
@@ -135,7 +138,7 @@ void NBody::Init()
         },
         ECS::SystemGroup::Update);
 
-    ecs.RegisterSystem <StarComponent, Velocity>("applyGravity",
+    ecs.RegisterSystem <StarComponent, Velocity>("move",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
         {
             auto starsPos = ctx.Slice<Position>();
@@ -171,5 +174,5 @@ void NBody::Init()
                 SDL_SetRenderDrawColor(data->SDLrenderer, 0, 0, 0, 0);
             }
         },
-        ECS::SystemGroup::Render);*/
+        ECS::SystemGroup::Render);
 }

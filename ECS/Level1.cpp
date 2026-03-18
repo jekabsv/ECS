@@ -9,44 +9,46 @@
 
 struct PlayerComponent
 {
-    PlayerComponent(uint64_t _start) :start(_start) {};
     int direction = 0;
-    int TexX = 0;
-    int TexY = 0;
-    uint64_t start = 0;
 };
 
 
 void Level1::Init()
 {
+    //LOG_ERROR(GlobalLogger, "TEST", "test");
+
 	ecs.Tie(_data);
 	
 	e = ecs.Create();
 	playerEntity = ecs.Create();
 
     ecs.Add<RenderComponent>(e, RenderComponent(false));
-    ecs.Add<MeshComponent>(e, MeshComponent("triangle", ""));
+    ecs.Add<MeshComponent>(e, MeshComponent("triangle"));
 
     ecs.Add<RenderComponent>(playerEntity, RenderComponent(true, Vec2(10, 10)));
     ecs.Add<SimpleSprite>(playerEntity, SimpleSprite({ 100, 100, 100, 100 }, { 0, 0, 64, 64 }, "player"));
     ecs.Add<InputComponent>(playerEntity, InputComponent());
     ecs.Add<PlayerComponent>(playerEntity, PlayerComponent(SDL_GetTicks()));
+    ecs.Add<AnimationPlayer>(playerEntity, AnimationPlayer{});
+    _data->animation.Play(ecs.Get<AnimationPlayer>(playerEntity), "player_idle_right");
 
-    ecs.RegisterSystem<RenderComponent, SimpleSprite, InputComponent, PlayerComponent>("move",
+    ecs.RegisterSystem<RenderComponent, SimpleSprite, InputComponent, PlayerComponent, AnimationPlayer>(
+        "move",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef _data)
         {
             auto rcs = ctx.Slice<RenderComponent>();
             auto sss = ctx.Slice<SimpleSprite>();
             auto pcs = ctx.Slice<PlayerComponent>();
+            auto anims = ctx.Slice<AnimationPlayer>();
 
-            InputSystem::INPUT_DATA_4 dMove = _data->inputs.GetActionAxis("move");
-            InputSystem::INPUT_DATA_4 dScale = _data->inputs.GetActionAxis("scale");
+            auto dMove = _data->inputs.GetActionAxis("move");
+            auto dScale = _data->inputs.GetActionAxis("scale");
 
             for (std::size_t i = 0; i < rcs.size(); i++)
             {
                 auto& rc = rcs[i];
-                auto& ss = sss[i];
                 auto& pc = pcs[i];
+                auto& anim = anims[i];
 
                 rc.position.x += 1000 * dMove[0] * dt;
                 rc.position.y += 1000 * dMove[1] * dt;
@@ -58,23 +60,21 @@ void Level1::Init()
 
                 if (!dMove[0])
                 {
-                    if (!pc.direction) { pc.TexX = 3; pc.TexY = 1; }
-                    if (pc.direction) { pc.TexX = 3; pc.TexY = 3; }
+                    StringId idle = pc.direction ? "player_idle_left" : "player_idle_right";
+                    if (anim.currentClip != idle)
+                        _data->animation.Play(anim, idle);
                 }
                 else
                 {
-                    if (!pc.direction) pc.TexY = 0;
-                    if (pc.direction) pc.TexY = 2;
-                    if (SDL_GetTicks() - pc.start > 100)
-                    {
-                        pc.TexX++;
-                        pc.start = SDL_GetTicks();
-                        pc.TexX %= 8;
-                    }
+                    StringId run = pc.direction ? "player_run_left" : "player_run_right";
+                    if (anim.currentClip != run)
+                        _data->animation.Play(anim, run);
                 }
 
-                ss.TextureRect.x = pc.TexX * 64;
-                ss.TextureRect.y = pc.TexY * 64;
+                _data->animation.Update(anim, dt);
+
+                sss[i].TextureRect = anim.currentRect;
+                sss[i].TextureName = anim.currentSpritesheet;
             }
         },
         ECS::SystemGroup::Update);
@@ -108,5 +108,5 @@ void Level1::Init()
 void Level1::Update(float dt)
 {
     if(_data->inputs.GetActionState("next") == InputSystem::Pressed)
-        _data->state.AddState(StateRef(new FusionBenchmark(_data)), 1);
+        _data->state.AddState(StateRef(new NBody(_data)), 1);
 }

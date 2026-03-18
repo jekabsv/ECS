@@ -84,6 +84,9 @@
     <ClCompile Include="FusionBenchmark.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AnimationSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECS.h">
@@ -142,6 +145,9 @@
     </ClInclude>
     <ClInclude Include="FusionBenchmark.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimationSystem.h">
+      <Filter>Header Files\Internals</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

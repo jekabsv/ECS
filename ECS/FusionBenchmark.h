@@ -2,7 +2,7 @@
 #include "SharedDataRef.h"
 #include "State.h"
 
-// 64-byte component — large enough that repeated chunk loads are measurable
+// 64-byte component ï¿½ large enough that repeated chunk loads are measurable
 struct Transform
 {
     float matrix[16] = {
@@ -32,7 +32,7 @@ private:
 
     SharedDataRef _data;
 
-    // Two worlds — identical entities, identical system logic, different access declarations
+    // Two worlds ï¿½ identical entities, identical system logic, different access declarations
     ECS::World _fusedWorld;
     ECS::World _unfusedWorld;
 

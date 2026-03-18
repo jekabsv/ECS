@@ -281,8 +281,10 @@ void World::Destroy(Entity e)
 bool World::Alive(Entity e) const noexcept
 {
     uint32_t id = EntityId(e);
-    if (id >= records_.size()) return false;
-    if (records_[id].arch == nullptr) return false;
+    if (id >= records_.size()) 
+        return false;
+    if (records_[id].arch == nullptr) 
+        return false;
     return records_[id].generation == EntityGeneration(e);
 }
 
@@ -301,9 +303,6 @@ void World::DisableSystem(StringId name)
         if (s.name == name) { s.enabled = false; systems_dirty_ = true; return; }
 }
 
-// Walks systems in registration order. A system joins the current group if it has no
-// RAW (read-after-write), WAW (write-after-write), or WAR (write-after-read) conflict
-// with the group's accumulated masks. Otherwise it flushes and starts a new group.
 void World::RebuildFusedGroups(std::vector<SystemEntry>& systems, std::vector<FusedGroup>& groups)
 {
     groups.clear();
@@ -316,9 +315,12 @@ void World::RebuildFusedGroups(std::vector<SystemEntry>& systems, std::vector<Fu
         if (fits)
         {
             const auto& last = groups.back();
-            if ((sys.write_mask & last.read_mask) != 0) fits = false; // WAR
-            if ((sys.write_mask & last.write_mask) != 0) fits = false; // WAW
-            if ((sys.read_mask & last.write_mask) != 0) fits = false; // RAW
+            if ((sys.write_mask & last.read_mask) != 0) 
+                fits = false;
+            if ((sys.write_mask & last.write_mask) != 0) 
+                fits = false;
+            if ((sys.read_mask & last.write_mask) != 0) 
+                fits = false;
         }
 
         if (!fits)
@@ -331,8 +333,6 @@ void World::RebuildFusedGroups(std::vector<SystemEntry>& systems, std::vector<Fu
     }
 }
 
-// For each fused group: iterate all archetypes and chunks once, running every matching
-// system in the group before moving to the next chunk. Keeps chunk data hot in cache.
 void World::RunSystems(std::vector<FusedGroup>& groups, float dt)
 {
     for (auto& group : groups)

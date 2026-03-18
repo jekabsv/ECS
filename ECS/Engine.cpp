@@ -66,7 +66,7 @@ bool Engine::Initialize()
 
 void Engine::Update(float dt)
 {
-    //_data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Update, dt);
+    _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Update, dt);
     _data->state.GetActiveState()->Update(dt);
 }
 
@@ -81,7 +81,7 @@ void Engine::Render(float dt)
 
     SDL_RenderClear(_data->SDLrenderer);
 
-    //_data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Render, dt);
+    _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Render, dt);
     _data->state.GetActiveState()->Render(dt);
 
     SDL_RenderPresent(_data->SDLrenderer);

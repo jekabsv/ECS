@@ -17,7 +17,7 @@ static auto MakeUpdateTransform()
             const float c = std::cos(dt * 0.1f);
             for (auto& t : transforms)
             {
-                // Cheap in-place rotation in XZ plane — forces a full read+write of the matrix
+                // Cheap in-place rotation in XZ plane ï¿½ forces a full read+write of the matrix
                 float m0 = t.matrix[0] * c - t.matrix[2] * s;
                 float m2 = t.matrix[0] * s + t.matrix[2] * c;
                 float m4 = t.matrix[4] * c - t.matrix[6] * s;
@@ -32,7 +32,7 @@ static auto MakeUpdateTransform()
 }
 
 // FrustumCull: reads all 16 floats of the matrix to compute a simple
-// projection test — forces the full Transform column into cache.
+// projection test ï¿½ forces the full Transform column into cache.
 static auto MakeFrustumCull()
 {
     return [](ECS::ArchetypeContext ctx, float, SharedDataRef)
@@ -48,7 +48,7 @@ static auto MakeFrustumCull()
         };
 }
 
-// ShadowCull: similar read of the matrix — if Transform is still hot from
+// ShadowCull: similar read of the matrix ï¿½ if Transform is still hot from
 // FrustumCull (fused), this is nearly free. If evicted (unfused), reload.
 static auto MakeShadowCull()
 {
@@ -104,7 +104,7 @@ void FusionBenchmark::InitWorld(ECS::World& world, bool fused)
         world.Add<LODLevel>(e, {});
     }
 
-    // UpdateTransform writes Transform — must always be its own group regardless of fusing,
+    // UpdateTransform writes Transform ï¿½ must always be its own group regardless of fusing,
     // because all three culling systems RAW-depend on it.
     if (fused)
     {
@@ -112,7 +112,7 @@ void FusionBenchmark::InitWorld(ECS::World& world, bool fused)
             .Read<Transform>()
             .Write<Transform>();
 
-        // All three read Transform, write disjoint outputs — no conflicts, they fuse.
+        // All three read Transform, write disjoint outputs ï¿½ no conflicts, they fuse.
         world.RegisterSystem<Transform, Visible>("frustumCull", MakeFrustumCull())
             .Read<Transform>()
             .Write<Visible>();
@@ -127,7 +127,7 @@ void FusionBenchmark::InitWorld(ECS::World& world, bool fused)
     }
     else
     {
-        // No Read/Write declarations — every system conflicts with everything,
+        // No Read/Write declarations ï¿½ every system conflicts with everything,
         // each gets its own group, four separate passes over all chunks.
         world.RegisterSystem<Transform>("updateTransform", MakeUpdateTransform());
         world.RegisterSystem<Transform, Visible>("frustumCull", MakeFrustumCull());
@@ -221,7 +221,7 @@ void FusionBenchmark::Render(float dt)
     SDL_RenderDebugText(r, 40.0f, 392.0f, unfusedLabel.c_str());
 
     SDL_SetRenderDrawColor(r, 200, 200, 200, 255);
-    SDL_RenderDebugText(r, 40.0f, 460.0f, "SPACE — finalize current average and switch");
+    SDL_RenderDebugText(r, 40.0f, 460.0f, "SPACE ï¿½ finalize current average and switch");
     SDL_RenderDebugText(r, 40.0f, 476.0f, ("N = " + std::to_string(N) + "  |  3 culling systems share Transform (64 bytes/entity)").c_str());
     SDL_RenderDebugText(r, 40.0f, 492.0f, "Fused: 2 chunk passes   Unfused: 4 chunk passes");
 }

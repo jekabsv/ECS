@@ -5,6 +5,7 @@
 #include "InputSystem.h"
 #include "logger.h"
 #include "Blackboard.h"
+#include "AnimationSystem.h"
 
 struct SharedData
 {
@@ -18,6 +19,7 @@ struct SharedData
     Renderer renderer;
     bool quit = false;
     Blackboard session;
+    AnimationSystem animation;
 };
 
 typedef std::shared_ptr<SharedData> SharedDataRef;

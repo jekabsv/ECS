@@ -22,9 +22,15 @@ namespace ECS
 
     constexpr std::size_t CHUNK_SIZE = 16 * 1024;
 
-    constexpr uint32_t EntityId(Entity e) { return (uint32_t)(e >> 32); }
-    constexpr uint32_t EntityGeneration(Entity e) { return (uint32_t)(e & 0xFFFFFFFF); }
-    constexpr Entity   MakeEntity(uint32_t id, uint32_t gen) { return ((uint64_t)id << 32) | gen; }
+    constexpr uint32_t EntityId(Entity e) {
+        return (uint32_t)(e >> 32); 
+    }
+    constexpr uint32_t EntityGeneration(Entity e) {
+        return (uint32_t)(e & 0xFFFFFFFF); 
+    }
+    constexpr Entity MakeEntity(uint32_t id, uint32_t gen) {
+        return ((uint64_t)id << 32) | gen; 
+    }
 
     inline ComponentId AllocComponentId() noexcept
     {
@@ -189,8 +195,6 @@ namespace ECS
 
     using SystemFn = std::function<void(ArchetypeContext&, float, SharedDataRef)>;
 
-    // read_mask and write_mask default to all-bits-set: undeclared access conflicts with everything.
-    // Use SystemBuilder::Read<T>() / Write<T>() to declare intent and enable fusing.
     struct SystemEntry
     {
         StringId name;
@@ -201,8 +205,6 @@ namespace ECS
         ComponentMask write_mask = ~ComponentMask(0);
     };
 
-    // Systems with no RAW/WAW/WAR conflicts between them are collapsed into a FusedGroup.
-    // A single group iterates archetypes and chunks once, running all member systems per chunk.
     struct FusedGroup
     {
         std::vector<SystemEntry*> systems;
@@ -210,8 +212,6 @@ namespace ECS
         ComponentMask write_mask = 0;
     };
 
-    // Returned by RegisterSystem. Chain .Read<T>() and .Write<T>() to declare component access.
-    // The first declaration clears the "conflicts with everything" default on both masks.
     class SystemBuilder
     {
         SystemEntry& entry_;
@@ -248,7 +248,7 @@ namespace ECS
     };
 
 
-    class World
+    class World 
     {
         std::vector<EntityRecord> records_;
         std::vector<uint32_t> free_;
@@ -328,9 +328,6 @@ namespace ECS
         template<typename T>
         bool Has(Entity e) const noexcept;
 
-        // Returns a SystemBuilder for chaining .Read<T>() / .Write<T>() access declarations.
-        // Systems with compatible declared access within the same group will be fused into
-        // a single chunk pass. Undeclared systems (no Read/Write calls) conflict with everything.
         template<typename... Ts>
         SystemBuilder RegisterSystem(StringId name, SystemFn fn, SystemGroup group = SystemGroup::Update);
 

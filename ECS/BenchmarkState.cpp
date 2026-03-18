@@ -108,7 +108,7 @@ void BenchmarkState::Init()
     }
 
     // Group 1: integrate only.
-    // friction cannot join — it writes Velocity which integrate reads (WAR).
+    // friction cannot join ï¿½ it writes Velocity which integrate reads (WAR).
     ecs.RegisterSystem<Position, Velocity>("integrate",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
         {
@@ -123,8 +123,8 @@ void BenchmarkState::Init()
         .Read<Velocity>()
         .Write<Position>();
 
-    // Group 2: friction + healthRegen + lifetime — no conflicts between the three.
-    // boundsCheck cannot join — it writes Velocity which friction reads (WAR).
+    // Group 2: friction + healthRegen + lifetime ï¿½ no conflicts between the three.
+    // boundsCheck cannot join ï¿½ it writes Velocity which friction reads (WAR).
     ecs.RegisterSystem<Velocity>("friction",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef)
         {
@@ -158,7 +158,7 @@ void BenchmarkState::Init()
         .Write<Lifetime>();
 
     // Group 3: boundsCheck only.
-    // renderEntities cannot join — it reads Position which boundsCheck writes (RAW).
+    // renderEntities cannot join ï¿½ it reads Position which boundsCheck writes (RAW).
     ecs.RegisterSystem<Position, Velocity>("boundsCheck",
         [](ECS::ArchetypeContext ctx, float, SharedDataRef data)
         {
