@@ -22,14 +22,30 @@ namespace ECS
 
     constexpr std::size_t CHUNK_SIZE = 16 * 1024;
 
+    /// <summary>
+    /// Get Entity ID of entity
+    /// </summary>
+    /// <param name="e"></param>
+    /// <returns></returns>
     constexpr uint32_t EntityId(Entity e) {
-        return (uint32_t)(e >> 32); 
+        return (uint32_t)(e >> 32);
     }
+    /// <summary>
+    /// Get Entity generation of entity
+    /// </summary>
+    /// <param name="e"></param>
+    /// <returns></returns>
     constexpr uint32_t EntityGeneration(Entity e) {
-        return (uint32_t)(e & 0xFFFFFFFF); 
+        return (uint32_t)(e & 0xFFFFFFFF);
     }
+    /// <summary>
+    /// make entity with generation and id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="gen"></param>
+    /// <returns></returns>
     constexpr Entity MakeEntity(uint32_t id, uint32_t gen) {
-        return ((uint64_t)id << 32) | gen; 
+        return ((uint64_t)id << 32) | gen;
     }
 
     inline ComponentId AllocComponentId() noexcept
@@ -38,6 +54,11 @@ namespace ECS
         return counter++;
     }
 
+    /// <summary>
+    /// Get ID of a component
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
     template<typename T>
     ComponentId GetComponentId() noexcept
     {
@@ -45,18 +66,33 @@ namespace ECS
         return id;
     }
 
+    /// <summary>
+    /// Get component bit in bitmask
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
     template<typename T>
     ComponentMask ComponentBit() noexcept
     {
         return ComponentMask(1) << GetComponentId<T>();
     }
 
+    /// <summary>
+    /// make bitmask from components
+    /// </summary>
+    /// <typeparam name="...Ts"></typeparam>
+    /// <returns></returns>
     template<typename... Ts>
     ComponentMask MakeMask() noexcept
     {
         return (ComponentBit<Ts>() | ... | ComponentMask(0));
     }
 
+    /// <summary>
+    /// make bitmask from component id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
     inline ComponentMask MakeMaskFromId(ComponentId id) noexcept
     {
         return ComponentMask(1) << id;
@@ -179,6 +215,12 @@ namespace ECS
         std::size_t chunk_idx = 0;
         World* world = nullptr;
 
+
+        /// <summary>
+        /// Returns a list of components T in this archetype
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         template<typename T>
         std::span<T> Slice()
         {
@@ -189,6 +231,11 @@ namespace ECS
                 return std::span<T>(chunk.GetArray<T>(GetComponentId<T>()), chunk.count);
         }
 
+        /// <summary>
+        /// Returns a vector of all archetypes with at least components ... Ts
+        /// </summary>
+        /// <typeparam name="...Ts"></typeparam>
+        /// <returns></returns>
         template<typename... Ts>
         std::vector<ArchetypeContext> View();
     };
@@ -230,6 +277,11 @@ namespace ECS
     public:
         SystemBuilder(SystemEntry& entry) : entry_(entry) {}
 
+        /// <summary>
+        /// Adds read dependancy to component T
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         template<typename T>
         SystemBuilder& Read()
         {
@@ -238,6 +290,11 @@ namespace ECS
             return *this;
         }
 
+        /// <summary>
+        /// Adds write dependancy to component T
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         template<typename T>
         SystemBuilder& Write()
         {
@@ -248,7 +305,7 @@ namespace ECS
     };
 
 
-    class World 
+    class World
     {
         std::vector<EntityRecord> records_;
         std::vector<uint32_t> free_;
@@ -275,10 +332,29 @@ namespace ECS
 
         World();
 
+        /// <summary>
+        /// Create a new ECS entity, returns entity handle ID
+        /// </summary>
+        /// <returns></returns>
         Entity Create();
+        /// <summary>
+        /// Destroy enntity with handle
+        /// </summary>
+        /// <param name="e">Entity handle</param>
         void Destroy(Entity e);
+        /// <summary>
+        /// Returns true if entity is alive, otherwise false
+        /// </summary>
+        /// <param name="e">Entity handle</param>
+        /// <returns></returns>
         bool Alive(Entity e) const noexcept;
 
+        /// <summary>
+        /// Executes a lambda for each entity with components ... Ts
+        /// </summary>
+        /// <typeparam name="...Ts">Entity components</typeparam>
+        /// <typeparam name="Fn"></typeparam>
+        /// <param name="fn">lambda</param>
         template<typename... Ts, typename Fn>
         void Query(Fn&& fn)
         {
@@ -293,13 +369,33 @@ namespace ECS
             }
         }
 
+        /// <summary>
+        /// Tie GameData to ECS world
+        /// </summary>
+        /// <param name="data"></param>
         void Tie(SharedDataRef data) {
             _data = data;
         }
 
+        /// <summary>
+        /// Adds a component to entity
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="e">Entity handle</param>
+        /// <param name="value">Initial component values</param>
         template<typename T>
         void Add(Entity e, T value = T{});
 
+        /// <summary>
+        /// Adds multiple components to entity
+        /// </summary>
+        /// <typeparam name="T1"></typeparam>
+        /// <typeparam name="T2"></typeparam>
+        /// <typeparam name="...Ts"></typeparam>
+        /// <param name="e">Entity handle</param>
+        /// <param name="v1">Initial component values</param>
+        /// <param name="v2"></param>
+        /// <param name="...values"></param>
         template<typename T1, typename T2, typename... Ts>
         void Add(Entity e, T1 v1, T2 v2, Ts... values)
         {
@@ -308,9 +404,21 @@ namespace ECS
             (Add<Ts>(e, values), ...);
         }
 
+        /// <summary>
+        /// Removes a component from entity
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="e">Entity handle</param>
         template<typename T>
         void Remove(Entity e);
 
+        /// <summary>
+        /// Removes multiple components from entity
+        /// </summary>
+        /// <typeparam name="T1"></typeparam>
+        /// <typeparam name="T2"></typeparam>
+        /// <typeparam name="...Ts"></typeparam>
+        /// <param name="e">Entity handle</param>
         template<typename T1, typename T2, typename... Ts>
         void Remove(Entity e)
         {
@@ -319,23 +427,67 @@ namespace ECS
             (Remove<Ts>(e), ...);
         }
 
+        /// <summary>
+        /// Returns component T assigned to entity, throws if no component
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="e">Entity handle</param>
+        /// <returns></returns>
         template<typename T>
         T& Get(Entity e);
 
+        /// <summary>
+        /// Returns ptr to component T assigned to entity, returns nullptr if no component
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="e">Entity handle</param>
+        /// <returns></returns>
         template<typename T>
         T* TryGet(Entity e) noexcept;
 
+        /// <summary>
+        /// returns true if entity has component, otherwise false
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="e">Entity handle</param>
+        /// <returns></returns>
         template<typename T>
         bool Has(Entity e) const noexcept;
 
+        /// <summary>
+        /// Register lambda function of type [](ECS::ArchetypeContext ctx, float dt, SharedDataRef _data) to run each frame on Update or Render.
+        /// </summary>
+        /// <typeparam name="...Ts"></typeparam>
+        /// <param name="name">System name</param>
+        /// <param name="fn">lambda</param>
+        /// <param name="group">Update/Render</param>
+        /// <returns>System builder for .Read(); .Write() modifications</returns>
         template<typename... Ts>
         SystemBuilder RegisterSystem(StringId name, SystemFn fn, SystemGroup group = SystemGroup::Update);
 
+        /// <summary>
+        /// Enable system
+        /// </summary>
+        /// <param name="name">System name</param>
         void EnableSystem(StringId name);
+        /// <summary>
+        /// Disable system
+        /// </summary>
+        /// <param name="name">System name</param>
         void DisableSystem(StringId name);
 
+        /// <summary>
+        /// Run system assigned to Update/Render
+        /// </summary>
+        /// <param name="group">Update/Render</param>
+        /// <param name="dt">time step</param>
         void Run(SystemGroup group, float dt);
 
+        /// <summary>
+        /// returns a vector of all archetypes that have entities with at least components ... Ts
+        /// </summary>
+        /// <typeparam name="...Ts">components</typeparam>
+        /// <returns></returns>
         template<typename... Ts>
         std::vector<ArchetypeContext> View()
         {

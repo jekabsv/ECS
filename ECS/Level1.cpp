@@ -6,100 +6,181 @@
 #include "NBody.h"
 #include "BenchmarkState.h"
 #include "FusionBenchmark.h"
-
-struct PlayerComponent
-{
-    int direction = 0;
-};
-
+#include <iostream>
+#include "Transform.h"
 
 void Level1::Init()
 {
-    //LOG_ERROR(GlobalLogger, "TEST", "test");
-
 	ecs.Tie(_data);
-	
+    _data->physics.Tie(ecs, _data);
+    //_data->physics.EnableMovement();
+    _data->physics.EnableCollisionDetection();
+
+
 	e = ecs.Create();
 	playerEntity = ecs.Create();
 
-    ecs.Add<RenderComponent>(e, RenderComponent(true));
-    ecs.Add<MeshComponent>(e, MeshComponent("triangle"));
+    ecs.Add<BoxCollider>(e, BoxCollider(50.0f, 50.0f, true));
+    ecs.Add<MeshComponent>(e, MeshComponent("Triangle", "", true));
+    ecs.Add<TransformComponent>(e, TransformComponent({ 1000.0f, 1000.0f }, { 100.0f, 100.0f }));
 
-    ecs.Add<RenderComponent>(playerEntity, RenderComponent(true, Vec2(10, 10)));
-    ecs.Add<SimpleSprite>(playerEntity, SimpleSprite({ 100, 100, 100, 100 }, { 0, 0, 64, 64 }, "player"));
+    ecs.Add<SimpleSprite>(playerEntity, SimpleSprite({ 100, 100, 100, 100 }, { 0, 0, 64, 64 }, "player", true));
+    ecs.Add<TransformComponent>(playerEntity, TransformComponent({ 0.0f, 0.0f }, { 1.0f, 1.0f }));
     ecs.Add<InputComponent>(playerEntity, InputComponent());
-    ecs.Add<PlayerComponent>(playerEntity, PlayerComponent(SDL_GetTicks()));
     ecs.Add<AnimationPlayer>(playerEntity, AnimationPlayer{});
+    ecs.Add<BoxCollider>(playerEntity, BoxCollider(50.0f, 50.0f, true));
+    ecs.Add<CollisionEvent>(playerEntity, CollisionEvent{});
+
+    
+
+
+    //RigidBody rbd;
+    //rbd.isStatic = 0.0f;
+
+
     _data->animation.Play(ecs.Get<AnimationPlayer>(playerEntity), "player_idle_right");
 
-    ecs.RegisterSystem<RenderComponent, SimpleSprite, InputComponent, PlayerComponent, AnimationPlayer>(
+    ecs.RegisterSystem<TransformComponent, SimpleSprite, InputComponent, AnimationPlayer>(
         "move",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef _data)
         {
-            auto rcs = ctx.Slice<RenderComponent>();
-            auto sss = ctx.Slice<SimpleSprite>();
-            auto pcs = ctx.Slice<PlayerComponent>();
             auto anims = ctx.Slice<AnimationPlayer>();
+            auto transforms = ctx.Slice<TransformComponent>();
+            auto sprites = ctx.Slice<SimpleSprite>();
 
             auto dMove = _data->inputs.GetActionAxis("move");
             auto dScale = _data->inputs.GetActionAxis("scale");
 
-            for (std::size_t i = 0; i < rcs.size(); i++)
+            for (std::size_t i = 0; i < sprites.size(); i++)
             {
-                auto& rc = rcs[i];
-                auto& pc = pcs[i];
+                auto& sprite = sprites[i];
                 auto& anim = anims[i];
+                auto& transform = transforms[i];
 
-                rc.position.x += 1000 * dMove[0] * dt;
-                rc.position.y += 1000 * dMove[1] * dt;
-                rc.scale.x += dScale[0] * dt * 5;
-                rc.scale.y += dScale[0] * dt * 5;
-
-                if (dMove[0] < 0) pc.direction = 1;
-                if (dMove[0] > 0) pc.direction = 0;
+                transform.position.x += 1000 * dMove[0] * dt;
+                transform.position.y += 1000 * dMove[1] * dt;
+                transform.scale.x += dScale[0] * dt * 5;
+                transform.scale.y += dScale[0] * dt * 5;
+                
 
                 if (!dMove[0])
                 {
-                    StringId idle = pc.direction ? "player_idle_left" : "player_idle_right";
-                    if (anim.currentClip != idle)
-                        _data->animation.Play(anim, idle);
+                    if (anim.currentClip == "player_run_left")
+                        _data->animation.Play(anim, "player_idle_left");
+                    else if (anim.currentClip == "player_run_right")
+                        _data->animation.Play(anim, "player_idle_right");
                 }
                 else
                 {
-                    StringId run = pc.direction ? "player_run_left" : "player_run_right";
-                    if (anim.currentClip != run)
-                        _data->animation.Play(anim, run);
+                    if (dMove[0] < 0 && anim.currentClip != "player_run_left")
+                        _data->animation.Play(anim, "player_run_left");
+                    if (dMove[0] > 0 && anim.currentClip != "player_run_right")
+                        _data->animation.Play(anim, "player_run_right");
                 }
 
                 _data->animation.Update(anim, dt);
 
-                sss[i].TextureRect = anim.currentRect;
-                sss[i].TextureName = anim.currentSpritesheet;
+                sprite.TextureRect = anim.currentRect;
+                sprite.TextureName = anim.currentSpritesheet;
             }
         },
         ECS::SystemGroup::Update);
 
-    ecs.RegisterSystem<RenderComponent, SimpleSprite>("renderSprite",
+    ecs.RegisterSystem<CollisionEvent>("onCollision",
+        [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
+        {
+            auto evs = ctx.Slice<CollisionEvent>();
+
+            for (std::size_t i = 0; i < evs.size(); i++)
+            {
+                auto& ev = evs[i];
+                if (ev.count == 0)
+                    continue;
+
+
+                for (std::size_t c = 0; c < ev.count; c++)
+                {
+                    ECS::Entity other = ev.Contacts()[c];
+
+                    BoxCollider* otherBc = data->physics.GetWorld()->TryGet<BoxCollider>(other);
+                    if (otherBc && otherBc->isTrigger)
+                    {
+                        std::cout << "Trigger collision!\n";
+                    }
+                    else
+                    {
+                        std::cout << "physics collision!\n";
+                    }
+                }
+            }
+        },
+        ECS::SystemGroup::Update);
+
+
+
+
+    ecs.RegisterSystem<SimpleSprite, TransformComponent>("renderSprite",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef _data)
         {
-            auto rcs = ctx.Slice<RenderComponent>();
-            auto sss = ctx.Slice<SimpleSprite>();
+            auto sprites = ctx.Slice<SimpleSprite>();
+            auto transforms = ctx.Slice<TransformComponent>();
 
-            for (std::size_t i = 0; i < rcs.size(); i++)
+            for (std::size_t i = 0; i < transforms.size(); i++)
             {
-                auto& rc = rcs[i];
-                auto& ss = sss[i];
+                auto& transform = transforms[i];
+                auto& sprite = sprites[i];
 
-                SDL_FRect RectToDraw = ss.rect;
-                RectToDraw.h *= rc.scale.y;
-                RectToDraw.w *= rc.scale.x;
-                RectToDraw.x += rc.position.x;
-                RectToDraw.y += rc.position.y;
+                if (!sprite.render)
+                    continue;
+                SDL_FRect RectToDraw = sprite.rect;
+                RectToDraw.h *= transform.scale.y;
+                RectToDraw.w *= transform.scale.x;
+                RectToDraw.x += transform.position.x;
+                RectToDraw.y += transform.position.y;
 
-                if (!ss.TextureRect.h || !ss.TextureRect.w)
-                    _data->renderer.Render(_data->assets.GetTexture(ss.TextureName), nullptr, &RectToDraw);
+                if (!sprite.TextureRect.h || !sprite.TextureRect.w)
+                    _data->renderer.Render(_data->assets.GetTexture(sprite.TextureName), nullptr, &RectToDraw);
                 else
-                    _data->renderer.Render(_data->assets.GetTexture(ss.TextureName), &ss.TextureRect, &RectToDraw);
+                    _data->renderer.Render(_data->assets.GetTexture(sprite.TextureName), &sprite.TextureRect, &RectToDraw);
+            }
+        },
+        ECS::SystemGroup::Render);
+
+    ecs.RegisterSystem<MeshComponent, TransformComponent>("renderMesh",
+        [](ECS::ArchetypeContext ctx, float dt, SharedDataRef _data)
+        {
+            auto meshes = ctx.Slice<MeshComponent>();
+            auto transforms = ctx.Slice<TransformComponent>();
+
+            for (int i = 0;i < meshes.size();i++)
+            {
+                auto& meshC = meshes[i];
+                auto& transform = transforms[i];
+
+                if (!meshC.render)
+                    continue;
+
+                const Mesh* mesh = _data->assets.GetMesh(meshC.MeshName);
+                if (!mesh)
+                    continue;
+
+                const SDL_Texture* texture = _data->assets.GetTexture(meshC.TextureName);
+
+                std::vector<SDL_Vertex> transformed = *mesh;
+                for (auto& v : transformed)
+                {
+                    v.position.x = v.position.x * transform.scale.x + transform.position.x;
+                    v.position.y = v.position.y * transform.scale.y + transform.position.y;
+                }
+
+                SDL_RenderGeometry(
+                    _data->SDLrenderer,
+                    const_cast<SDL_Texture*>(texture),
+                    transformed.data(),
+                    (int)transformed.size(),
+                    nullptr,
+                    0
+                );
             }
         },
         ECS::SystemGroup::Render);

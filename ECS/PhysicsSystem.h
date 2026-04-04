@@ -1,18 +1,16 @@
 #pragma once
 #include "ECS.h"
-#include "SharedDataRef.h"
+#include "RigidBody.h"
+
+struct SharedData;
+typedef std::shared_ptr<SharedData> SharedDataRef;
 
 // ─── Components ───────────────────────────────────────────────────────────────
 
-struct RigidBody
-{
-    float vx = 0.0f, vy = 0.0f;
-    float drag = 0.0f;
-    bool isStatic = false;
-};
-
 struct BoxCollider
 {
+    BoxCollider(float halfWidth = 0.0f, float HalfHeight = 0.0f, bool _isTrigger = false, float _offsetX = 0.0f, float _offsetY = 0.0f)
+        : offsetX(_offsetX), offsetY(_offsetY), hw(halfWidth), hh(HalfHeight), isTrigger(_isTrigger) {};
     float offsetX = 0.0f, offsetY = 0.0f;
     float hw = 0.0f, hh = 0.0f;    // half-extents
     bool isTrigger = false;
@@ -109,6 +107,9 @@ public:
     // Read-only access to all collision pairs detected last frame.
     // Each pair is (entityA, entityB); order is not guaranteed.
     const std::vector<std::pair<ECS::Entity, ECS::Entity>>& GetCollisionPairs() const;
+
+
+    ECS::World* GetWorld() const { return world_; }
 
 private:
     ECS::World* world_ = nullptr;

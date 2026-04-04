@@ -9,5 +9,5 @@ struct RenderComponent
     ~RenderComponent() = default;
     bool render;
     Vec2 position;
-    Vec2 scale;  
+    Vec2 scale;
 };

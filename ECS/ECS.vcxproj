@@ -166,12 +166,14 @@
     <ClInclude Include="MeshComponent.h" />
     <ClInclude Include="NBody.h" />
     <ClInclude Include="RenderComponent.h" />
+    <ClInclude Include="RigidBody.h" />
     <ClInclude Include="SharedDataRef.h" />
     <ClInclude Include="SimpleSprite.h" />
     <ClInclude Include="StartState.h" />
     <ClInclude Include="State.h" />
     <ClInclude Include="StateMachine.h" />
     <ClInclude Include="Struct.h" />
+    <ClInclude Include="Transform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

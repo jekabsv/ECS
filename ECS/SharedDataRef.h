@@ -6,6 +6,7 @@
 #include "logger.h"
 #include "Blackboard.h"
 #include "AnimationSystem.h"
+#include "PhysicsSystem.h"
 
 struct SharedData
 {
@@ -20,6 +21,7 @@ struct SharedData
     bool quit = false;
     Blackboard session;
     AnimationSystem animation;
+    PhysicsSystem physics;
 };
 
 typedef std::shared_ptr<SharedData> SharedDataRef;

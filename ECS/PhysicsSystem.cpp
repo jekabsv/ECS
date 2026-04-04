@@ -1,6 +1,8 @@
 #include "PhysicsSystem.h"
 #include "RenderComponent.h"
 #include "logger.h"
+#include "SharedDataRef.h"
+#include "Transform.h"
 
 // ─── CollisionEvent ───────────────────────────────────────────────────────────
 
@@ -213,7 +215,7 @@ void PhysicsSystem::EnableCollisionDetection(bool enable)
     }
 
     // Registered first — clears and builds the quadtree each frame.
-    world_->RegisterSystem<RigidBody, BoxCollider, RenderComponent>("physicsBuild",
+    world_->RegisterSystem<BoxCollider, TransformComponent>("physicsBuild",
         [this](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
         {
             BuildSystem(ctx, dt, data);
@@ -221,7 +223,7 @@ void PhysicsSystem::EnableCollisionDetection(bool enable)
         ECS::SystemGroup::Update);
 
     // Registered after — queries the built tree and writes collision results.
-    world_->RegisterSystem<RigidBody, BoxCollider, RenderComponent>("physicsCollide",
+    world_->RegisterSystem<BoxCollider, TransformComponent>("physicsCollide",
         [this](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
         {
             CollisionSystem(ctx, dt, data);
@@ -239,7 +241,8 @@ void PhysicsSystem::MovementSystem(ECS::ArchetypeContext ctx, float dt, SharedDa
     for (std::size_t i = 0; i < rbs.size(); i++)
     {
         auto& rb = rbs[i];
-        if (rb.isStatic) continue;
+        if (rb.isStatic) 
+            continue;
 
         float dragFactor = 1.0f - rb.drag * dt;
         if (dragFactor < 0.0f) dragFactor = 0.0f;
@@ -266,13 +269,14 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
     }
 
     auto entities = ctx.Slice<ECS::Entity>();
-    auto rcs = ctx.Slice<RenderComponent>();
+    auto rcs = ctx.Slice<TransformComponent>();
     auto bcs = ctx.Slice<BoxCollider>();
 
     for (std::size_t i = 0; i < entities.size(); i++)
     {
         CollisionEvent* ev = world_->TryGet<CollisionEvent>(entities[i]);
-        if (ev) ev->count = 0;
+        if (ev) 
+            ev->count = 0;
 
         auto& rc = rcs[i];
         auto& bc = bcs[i];
@@ -297,7 +301,7 @@ void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedD
     }
 
     auto entities = ctx.Slice<ECS::Entity>();
-    auto rcs = ctx.Slice<RenderComponent>();
+    auto rcs = ctx.Slice<TransformComponent>();
     auto bcs = ctx.Slice<BoxCollider>();
 
     constexpr std::size_t QUERY_BUF_SIZE = 64;
