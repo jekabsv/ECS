@@ -22,7 +22,7 @@ void Level1::Init()
 	e = ecs.Create();
 	playerEntity = ecs.Create();
 
-    ecs.Add<RenderComponent>(e, RenderComponent(false));
+    ecs.Add<RenderComponent>(e, RenderComponent(true));
     ecs.Add<MeshComponent>(e, MeshComponent("triangle"));
 
     ecs.Add<RenderComponent>(playerEntity, RenderComponent(true, Vec2(10, 10)));

@@ -146,6 +146,8 @@
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="InputSystem.cpp" />
     <ClCompile Include="NBody.cpp" />
+    <ClCompile Include="PhysicsSystem.cpp" />
+    <ClCompile Include="PhysicsSystem.h" />
     <ClCompile Include="StartState.cpp" />
     <ClCompile Include="StateMachine.cpp" />
   </ItemGroup>
