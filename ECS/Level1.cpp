@@ -13,29 +13,24 @@ void Level1::Init()
 {
 	ecs.Tie(_data);
     _data->physics.Tie(ecs, _data);
-    //_data->physics.EnableMovement();
     _data->physics.EnableCollisionDetection();
+    _data->physics.EnableMovement();
 
 
 	e = ecs.Create();
 	playerEntity = ecs.Create();
 
     ecs.Add<BoxCollider>(e, BoxCollider(50.0f, 50.0f, true));
-    ecs.Add<MeshComponent>(e, MeshComponent("Triangle", "", true));
-    ecs.Add<TransformComponent>(e, TransformComponent({ 1000.0f, 1000.0f }, { 100.0f, 100.0f }));
+    ecs.Add<MeshComponent>(e, MeshComponent("Triangle", "", false));
+    ecs.Add<TransformComponent>(e, TransformComponent({ 0.0f, 0.0f }, { 100.0f, 100.0f }));
 
-    ecs.Add<SimpleSprite>(playerEntity, SimpleSprite({ 100, 100, 100, 100 }, { 0, 0, 64, 64 }, "player", true));
+
+    ecs.Add<SimpleSprite>(playerEntity, SimpleSprite(100, 100, { 0, 0, 64, 64 }, "player", true));
     ecs.Add<TransformComponent>(playerEntity, TransformComponent({ 0.0f, 0.0f }, { 1.0f, 1.0f }));
     ecs.Add<InputComponent>(playerEntity, InputComponent());
     ecs.Add<AnimationPlayer>(playerEntity, AnimationPlayer{});
-    ecs.Add<BoxCollider>(playerEntity, BoxCollider(50.0f, 50.0f, true));
-    ecs.Add<CollisionEvent>(playerEntity, CollisionEvent{});
-
-    
-
-
-    //RigidBody rbd;
-    //rbd.isStatic = 0.0f;
+    ecs.Add<BoxCollider>(playerEntity, BoxCollider(64.0f, 64.0f, false));
+    ecs.Add<CollisionEvent>(playerEntity, CollisionEvent());
 
 
     _data->animation.Play(ecs.Get<AnimationPlayer>(playerEntity), "player_idle_right");
@@ -86,26 +81,26 @@ void Level1::Init()
         },
         ECS::SystemGroup::Update);
 
-    ecs.RegisterSystem<CollisionEvent>("onCollision",
+    ecs.RegisterSystem<CollisionEvent, TransformComponent>("onCollision",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
         {
             auto evs = ctx.Slice<CollisionEvent>();
+            auto transforms = ctx.Slice<TransformComponent>();
 
             for (std::size_t i = 0; i < evs.size(); i++)
             {
                 auto& ev = evs[i];
                 if (ev.count == 0)
                     continue;
-
-
                 for (std::size_t c = 0; c < ev.count; c++)
                 {
                     ECS::Entity other = ev.Contacts()[c];
 
+
                     BoxCollider* otherBc = data->physics.GetWorld()->TryGet<BoxCollider>(other);
                     if (otherBc && otherBc->isTrigger)
                     {
-                        std::cout << "Trigger collision!\n";
+                        std::cout << "Trigger collision!\n"; //outputs this when should the other
                     }
                     else
                     {
@@ -183,6 +178,26 @@ void Level1::Init()
                 );
             }
         },
+        ECS::SystemGroup::Render);
+
+    ecs.RegisterSystem<BoxCollider, TransformComponent>("draw_colliders",
+        [](ECS::ArchetypeContext ctx, float dt, SharedDataRef _data)
+        {
+            auto colliders = ctx.Slice<BoxCollider>();
+            auto transforms = ctx.Slice<TransformComponent>();
+
+            for (int i = 0;i < colliders.size();i++)
+            {
+
+                auto& transform = transforms[i];
+                SDL_FRect rect = { transform.position.x + colliders[i].offsetX,
+                    transform.position.y + colliders[i].offsetY, colliders[i].hw * 2, colliders[i].hh * 2 };
+                SDL_SetRenderDrawColor(_data->SDLrenderer, 255, 0, 0, 255);
+                SDL_RenderRect(_data->SDLrenderer, &rect);
+                SDL_SetRenderDrawColor(_data->SDLrenderer, 0, 0, 0, 255);
+
+            }
+        }, 
         ECS::SystemGroup::Render);
 }
 

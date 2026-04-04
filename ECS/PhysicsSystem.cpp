@@ -191,7 +191,7 @@ void PhysicsSystem::EnableMovement(bool enable)
 
     if (!enable) { world_->DisableSystem("physicsMove"); return; }
 
-    world_->RegisterSystem<RigidBody, RenderComponent>("physicsMove",
+    world_->RegisterSystem<RigidBody, TransformComponent>("physicsMove",
         [this](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
         {
             MovementSystem(ctx, dt, data);
@@ -236,7 +236,7 @@ void PhysicsSystem::EnableCollisionDetection(bool enable)
 void PhysicsSystem::MovementSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
 {
     auto rbs = ctx.Slice<RigidBody>();
-    auto rcs = ctx.Slice<RenderComponent>();
+    auto rcs = ctx.Slice<TransformComponent>();
 
     for (std::size_t i = 0; i < rbs.size(); i++)
     {
@@ -296,7 +296,7 @@ void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedD
 {
     if (!queried_)
     {
-        built_ = false; // Ready for next frame's BuildSystem.
+        built_ = false;
         queried_ = true;
     }
 
@@ -323,10 +323,10 @@ void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedD
         {
             ECS::Entity other = candidates[j];
             if (other == entities[i]) continue;
-            if (entities[i] > other) continue; // Avoid duplicate pairs.
+            if (entities[i] > other) continue;
 
             BoxCollider* otherBc = world_->TryGet<BoxCollider>(other);
-            RenderComponent* otherRc = world_->TryGet<RenderComponent>(other);
+            TransformComponent* otherRc = world_->TryGet<TransformComponent>(other);
             if (!otherBc || !otherRc) continue;
 
             float bx = otherRc->position.x + otherBc->offsetX - otherBc->hw;
