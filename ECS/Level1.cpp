@@ -4,10 +4,8 @@
 #include "SimpleSprite.h"
 #include "InputComponent.h"
 #include "NBody.h"
-#include "BenchmarkState.h"
-#include "FusionBenchmark.h"
-#include <iostream>
 #include "Transform.h"
+#include <iostream>
 
 void Level1::Init()
 {

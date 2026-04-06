@@ -2,120 +2,58 @@
 #include <cstdlib>
 #include <cmath>
 #include "RenderComponent.h"
-
+#include "Transform.h"
 
 
 void NBody::Init()
 {
-    ecs.Tie(_data);
-
+    _data->physics.EnableMovement();
     const float W = (float)_data->GAME_WIDTH;
     const float H = (float)_data->GAME_HEIGHT * 0.5f;
 
     for (int i = 0; i < N; i++)
     {
         ECS::Entity e = ecs.Create();
+
+        RigidBody rb;
         StarComponent star;
-        Position pos;
-        Velocity vel;
-        pos.x = (float)(rand() % (int)W);
-        pos.y = (float)(rand() % (int)H);
-        vel.vx = ((rand() % 400) - 200) * 0.3f;
-        vel.vy = ((rand() % 400) - 200) * 0.3f;
-        //pos.x = (float)(rand() % (int)W);
-        //star.y = (float)(rand() % (int)H);
-       // star.vx = ((rand() % 400) - 200) * 0.3f;
-       // star.vy = ((rand() % 400) - 200) * 0.3f;
+        TransformComponent tr;
+
+        rb.drag = 0.0f;
+        rb.isStatic = false;
+        rb.vx = ((rand() % 400) - 200) * 0.3f;
+        rb.vy = ((rand() % 400) - 200) * 0.3f;
+
+        tr.position.x = (float)(rand() % (int)W);
+        tr.position.y = (float)(rand() % (int)H);
+        
         star.mass = 80.0f + (float)(rand() % 120);
+        
         ecs.Add<StarComponent>(e, star);
-        ecs.Add<Position>(e, pos);
-        ecs.Add<Velocity>(e, vel);
+        ecs.Add<TransformComponent>(e, tr);
+        ecs.Add<RigidBody>(e, rb);
     }
 
-   /* ecs.RegisterSystem<StarComponent>("applyGravity",
+    ecs.RegisterSystem<StarComponent, TransformComponent, RigidBody>("applyGravity",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
         {
-            auto stars = ctx.Slice<StarComponent>();
-
-            for (auto& s : stars)
-            {
-                float ax = 0.0f, ay = 0.0f;
-
-                for (auto& otherCtx : ctx.View<StarComponent>())
-                {
-                    auto others = otherCtx.Slice<StarComponent>();
-                    for (auto& other : others)
-                    {
-                        float dx = other.x - s.x;
-                        float dy = other.y - s.y;
-                        float distSq = dx * dx + dy * dy + SOFTENING_SQ;
-                        float dist = std::sqrt(distSq);
-                        float a = G * other.mass / distSq;
-                        ax += a * dx / dist;
-                        ay += a * dy / dist;
-                    }
-                }
-
-                s.vx += ax * dt;
-                s.vy += ay * dt;
-
-                float speedSq = s.vx * s.vx + s.vy * s.vy;
-                if (speedSq > MAX_SPEED * MAX_SPEED)
-                {
-                    float scale = MAX_SPEED / std::sqrt(speedSq);
-                    s.vx *= scale;
-                    s.vy *= scale;
-                }
-
-                s.x += s.vx * dt;
-                s.y += s.vy * dt;
-
-                const float W = (float)data->GAME_WIDTH;
-                const float H = (float)data->GAME_HEIGHT * 0.5f;
-                if (s.x < 0.0f) { s.x = 0.0f; s.vx = std::abs(s.vx); }
-                if (s.x > W) { s.x = W;     s.vx = -std::abs(s.vx); }
-                if (s.y < 0.0f) { s.y = 0.0f;  s.vy = std::abs(s.vy); }
-                if (s.y > H) { s.y = H;      s.vy = -std::abs(s.vy); }
-            }
-        },
-        ECS::SystemGroup::Update);
-
-    ecs.RegisterSystem<StarComponent>("renderStars",
-        [](ECS::ArchetypeContext ctx, float, SharedDataRef data)
-        {
-            auto stars = ctx.Slice<StarComponent>();
-
-            for (auto& s : stars)
-            {
-                Uint8 b = (Uint8)(160 + (int)((s.mass - 80) * 0.475f));
-                SDL_SetRenderDrawColor(data->SDLrenderer, b, b, (Uint8)(b * 0.7f), 255);
-                SDL_FRect rect = { s.x - 1.5f, s.y - 1.5f, 3.0f, 3.0f };
-                SDL_RenderFillRect(data->SDLrenderer, &rect);
-                SDL_SetRenderDrawColor(data->SDLrenderer, 0, 0, 0, 0);
-            }
-        },
-        ECS::SystemGroup::Render);*/
-    
-
-    ecs.RegisterSystem<StarComponent, Position, Velocity>("applyGravity",
-        [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
-        {
-            auto positions = ctx.Slice<Position>();
-            auto velocities = ctx.Slice<Velocity>();
+            auto transforms = ctx.Slice<TransformComponent>();
+            auto rigidBodies = ctx.Slice<RigidBody>();
             auto masses = ctx.Slice<StarComponent>();
 
-            for (std::size_t i = 0; i < positions.size(); i++)
+            for (std::size_t i = 0; i < transforms.size(); i++)
             {
                 float ax = 0.0f, ay = 0.0f;
 
-                for (auto& otherCtx : ctx.View<StarComponent, Position>())
+                for (auto& otherCtx : ctx.View<StarComponent, TransformComponent>())
                 {
-                    auto othersPos = otherCtx.Slice<Position>();
+                    auto othersTransform = otherCtx.Slice<TransformComponent>();
                     auto othersMass = otherCtx.Slice<StarComponent>();
-                    for (std::size_t j = 0; j < othersPos.size(); j++)
+                    for (std::size_t j = 0; j < othersTransform.size(); j++)
                     {
-                        float dx = othersPos[j].x - positions[i].x;
-                        float dy = othersPos[j].y - positions[i].y;
+                        float dx = othersTransform[j].position.x - transforms[i].position.x;
+                        float dy = othersTransform[j].position.y - transforms[i].position.y;
+
                         float distSq = dx * dx + dy * dy + SOFTENING_SQ;
                         float dist = std::sqrt(distSq);
                         float a = G * othersMass[j].mass / distSq;
@@ -124,52 +62,31 @@ void NBody::Init()
                     }
                 }
 
-                velocities[i].vx += ax * dt;
-                velocities[i].vy += ay * dt;
+                rigidBodies[i].vx += ax * dt;
+                rigidBodies[i].vy += ay * dt;
 
-                float speedSq = velocities[i].vx * velocities[i].vx + velocities[i].vy * velocities[i].vy;
+                float speedSq = rigidBodies[i].vx * rigidBodies[i].vx + rigidBodies[i].vy * rigidBodies[i].vy;
                 if (speedSq > MAX_SPEED * MAX_SPEED)
                 {
                     float scale = MAX_SPEED / std::sqrt(speedSq);
-                    velocities[i].vx *= scale;
-                    velocities[i].vy *= scale;
+                    rigidBodies[i].vx *= scale;
+                    rigidBodies[i].vy *= scale;
                 }
             }
         },
         ECS::SystemGroup::Update);
 
-    ecs.RegisterSystem <StarComponent, Velocity>("move",
-        [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
-        {
-            auto starsPos = ctx.Slice<Position>();
-            auto starsVel = ctx.Slice<Velocity>();
-
-            for (int i = 0;i < starsPos.size();i++)
-            {
-                starsPos[i].x += starsVel[i].vx * dt;
-                starsPos[i].y += starsVel[i].vy * dt;
-
-                const float W = (float)data->GAME_WIDTH;
-                const float H = (float)data->GAME_HEIGHT * 0.5f;
-                if (starsPos[i].x < 0.0f) { starsPos[i].x = 0.0f; starsVel[i].vx = std::abs(starsVel[i].vx); }
-                if (starsPos[i].x > W) { starsPos[i].x = W;     starsVel[i].vx = -std::abs(starsVel[i].vx); }
-                if (starsPos[i].y < 0.0f) { starsPos[i].y = 0.0f;  starsVel[i].vy = std::abs(starsVel[i].vy); }
-                if (starsPos[i].y > H) { starsPos[i].y = H;      starsVel[i].vy = -std::abs(starsVel[i].vy); }
-            }
-        },
-        ECS::SystemGroup::Update);
-
-    ecs.RegisterSystem<StarComponent, Position>("renderStars",
+    ecs.RegisterSystem<StarComponent, TransformComponent>("renderStars",
         [](ECS::ArchetypeContext ctx, float, SharedDataRef data)
         {
-            auto starsPos = ctx.Slice<Position>();
+            auto starsTransform = ctx.Slice<TransformComponent>();
             auto starsMass = ctx.Slice<StarComponent>();
 
-            for (int i = 0; i < starsPos.size(); i++)
+            for (int i = 0; i < starsTransform.size(); i++)
             {
                 Uint8 b = (Uint8)(160 + (int)((starsMass[i].mass - 80) * 0.475f));
                 SDL_SetRenderDrawColor(data->SDLrenderer, b, b, (Uint8)(b * 0.7f), 255);
-                SDL_FRect rect = { starsPos[i].x - 1.5f, starsPos[i].y - 1.5f, 3.0f, 3.0f};
+                SDL_FRect rect = { starsTransform[i].position.x - 1.5f, starsTransform[i].position.y - 1.5f, 3.0f, 3.0f};
                 SDL_RenderFillRect(data->SDLrenderer, &rect);
                 SDL_SetRenderDrawColor(data->SDLrenderer, 0, 0, 0, 0);
             }

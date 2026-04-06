@@ -78,14 +78,8 @@
     <ClCompile Include="NBody.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BenchmarkState.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ECS.cpp">
       <Filter>Source Files\Internals</Filter>
-    </ClCompile>
-    <ClCompile Include="FusionBenchmark.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PhysicsSystem.h">
       <Filter>Header Files\Internals</Filter>
@@ -146,12 +140,6 @@
     <ClInclude Include="InputComponent.h">
       <Filter>Header Files\Internals\ECS</Filter>
     </ClInclude>
-    <ClInclude Include="BenchmarkState.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FusionBenchmark.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="AnimationSystem.h">
       <Filter>Header Files\Internals</Filter>
     </ClInclude>
@@ -168,6 +156,9 @@
       <Filter>Header Files\Internals\ECS</Filter>
     </ClInclude>
     <ClInclude Include="RigidBody.h">
+      <Filter>Header Files\Internals\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="BoxCollider.h">
       <Filter>Header Files\Internals\ECS</Filter>
     </ClInclude>
   </ItemGroup>

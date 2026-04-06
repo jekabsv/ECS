@@ -137,9 +137,7 @@
   <ItemGroup>
     <ClCompile Include="AnimationSystem.cpp" />
     <ClCompile Include="AssetManager.cpp" />
-    <ClCompile Include="BenchmarkState.cpp" />
     <ClCompile Include="ECS.cpp" />
-    <ClCompile Include="FusionBenchmark.cpp" />
     <ClCompile Include="Level1.cpp" />
     <ClCompile Include="logger.cpp" />
     <ClCompile Include="main.cpp" />
@@ -156,11 +154,10 @@
   <ItemGroup>
     <ClInclude Include="AnimationSystem.h" />
     <ClInclude Include="AssetManager.h" />
-    <ClInclude Include="BenchmarkState.h" />
     <ClInclude Include="Blackboard.h" />
+    <ClInclude Include="BoxCollider.h" />
     <ClInclude Include="ECS.h" />
     <ClInclude Include="Engine.h" />
-    <ClInclude Include="FusionBenchmark.h" />
     <ClInclude Include="InputComponent.h" />
     <ClInclude Include="InputSystem.h" />
     <ClInclude Include="Level1.h" />

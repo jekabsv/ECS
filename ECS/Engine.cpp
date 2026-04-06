@@ -89,7 +89,7 @@ void Engine::Render(float dt)
 
 void Engine::run()
 {
-    const int TARGET_FPS = 60;
+    const int TARGET_FPS = 120;
     const float TARGET_FRAME_TIME = 1000.0f / TARGET_FPS;
     uint64_t lastTicks = SDL_GetTicks();
 

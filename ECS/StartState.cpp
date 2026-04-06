@@ -5,7 +5,7 @@
 class ProcessWASD : public InputSystem::Processor
 {
 public:
-    ProcessWASD(StringId _name) : InputSystem::Processor(_name) {};
+    using InputSystem::Processor::Processor;
     int Process(InputSystem::INPUT_DATA_4& data) override
     {
         float x = data[3] - data[1];
@@ -42,12 +42,13 @@ public:
 
 void StartState::Init()
 {
+
+    //Assets
     Mesh triangleMesh = {
         {-1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f},
         {1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f},
         {0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f} 
     };
-
     Mesh squareMesh = {
     {{-1,  1}, {1.0f, 0.0f, 0.0f, 1.0f}},
     {{-1, -1}, {0.0f, 1.0f, 0.0f, 1.0f}},
@@ -58,7 +59,6 @@ void StartState::Init()
     {{ 1,  1}, {0.0f, 0.0f, 1.0f, 1.0f}}
     };
 
-    
     _data->assets.AddMesh("Triangle", triangleMesh);
     _data->assets.AddMesh("square", squareMesh);
 
@@ -66,6 +66,7 @@ void StartState::Init()
     _data->assets.LoadBMPTexture("player", "../player.bmp", _data->SDLrenderer);
 
 
+    //Inputs
     _data->inputs.AddActionMap("level1").AddAction("move")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_W, 0)
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_A, 1)
@@ -90,10 +91,15 @@ void StartState::Init()
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_E, 1)
         .AddProcessor(std::make_unique<ProcessQE>("qe"));
 
-    _data->state.AddState(StateRef(new Level1(_data)), 1);
 
+
+    //Animations
     _data->animation.AddClip("player_idle_right", { "player", 64, 64, 192, 192, 1, 0.1f });
     _data->animation.AddClip("player_idle_left", { "player", 64, 64, 192, 192, 3, 0.1f });
     _data->animation.AddClip("player_run_right", { "player", 64, 64, 0,   448, 0, 0.08f });
     _data->animation.AddClip("player_run_left", { "player", 64, 64, 0,   448, 2, 0.08f });
+
+
+    //State Change
+    _data->state.AddState(StateRef(new Level1(_data)), 1);
 }
