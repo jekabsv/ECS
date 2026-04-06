@@ -79,7 +79,7 @@ void Engine::Render(float dt)
         return;
     }
 
-    SDL_RenderClear(_data->SDLrenderer);
+    //SDL_RenderClear(_data->SDLrenderer);
 
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Render, dt);
     _data->state.GetActiveState()->Render(dt);

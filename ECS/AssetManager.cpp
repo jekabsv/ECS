@@ -20,6 +20,19 @@ const Mesh* AssetManager::GetMesh(StringId meshName) const
     return &it->second;
 }
 
+int AssetManager::MoveMeshOrigin(StringId meshName, float dx, float dy)
+{
+    Mesh *mesh = GetEditableMesh(meshName);
+    if (!mesh)
+        return -1;
+    for (auto &m : *mesh)
+    {
+        m.position.x -= dx;
+        m.position.x -= dy;
+    }
+    return 0;
+}
+
 int AssetManager::LoadBMPTexture(StringId TextureName, const std::string& filename, SDL_Renderer* renderer)
 {
     SDL_Surface* surface = SDL_LoadBMP(filename.c_str());
@@ -47,3 +60,13 @@ const SDL_Texture* AssetManager::GetTexture(StringId TextureName) const
     return it->second;
 }
 
+Mesh* AssetManager::GetEditableMesh(StringId meshName)
+{
+    auto it = _meshes.find(meshName);
+    if (it == _meshes.end())
+    {
+        LOG_WARN(GlobalLogger(), "AssetManager", "Mesh not found");
+        return nullptr;
+    }
+    return &it->second;
+}

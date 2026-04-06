@@ -271,6 +271,7 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
     auto entities = ctx.Slice<ECS::Entity>();
     auto rcs = ctx.Slice<TransformComponent>();
     auto bcs = ctx.Slice<BoxCollider>();
+    SDL_RenderClear(data_->SDLrenderer);
 
     for (std::size_t i = 0; i < entities.size(); i++)
     {
@@ -280,10 +281,17 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
 
         auto& rc = rcs[i];
         auto& bc = bcs[i];
-        float ax = rc.position.x + bc.offsetX - bc.hw;
-        float ay = rc.position.y + bc.offsetY - bc.hh;
-        float aw = bc.hw * 2.0f;
-        float ah = bc.hh * 2.0f;
+        float ax = rc.position.x + bc.offsetX * rc.scale.x - bc.hw * rc.scale.x;
+        float ay = rc.position.y + bc.offsetY * rc.scale.y - bc.hh * rc.scale.y;
+        float aw = bc.hw * 2.0f * rc.scale.x;
+        float ah = bc.hh * 2.0f * rc.scale.y;
+
+        SDL_FRect rect = { ax, ay, aw, ah };
+        SDL_SetRenderDrawColor(data_->SDLrenderer, 255, 0, 0, 255);
+        SDL_RenderRect(data_->SDLrenderer, &rect);
+        SDL_SetRenderDrawColor(data_->SDLrenderer, 0, 0, 0, 255);
+
+
         quadTree_.Insert(entities[i], ax, ay, aw, ah);
     }
 }

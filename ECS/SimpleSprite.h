@@ -4,8 +4,8 @@
 
 struct SimpleSprite
 {
-	SimpleSprite(float width, float height, SDL_FRect TextureMask, StringId _TextureName, bool _render = false) 
-		: rect(SDL_FRect{0, 0, width, height}), TextureRect(TextureMask), TextureName(_TextureName), render(_render) { };
+	SimpleSprite(SDL_FRect _rect, SDL_FRect TextureMask, StringId _TextureName, bool _render = false)
+		: rect(_rect), TextureRect(TextureMask), TextureName(_TextureName), render(_render) { };
 	SimpleSprite() = default;
 	SDL_FRect rect = { 0, 0, 0, 0 };
 	SDL_FRect TextureRect = { 0, 0, 0, 0 };

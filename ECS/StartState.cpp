@@ -1,5 +1,6 @@
 #include "StartState.h"
 #include "Level1.h"
+#include <windows.h>
 
 class ProcessWASD : public InputSystem::Processor
 {

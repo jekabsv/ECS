@@ -20,16 +20,16 @@ void Level1::Init()
 	e = ecs.Create();
 	playerEntity = ecs.Create();
 
-    ecs.Add<BoxCollider>(e, BoxCollider(50.0f, 50.0f, true));
-    ecs.Add<MeshComponent>(e, MeshComponent("Triangle", "", false));
-    ecs.Add<TransformComponent>(e, TransformComponent({ 0.0f, 0.0f }, { 100.0f, 100.0f }));
+    ecs.Add<BoxCollider>(e, BoxCollider(100.0f, 100.0f, true));
+    ecs.Add<MeshComponent>(e, MeshComponent("square", "", true));
+    ecs.Add<TransformComponent>(e, TransformComponent({ 500.0f, 500.0f }, { 100.0f, 100.0f }));
 
 
-    ecs.Add<SimpleSprite>(playerEntity, SimpleSprite(100, 100, { 0, 0, 64, 64 }, "player", true));
+    ecs.Add<SimpleSprite>(playerEntity, SimpleSprite({ -50, -50, 100, 100 }, { 0, 0, 64, 64 }, "player", true));
     ecs.Add<TransformComponent>(playerEntity, TransformComponent({ 0.0f, 0.0f }, { 1.0f, 1.0f }));
     ecs.Add<InputComponent>(playerEntity, InputComponent());
     ecs.Add<AnimationPlayer>(playerEntity, AnimationPlayer{});
-    ecs.Add<BoxCollider>(playerEntity, BoxCollider(64.0f, 64.0f, false));
+    ecs.Add<BoxCollider>(playerEntity, BoxCollider(25.0f, 50.0f, false));
     ecs.Add<CollisionEvent>(playerEntity, CollisionEvent());
 
 
@@ -130,6 +130,8 @@ void Level1::Init()
                 SDL_FRect RectToDraw = sprite.rect;
                 RectToDraw.h *= transform.scale.y;
                 RectToDraw.w *= transform.scale.x;
+                RectToDraw.x *= transform.scale.x;
+                RectToDraw.y *= transform.scale.y;
                 RectToDraw.x += transform.position.x;
                 RectToDraw.y += transform.position.y;
 
@@ -188,10 +190,15 @@ void Level1::Init()
 
             for (int i = 0;i < colliders.size();i++)
             {
-
                 auto& transform = transforms[i];
-                SDL_FRect rect = { transform.position.x + colliders[i].offsetX,
-                    transform.position.y + colliders[i].offsetY, colliders[i].hw * 2, colliders[i].hh * 2 };
+                auto& col = colliders[i];
+                float ax = transform.position.x + col.offsetX * transform.scale.x - col.hw * transform.scale.x;
+                float ay = transform.position.y + col.offsetY * transform.scale.y - col.hh * transform.scale.y;
+                float aw = col.hw * 2.0f * transform.scale.x;
+                float ah = col.hh * 2.0f * transform.scale.y;
+
+
+                SDL_FRect rect = {ax, ay, aw, ah};
                 SDL_SetRenderDrawColor(_data->SDLrenderer, 255, 0, 0, 255);
                 SDL_RenderRect(_data->SDLrenderer, &rect);
                 SDL_SetRenderDrawColor(_data->SDLrenderer, 0, 0, 0, 255);
@@ -199,6 +206,8 @@ void Level1::Init()
             }
         }, 
         ECS::SystemGroup::Render);
+
+    ecs.DisableSystem("draw_colliders");
 }
 
 void Level1::Update(float dt)
