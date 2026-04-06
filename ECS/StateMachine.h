@@ -3,7 +3,6 @@
 #include <memory>
 #include <stack>
 #include "State.h"
-
 typedef std::unique_ptr<State> StateRef;
 
 class StateMachine

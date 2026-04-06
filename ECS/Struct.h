@@ -1,8 +1,14 @@
 #pragma once
-#include <SDL3\SDL.h>
+
 #include <array>
 #include <string_view>
 #include <vector>
+#include <SDL3/SDL.h>
+
+struct SDL_Vertex;
+struct SDL_Texture;
+struct SDL_FRect;
+struct SDL_Renderer;
 
 struct Vec2
 {
@@ -49,7 +55,5 @@ public:
     SDL_Renderer* SDLrenderer = nullptr;
     Renderer() = default;
     Renderer(SDL_Renderer* _SDLrenderer) : SDLrenderer(_SDLrenderer) {};
-    int Render(const SDL_Texture* texture, const SDL_FRect* srect, const SDL_FRect* dsrect) const {
-        return(SDL_RenderTexture(SDLrenderer, std::_Const_cast(texture), srect, dsrect));
-    }
+    int Render(const SDL_Texture* texture, const SDL_FRect* srect, const SDL_FRect* dsrect) const;
 };

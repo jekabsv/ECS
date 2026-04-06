@@ -5,14 +5,13 @@
 class Level1 : public State
 {
 public:
-    Level1(SharedDataRef data) : _data(data) {}
-
+    using State::State;
     void Init() override;
     void HandleInput() override {}
     void Update(float dt) override;
 
 private:
-    SharedDataRef _data;
+    //SharedDataRef _data;
     int TexX = 0;
     int TexY = 0;
     bool direction = 0;

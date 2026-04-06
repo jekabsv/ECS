@@ -5,7 +5,6 @@
 struct SharedData;
 typedef std::shared_ptr<SharedData> SharedDataRef;
 
-// ─── Components ───────────────────────────────────────────────────────────────
 
 struct BoxCollider
 {
@@ -15,6 +14,9 @@ struct BoxCollider
     float hw = 0.0f, hh = 0.0f;    // half-extents
     bool isTrigger = false;
 };
+
+
+
 
 // Collision results written each frame by the physics system.
 // Stored as a raw byte buffer cast to Entity* at read time.
@@ -35,21 +37,22 @@ static_assert(std::is_trivially_copyable_v<RigidBody>);
 static_assert(std::is_trivially_copyable_v<BoxCollider>);
 static_assert(std::is_trivially_copyable_v<CollisionEvent>);
 
-// ─── Quadtree ─────────────────────────────────────────────────────────────────
+
+
+
+
 
 struct QuadNode
 {
-    float x, y, w, h;              // bounds of this node
+    float x, y, w, h;
 
     static constexpr int MAX_DEPTH = 6;
     static constexpr int MAX_ENTITIES = 8;
 
-    // Entities whose AABBs fall within this node (leaf storage)
-    // Stored inline; overflow causes subdivision.
     ECS::Entity entities[MAX_ENTITIES] = {};
     std::size_t entityCount = 0;
 
-    int children[4] = { -1, -1, -1, -1 };  // indices into QuadTree::nodes, -1 = no child
+    int children[4] = { -1, -1, -1, -1 }; //-1 = no child
     bool isLeaf = true;
 };
 
@@ -62,8 +65,6 @@ public:
     void Clear();
     void Insert(ECS::Entity e, float ax, float ay, float aw, float ah);
 
-    // Returns all candidate entities that share a node with the given AABB.
-    // Results written into out[], returns count written (capped at outSize).
     std::size_t Query(float ax, float ay, float aw, float ah,
         ECS::Entity* out, std::size_t outSize) const;
 
@@ -82,30 +83,20 @@ private:
         float ax, float ay, float aw, float ah);
 };
 
-// ─── PhysicsSystem ────────────────────────────────────────────────────────────
 
 class PhysicsSystem
 {
 public:
     PhysicsSystem() = default;
 
-    // Call once to bind to a world and shared data before enabling any systems.
     void Tie(ECS::World& world, SharedDataRef data);
 
-    // Registers a system that integrates RigidBody velocity into RenderComponent::position.
-    // Pass false to unregister (disable).
     void EnableMovement(bool enable = true);
 
-    // Registers a system that builds the quadtree, detects AABB overlaps,
-    // and writes CollisionEvent onto both participants each frame.
     void EnableCollisionDetection(bool enable = true);
 
-    // World bounds used by the quadtree. Defaults to SharedData::GAME_WIDTH/HEIGHT.
-    // Call before EnableCollisionDetection if you need custom bounds.
     void SetWorldBounds(float x, float y, float w, float h);
 
-    // Read-only access to all collision pairs detected last frame.
-    // Each pair is (entityA, entityB); order is not guaranteed.
     const std::vector<std::pair<ECS::Entity, ECS::Entity>>& GetCollisionPairs() const;
 
 
@@ -113,24 +104,17 @@ public:
 
 private:
     ECS::World* world_ = nullptr;
-    SharedDataRef data_;
 
     float boundsX_ = 0.0f, boundsY_ = 0.0f;
     float boundsW_ = 0.0f, boundsH_ = 0.0f;
 
     QuadTree quadTree_;
 
-    // Flat list of collision pairs produced last frame.
     std::vector<std::pair<ECS::Entity, ECS::Entity>> collisionPairs_;
 
-    // Frame-boundary flags used by BuildSystem / CollisionSystem.
-    // built_   — set on first BuildSystem chunk, cleared on first CollisionSystem chunk.
-    // queried_ — set on first CollisionSystem chunk, prevents double-reset.
-    bool built_ = false;
-    bool queried_ = false;
+    bool _built = false;
+    bool _queried = false;
 
-    // Internal system functions registered with the ECS.
-    // Not static — registered as lambdas capturing `this` inside Enable* methods.
     void MovementSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data);
     void BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data);
     void CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data);

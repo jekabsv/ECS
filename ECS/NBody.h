@@ -9,7 +9,7 @@
 class NBody : public State
 {
 public:
-    NBody(SharedDataRef data) : _data(data) {}
+    using State::State;
     void Init() override;
 
 private:
@@ -36,7 +36,6 @@ private:
     };
 
 
-    SharedDataRef _data;
 
     static constexpr int   N = 1000;
     static constexpr float G = 1200.0f;

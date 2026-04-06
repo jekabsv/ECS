@@ -1,8 +1,11 @@
 #include "AssetManager.h"
+
 #include <iostream>
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_surface.h>
 #include "logger.h"
+
+
+
 
 int AssetManager::AddMesh(StringId meshName, const Mesh& mesh)
 {
@@ -41,6 +44,7 @@ int AssetManager::LoadBMPTexture(StringId TextureName, const std::string& filena
         return 0;
     }
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_DestroySurface(surface);
     if (!texture) {
         LOG_ERROR(GlobalLogger(), "AssetManager", std::string("Failed to create texture: ") + SDL_GetError());
         return 0;

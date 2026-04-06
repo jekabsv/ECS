@@ -161,7 +161,6 @@ std::size_t QuadTree::Query(float ax, float ay, float aw, float ah,
 void PhysicsSystem::Tie(ECS::World& world, SharedDataRef data)
 {
     world_ = &world;
-    data_ = data;
     boundsX_ = 0.0f;
     boundsY_ = 0.0f;
     boundsW_ = (float)data->GAME_WIDTH;
@@ -261,18 +260,17 @@ void PhysicsSystem::MovementSystem(ECS::ArchetypeContext ctx, float dt, SharedDa
 
 void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
 {
-    if (!built_)
+    if (!_built)
     {
         quadTree_.Clear();
         collisionPairs_.clear();
-        built_ = true;
-        queried_ = false;
+        _built = true;
+        _queried = false;
     }
 
     auto entities = ctx.Slice<ECS::Entity>();
     auto rcs = ctx.Slice<TransformComponent>();
     auto bcs = ctx.Slice<BoxCollider>();
-    SDL_RenderClear(data_->SDLrenderer);
 
     for (std::size_t i = 0; i < entities.size(); i++)
     {
@@ -297,10 +295,10 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
 
 void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
 {
-    if (!queried_)
+    if (!_queried)
     {
-        built_ = false;
-        queried_ = true;
+        _built = false;
+        _queried = true;
     }
 
     auto entities = ctx.Slice<ECS::Entity>();

@@ -21,7 +21,7 @@ struct LODLevel { float level = 0.0f; };
 class FusionBenchmark : public State
 {
 public:
-    FusionBenchmark(SharedDataRef data) : _data(data) {}
+    using State::State;
 
     void Init()             override;
     void Update(float dt)   override;
@@ -30,7 +30,6 @@ public:
 private:
     void InitWorld(ECS::World& world, bool fused);
 
-    SharedDataRef _data;
 
     // Two worlds � identical entities, identical system logic, different access declarations
     ECS::World _fusedWorld;

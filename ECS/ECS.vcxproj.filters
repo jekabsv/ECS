@@ -96,6 +96,9 @@
     <ClCompile Include="PhysicsSystem.cpp">
       <Filter>Source Files\Internals</Filter>
     </ClCompile>
+    <ClCompile Include="Struct.cpp">
+      <Filter>Source Files\Internals</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECS.h">

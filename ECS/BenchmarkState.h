@@ -9,7 +9,7 @@
 class BenchmarkState : public State
 {
 public:
-    BenchmarkState(SharedDataRef data) : _data(data) {}
+    using State::State;
     void Init()   override;
     void Update(float dt) override;
     void Render(float dt) override;
@@ -24,7 +24,6 @@ private:
     struct DrawColor { uint8_t r, g, b, a; };
 
 
-    SharedDataRef _data;
     static constexpr int N = 100000;
 
     uint64_t _updateUs = 0;

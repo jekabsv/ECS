@@ -1,8 +1,10 @@
 #pragma once
 #include <unordered_map>
-#include "Struct.h"
-#include <array>
 #include <string>
+#include "Struct.h"
+
+struct SDL_Renderer;
+struct SDL_Texture;
 
 class AssetManager
 {

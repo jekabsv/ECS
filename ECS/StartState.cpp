@@ -66,7 +66,7 @@ void StartState::Init()
     _data->assets.LoadBMPTexture("player", "../player.bmp", _data->SDLrenderer);
 
 
-    _data->inputs.AddActionMap("gameplay").AddAction("move")
+    _data->inputs.AddActionMap("level1").AddAction("move")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_W, 0)
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_A, 1)
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_S, 2)
@@ -77,16 +77,15 @@ void StartState::Init()
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_RIGHT, 3)
         .AddProcessor(std::make_unique<ProcessWASD>("wasd"));
 
-    _data->inputs.GetActionMap("gameplay")->AddAction("next")
+    _data->inputs.GetActionMap("level1")->AddAction("next")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_SPACE);
     
-    _data->inputs.GetActionMap("gameplay")->AddAction("show_colliders")
+    _data->inputs.GetActionMap("level1")->AddAction("show_colliders")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_LSHIFT);
 
     _data->inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current());
-    _data->inputs.AssignMapToPlayer("gameplay");
 
-    _data->inputs.GetActionMap("gameplay")->AddAction("scale")
+    _data->inputs.GetActionMap("level1")->AddAction("scale")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_Q, 0)
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_E, 1)
         .AddProcessor(std::make_unique<ProcessQE>("qe"));

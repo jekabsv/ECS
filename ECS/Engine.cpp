@@ -102,6 +102,7 @@ void Engine::run()
             dt = 0.1f;
 
         _data->state.ProcessStateChanges();
+        
         _data->inputs.Update(dt);
         SDL_Event ev;
         while (SDL_PollEvent(&ev))

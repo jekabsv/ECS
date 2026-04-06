@@ -4,6 +4,7 @@
 class State
 {
 public:
+	State(SharedDataRef data) : _data(data) {};
 	virtual ~State() = default;
 	virtual void Init() {};
 	virtual void HandleInput() {};
@@ -15,4 +16,5 @@ public:
 	virtual void Resume() {};
 
 	ECS::World ecs;
+	SharedDataRef _data;
 };
