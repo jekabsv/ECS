@@ -15,8 +15,6 @@ const ECS::Entity* CollisionEvent::Contacts() const
     return reinterpret_cast<const ECS::Entity*>(buffer);
 }
 
-// ─── QuadTree ─────────────────────────────────────────────────────────────────
-
 bool QuadTree::Overlaps(float ax, float ay, float aw, float ah,
     float bx, float by, float bw, float bh)
 {
@@ -51,7 +49,6 @@ void QuadTree::Clear()
 
 void QuadTree::Subdivide(int nodeIdx)
 {
-    // Cache bounds before push_back — vector may reallocate.
     float x = nodes_[nodeIdx].x;
     float y = nodes_[nodeIdx].y;
     float hw = nodes_[nodeIdx].w * 0.5f;
@@ -93,7 +90,6 @@ void QuadTree::InsertInto(int nodeIdx, int depth, ECS::Entity e,
                 return;
             }
         }
-        // Straddles multiple children — store at this internal node.
         if (nodes_[nodeIdx].entityCount < QuadNode::MAX_ENTITIES)
             nodes_[nodeIdx].entities[nodes_[nodeIdx].entityCount++] = e;
         return;
@@ -106,7 +102,6 @@ void QuadTree::InsertInto(int nodeIdx, int depth, ECS::Entity e,
         return;
     }
 
-    // Subdivide and redistribute existing entities then insert the new one.
     ECS::Entity existing[QuadNode::MAX_ENTITIES];
     std::size_t existingCount = nodes_[nodeIdx].entityCount;
     for (std::size_t i = 0; i < existingCount; i++)
@@ -155,8 +150,6 @@ std::size_t QuadTree::Query(float ax, float ay, float aw, float ah,
     if (nodes_.empty()) return 0;
     return QueryInto(0, ax, ay, aw, ah, out, outSize, 0);
 }
-
-// ─── PhysicsSystem ────────────────────────────────────────────────────────────
 
 void PhysicsSystem::Tie(ECS::World& world, SharedDataRef data)
 {
@@ -213,7 +206,6 @@ void PhysicsSystem::EnableCollisionDetection(bool enable)
         return;
     }
 
-    // Registered first — clears and builds the quadtree each frame.
     world_->RegisterSystem<BoxCollider, TransformComponent>("physicsBuild",
         [this](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
         {
@@ -221,7 +213,6 @@ void PhysicsSystem::EnableCollisionDetection(bool enable)
         },
         ECS::SystemGroup::Update);
 
-    // Registered after — queries the built tree and writes collision results.
     world_->RegisterSystem<BoxCollider, TransformComponent>("physicsCollide",
         [this](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
         {
@@ -229,8 +220,6 @@ void PhysicsSystem::EnableCollisionDetection(bool enable)
         },
         ECS::SystemGroup::Update);
 }
-
-// ─── Movement system ──────────────────────────────────────────────────────────
 
 void PhysicsSystem::MovementSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
 {
@@ -253,10 +242,6 @@ void PhysicsSystem::MovementSystem(ECS::ArchetypeContext ctx, float dt, SharedDa
         rcs[i].position.y += rb.vy * dt;
     }
 }
-
-// ─── Build system ─────────────────────────────────────────────────────────────
-// Called once per matching chunk. The first chunk clears the tree and
-// collision state; subsequent chunks just insert into the already-cleared tree.
 
 void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
 {
@@ -288,10 +273,6 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
         quadTree_.Insert(entities[i], ax, ay, aw, ah);
     }
 }
-
-// ─── Collision system ─────────────────────────────────────────────────────────
-// Called once per matching chunk after all BuildSystem chunks have run.
-// Queries the fully-built quadtree and writes results.
 
 void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
 {
