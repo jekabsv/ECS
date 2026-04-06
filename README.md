@@ -128,55 +128,37 @@ The engine is designed to be modular, data-oriented, and suitable for both **run
 
 ---
 
-## Roadmap
+## ToDo
 
-### 1. InputSystem
-- Complete keyboard and mouse handling.
-- Track input states:
-  - `pressed`
-  - `held`
-  - `released`
-- Handle window focus and input loss.
-- Fully decouple input polling from gameplay logic.
+### 1. PhysicSystem
+- add BoxCollider, SphereCollider, CapsuleCollider, MeshCollider, etc..
+- RigidBody - add gravity, angular velocity, Various constraints like freeze position/rotation axes etc..
+- Add Physics Materials — assigned to colliders that define friction and bounciness
+- Add Joints
+- Add Querries like Raycast, OverlapBox, SphereCast, etc..
 
-### 2. Event / Messaging System
-- Central event dispatcher.
-- Subscription-based event handling.
-- Input, gameplay, and system-level events.
+### 2. UI
+- Add UI system
 
 ### 3. Core Game Loop
-- Fixed timestep support.
-- Variable timestep support.
 - Deterministic update order:  
   **Input → Update → Physics → Render**
 
-### 4. Scene & Entity System
-- Clean entity creation and destruction.
-- Safer entity lifetime handling.
-- Efficient component access patterns.
-
-### 5. Rendering Pipeline
+### 4. Rendering Pipeline
 - Camera abstraction.
-- Basic material system.
 - Shader abstraction.
 - Batch rendering for performance.
 
-### 6. Physics & Collision
-- AABB collision shapes.
-- Basic collision detection.
-- Simple collision response.
-- Integrated with ECS systems.
-
-### 7. Resource Management
+### 5. Resource Management
 - Improved asset lifetime control.
-- Reference-counted or handle-based assets.
 - Explicit load/unload policies.
 
-### 8. Debugging & Tooling
-- Logging system.
+### 6. Debugging & Tooling
 - Debug overlays (FPS, input states).
 - Runtime diagnostics and validation tools.
 
+### 7. Consitency
+- Change everything to have the same naming, logic conventions
 
 ## Technologies Used
 
