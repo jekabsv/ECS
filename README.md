@@ -131,6 +131,7 @@ The engine is designed to be modular, data-oriented, and suitable for both **run
 ## ToDo
 
 ### 1. PhysicSystem
+- !! Move collision pair data from component to PhysicsSystem and add a Getter to PhysicsSystem GetContacts(Entity ID) !!
 - add BoxCollider, SphereCollider, CapsuleCollider, MeshCollider, etc..
 - RigidBody - add gravity, angular velocity, Various constraints like freeze position/rotation axes etc..
 - Add Physics Materials — assigned to colliders that define friction and bounciness
