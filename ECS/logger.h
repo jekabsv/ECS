@@ -1,5 +1,5 @@
 #pragma once
-#include <string>
+
 #include <string_view>
 #include <vector>
 #include <memory>
@@ -17,6 +17,19 @@ namespace LogInternals
     };
 }
 
+class Logger
+{
+public:
+    LogLevel minLevel = LogLevel::Debug;
+
+    void AddSink(std::shared_ptr<LogInternals::Sink> sink);
+    void RemoveSink(std::shared_ptr<LogInternals::Sink> sink);
+    void Log(LogLevel level, std::string_view system, std::string_view msg, std::string_view file, int line, std::string_view func);
+
+private:
+    std::vector<std::shared_ptr<LogInternals::Sink>> _sinks;
+};
+
 class ConsoleSink : public LogInternals::Sink
 {
 public:
@@ -30,19 +43,6 @@ public:
     void Write(LogLevel level, std::string_view system, std::string_view msg, std::string_view file, int line, std::string_view func) override;
 private:
     std::ofstream _file;
-};
-
-class Logger
-{
-public:
-    LogLevel minLevel = LogLevel::Debug;
-
-    void AddSink(std::shared_ptr<LogInternals::Sink> sink);
-    void RemoveSink(std::shared_ptr<LogInternals::Sink> sink);
-    void Log(LogLevel level, std::string_view system, std::string_view msg, std::string_view file, int line, std::string_view func);
-
-private:
-    std::vector<std::shared_ptr<LogInternals::Sink>> _sinks;
 };
 
 Logger& GlobalLogger();

@@ -1,13 +1,14 @@
 #pragma once
+
 #include <unordered_map>
 #include <vector>
 #include <memory>
 #include <string>
 #include <array> 
 #include <functional>
-#include <algorithm>
-#include "SDL3/SDL.h"
 #include "Struct.h"
+
+union SDL_Event;
 
 namespace InputSystem
 {
@@ -26,26 +27,17 @@ namespace InputSystem
 		int componentIndex;
 		float scale = 1.0f;
 		int key;
-		Bindings(BindingType _bindingType, DeviceType _device, int _componentIndex, float _scale, int _key) :
-			bindingType(_bindingType), device(_device), componentIndex(_componentIndex), scale(_scale), key(_key) {
-		};
-		Bindings(BindingType _bindingType, DeviceType _device, int _componentIndex, int _key) :
-			bindingType(_bindingType), device(_device), componentIndex(_componentIndex), scale(1.0f), key(_key) {
-		};
-		bool operator==(const Bindings& other) const
-		{
-			return ((device == other.device) && (key == other.key));
-		}
+		Bindings(BindingType _bindingType, DeviceType _device, int _componentIndex, float _scale, int _key);
+		Bindings(BindingType _bindingType, DeviceType _device, int _componentIndex, int _key);
+		bool operator==(const Bindings& other) const;
 	};
 
 	namespace Internals {
 		class ActionStateClass
 		{
 		public:
-			ActionStateClass(ActionState _state, INPUT_DATA_4 _data) : data(_data), state(_state) {};
-			ActionStateClass()
-				: state(ActionState::Idle), data{ { 0,0,0,0 } } {
-			}
+			ActionStateClass(ActionState _state, INPUT_DATA_4 _data);
+			ActionStateClass();
 			ActionState state;
 			INPUT_DATA_4 data;
 		};
@@ -55,7 +47,7 @@ namespace InputSystem
 			DeviceType type;
 			int DeviceId;
 		public:
-			Device(int _DeviceId, DeviceType _type) : type(_type), DeviceId(_DeviceId) {};
+			Device(int _DeviceId, DeviceType _type);
 			DeviceType GetType() const;
 			int GetId() const;
 			virtual float IsPressed(int key) = 0;
@@ -102,10 +94,7 @@ namespace InputSystem
 	public:
 		Processor(StringId _name) : name(_name) {};
 		StringId name;
-		virtual int Process(INPUT_DATA_4& data)
-		{
-			return 0;
-		}
+		virtual int Process(INPUT_DATA_4& data);
 	};
 
 	class Interaction {
@@ -119,21 +108,11 @@ namespace InputSystem
 
 		virtual void Update(const INPUT_DATA_4& data, float dt, ActionState rawState) = 0;
 
-		void TriggerEvents(const INPUT_DATA_4& data) {
-			if (result == InteractionResult::Started && OnStarted)
-				OnStarted(data);
-			if (result == InteractionResult::Performed && OnPerformed)
-				OnPerformed(data);
-			if (result == InteractionResult::Canceled && OnCanceled)
-				OnCanceled(data);
-		}
+		void TriggerEvents(const INPUT_DATA_4& data);
 
 		virtual ~Interaction() = default;
 
-		bool operator==(const Interaction& other) const
-		{
-			return (name == other.name);
-		}
+		bool operator==(const Interaction& other) const;
 	};
 
 	class KeyboardHub

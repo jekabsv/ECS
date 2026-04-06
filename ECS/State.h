@@ -1,6 +1,11 @@
 #pragma once
 #include "ECS.h"
 
+#include <memory>
+struct SharedData;
+using SharedDataRef = std::shared_ptr<SharedData>;
+
+
 class State
 {
 public:
@@ -10,6 +15,7 @@ public:
 	virtual void HandleInput() {};
 	virtual void Update(float dt) {};
 	virtual void Render(float dt) {};
+	void SetData();
 
 
 	virtual void Pause() {};

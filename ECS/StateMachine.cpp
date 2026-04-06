@@ -1,7 +1,11 @@
 #include "StateMachine.h"
-#include <cassert>
+#include "State.h"
 #include "logger.h"
-#include "SharedDataRef.h"
+
+
+StateMachine::StateMachine() : _isRemoving(false), _isAdding(false), _isreplacing(false){}
+
+StateMachine::~StateMachine() {};
 
 void StateMachine::AddState(StateRef newState, bool isreplacing)
 {
@@ -39,8 +43,7 @@ void StateMachine::ProcessStateChanges()
 		}
 		_states.push(std::move(_newState));
 		_isAdding = 0;
-		this->_states.top()->_data->physics.Tie(this->_states.top()->ecs, this->_states.top()->_data);
-		this->_states.top()->ecs.Tie(this->_states.top()->_data);
+		this->_states.top()->SetData();
 		this->_states.top()->Init();
 		LOG_DEBUG(GlobalLogger(), "StateMachine", "State transition completed");		
 	}

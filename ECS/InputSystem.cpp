@@ -1,5 +1,6 @@
 #include "InputSystem.h"
 #include "logger.h"
+#include <SDL3/SDL.h>
 
 using namespace InputSystem;
 using namespace Internals;
@@ -514,6 +515,8 @@ void Action::Deactivate()
 	active = false;
 }
 
+InputSystem::Internals::Device::Device(int _DeviceId, DeviceType _type) : type(_type), DeviceId(_DeviceId) {};
+
 DeviceType Device::GetType() const
 {
 	return type;
@@ -626,4 +629,38 @@ float InputSystem::Internals::GamepadDevice::IsPressed(int key)
 float InputSystem::Internals::GamepadDevice::GetAxis(int axis)
 {
 	return (axis >= 0 && axis < axes.size()) ? axes[axis] : 0.0f;
+}
+
+InputSystem::Bindings::Bindings(BindingType _bindingType, DeviceType _device, int _componentIndex, float _scale, int _key) :
+	bindingType(_bindingType), device(_device), componentIndex(_componentIndex), scale(_scale), key(_key) {
+}
+InputSystem::Bindings::Bindings(BindingType _bindingType, DeviceType _device, int _componentIndex, int _key) :
+	bindingType(_bindingType), device(_device), componentIndex(_componentIndex), scale(1.0f), key(_key) {
+}
+bool InputSystem::Bindings::operator==(const Bindings& other) const
+{
+	return ((device == other.device) && (key == other.key));
+}
+
+InputSystem::Internals::ActionStateClass::ActionStateClass(ActionState _state, INPUT_DATA_4 _data) : data(_data), state(_state) {}
+InputSystem::Internals::ActionStateClass::ActionStateClass() : state(ActionState::Idle), data{ { 0,0,0,0 } } {}
+
+int InputSystem::Processor::Process(INPUT_DATA_4& data)
+{
+	return 0;
+}
+
+void InputSystem::Interaction::TriggerEvents(const INPUT_DATA_4& data)
+{
+	if (result == InteractionResult::Started && OnStarted)
+		OnStarted(data);
+	if (result == InteractionResult::Performed && OnPerformed)
+		OnPerformed(data);
+	if (result == InteractionResult::Canceled && OnCanceled)
+		OnCanceled(data);
+}
+
+bool InputSystem::Interaction::operator==(const Interaction& other) const
+{
+	return (name == other.name);
 }

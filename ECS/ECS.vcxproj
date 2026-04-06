@@ -149,6 +149,7 @@
     <ClCompile Include="PhysicsSystem.cpp" />
     <ClCompile Include="PhysicsSystem.h" />
     <ClCompile Include="StartState.cpp" />
+    <ClCompile Include="State.cpp" />
     <ClCompile Include="StateMachine.cpp" />
     <ClCompile Include="Struct.cpp" />
   </ItemGroup>

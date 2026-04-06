@@ -2,14 +2,15 @@
 
 #include <memory>
 #include <stack>
-#include "State.h"
+
+class State;
 typedef std::unique_ptr<State> StateRef;
 
 class StateMachine
 {
 public:
-    StateMachine() : _isRemoving(0), _isAdding(0), _isreplacing(0) {}
-    ~StateMachine() {}
+    StateMachine();
+    ~StateMachine();
 
     void AddState(StateRef newState, bool isReplacing);
     void RemoveState();

@@ -62,6 +62,7 @@ void Logger::Log(LogLevel level, std::string_view system, std::string_view msg, 
         sink->Write(level, system, msg, file, line, func);
 }
 
+
 void ConsoleSink::Write(LogLevel level, std::string_view system, std::string_view msg, std::string_view file, int line, std::string_view func)
 {
     std::string formatted = FormatMessage(level, system, msg, file, line, func);

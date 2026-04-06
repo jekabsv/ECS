@@ -3,7 +3,9 @@
 #include <array>
 #include <string_view>
 #include <vector>
-#include <SDL3/SDL.h>
+
+#include <SDL3/SDL_rect.h>
+#include <SDL3/SDL_render.h>
 
 struct SDL_Vertex;
 struct SDL_Texture;
