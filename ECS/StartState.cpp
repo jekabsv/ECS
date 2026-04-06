@@ -79,6 +79,9 @@ void StartState::Init()
 
     _data->inputs.GetActionMap("gameplay")->AddAction("next")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_SPACE);
+    
+    _data->inputs.GetActionMap("gameplay")->AddAction("show_colliders")
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_LSHIFT);
 
     _data->inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current());
     _data->inputs.AssignMapToPlayer("gameplay");

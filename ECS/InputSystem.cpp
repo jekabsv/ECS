@@ -234,69 +234,73 @@ std::vector<std::shared_ptr<Device>> System::GetDevicesOfType(int player, Device
 	return it->second;
 }
 
+void InputSystem::System::HandleEvent(SDL_Event& ev, bool &quit)
+{
+	switch (ev.type) {
+	case SDL_EVENT_QUIT:
+		quit = true;
+		break;
+	case SDL_EVENT_KEY_DOWN:
+	case SDL_EVENT_KEY_UP:
+		if (KeyboardHub::Current())
+			static_cast<KeyboardDevice*>(KeyboardHub::Current().get())
+			->SetState((int)ev.key.scancode, ev.type == SDL_EVENT_KEY_DOWN);
+		break;
+	case SDL_EVENT_MOUSE_BUTTON_DOWN:
+	case SDL_EVENT_MOUSE_BUTTON_UP:
+		if (MouseHub::Current())
+			static_cast<MouseDevice*>(MouseHub::Current().get())
+			->SetButton((int)ev.button.button, ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN);
+		break;
+	case SDL_EVENT_MOUSE_MOTION:
+		if (MouseHub::Current()) {
+			auto m = static_cast<MouseDevice*>(MouseHub::Current().get());
+			m->SetAxis(0, ev.motion.x);
+			m->SetAxis(1, ev.motion.y);
+			m->SetAxis(4, m->GetAxis(4) + ev.motion.xrel);
+			m->SetAxis(5, m->GetAxis(5) + ev.motion.yrel);
+		}
+		break;
+	case SDL_EVENT_GAMEPAD_ADDED:
+		LOG_INFO(GlobalLogger(), "InputSystem", "Gamepad connected");
+		GamepadHub::All().push_back(std::make_shared<GamepadDevice>(ev.gdevice.which));
+		break;
+	case SDL_EVENT_GAMEPAD_REMOVED:
+		LOG_INFO(GlobalLogger(), "InputSystem", "Gamepad disconnected");
+		std::erase_if(GamepadHub::All(), [&](auto& d) { return d->GetId() == ev.gdevice.which; });
+		break;
+	case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+	case SDL_EVENT_GAMEPAD_BUTTON_UP:
+		for (auto& dev : GamepadHub::All())
+			if (dev->GetId() == ev.gbutton.which) {
+				static_cast<GamepadDevice*>(dev.get())
+					->SetButton((int)ev.gbutton.button, ev.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN);
+				GamepadHub::Current() = dev;
+			}
+		break;
+	case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+		for (auto& dev : GamepadHub::All())
+			if (dev->GetId() == ev.gaxis.which) {
+				static_cast<GamepadDevice*>(dev.get())
+					->SetAxis((int)ev.gaxis.axis, ev.gaxis.value / 32767.0f);
+				GamepadHub::Current() = dev;
+			}
+		break;
+	case SDL_EVENT_MOUSE_WHEEL:
+		if (MouseHub::Current()) {
+			auto m = static_cast<MouseDevice*>(MouseHub::Current().get());
+			m->SetAxis(2, m->GetAxis(2) + ev.wheel.x);
+			m->SetAxis(3, m->GetAxis(3) + ev.wheel.y);
+		}
+		break;
+	}
+	
+}
+
 void System::Update(float dt)
 {
 	if (MouseHub::Current())
 		static_cast<MouseDevice*>(MouseHub::Current().get())->ResetFrameAxes();
-
-	SDL_Event ev;
-	while (SDL_PollEvent(&ev)) {
-		switch (ev.type) {
-		case SDL_EVENT_KEY_DOWN:
-		case SDL_EVENT_KEY_UP:
-			if (KeyboardHub::Current())
-				static_cast<KeyboardDevice*>(KeyboardHub::Current().get())
-				->SetState((int)ev.key.scancode, ev.type == SDL_EVENT_KEY_DOWN);
-			break;
-		case SDL_EVENT_MOUSE_BUTTON_DOWN:
-		case SDL_EVENT_MOUSE_BUTTON_UP:
-			if (MouseHub::Current())
-				static_cast<MouseDevice*>(MouseHub::Current().get())
-				->SetButton((int)ev.button.button, ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN);
-			break;
-		case SDL_EVENT_MOUSE_MOTION:
-			if (MouseHub::Current()) {
-				auto m = static_cast<MouseDevice*>(MouseHub::Current().get());
-				m->SetAxis(0, ev.motion.x);
-				m->SetAxis(1, ev.motion.y);
-				m->SetAxis(4, m->GetAxis(4) + ev.motion.xrel);
-				m->SetAxis(5, m->GetAxis(5) + ev.motion.yrel);
-			}
-			break;
-		case SDL_EVENT_GAMEPAD_ADDED:
-			LOG_INFO(GlobalLogger(), "InputSystem", "Gamepad connected");
-			GamepadHub::All().push_back(std::make_shared<GamepadDevice>(ev.gdevice.which));
-			break;
-		case SDL_EVENT_GAMEPAD_REMOVED:
-			LOG_INFO(GlobalLogger(), "InputSystem", "Gamepad disconnected");
-			std::erase_if(GamepadHub::All(), [&](auto& d) { return d->GetId() == ev.gdevice.which; });
-			break;
-		case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
-		case SDL_EVENT_GAMEPAD_BUTTON_UP:
-			for (auto& dev : GamepadHub::All())
-				if (dev->GetId() == ev.gbutton.which) {
-					static_cast<GamepadDevice*>(dev.get())
-						->SetButton((int)ev.gbutton.button, ev.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN);
-					GamepadHub::Current() = dev;
-				}
-			break;
-		case SDL_EVENT_GAMEPAD_AXIS_MOTION:
-			for (auto& dev : GamepadHub::All())
-				if (dev->GetId() == ev.gaxis.which) {
-					static_cast<GamepadDevice*>(dev.get())
-						->SetAxis((int)ev.gaxis.axis, ev.gaxis.value / 32767.0f);
-					GamepadHub::Current() = dev;
-				}
-			break;
-		case SDL_EVENT_MOUSE_WHEEL:
-			if (MouseHub::Current()) {
-				auto m = static_cast<MouseDevice*>(MouseHub::Current().get());
-				m->SetAxis(2, m->GetAxis(2) + ev.wheel.x);
-				m->SetAxis(3, m->GetAxis(3) + ev.wheel.y);
-			}
-			break;
-		}
-	}
 
 	for (auto& [playerId, mapName] : PlayerToMap)
 	{

@@ -28,9 +28,6 @@
     <Filter Include="Header Files\Internals">
       <UniqueIdentifier>{be81bd6d-9f83-48cc-9b3e-9c446afb88a5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Internals\Components">
-      <UniqueIdentifier>{323f651f-256e-4008-af26-d63bc4d5dbfa}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Internals\InputSystem">
       <UniqueIdentifier>{a84451c1-6bc9-4882-b5ce-a07abd0cf250}</UniqueIdentifier>
     </Filter>
@@ -45,6 +42,12 @@
     </Filter>
     <Filter Include="Source Files\Internals\logger">
       <UniqueIdentifier>{9ce3ce95-b1ae-440c-b985-4c5d6878244c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Internals\ECS">
+      <UniqueIdentifier>{323f651f-256e-4008-af26-d63bc4d5dbfa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Internals\Util">
+      <UniqueIdentifier>{c460774d-cde3-4e37-a9fa-0663553ad269}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -84,22 +87,22 @@
     <ClCompile Include="FusionBenchmark.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AnimationSystem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="PhysicsSystem.h">
       <Filter>Header Files\Internals</Filter>
     </ClCompile>
+    <ClCompile Include="AnimationSystem.cpp">
+      <Filter>Source Files\Internals</Filter>
+    </ClCompile>
     <ClCompile Include="PhysicsSystem.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Internals</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECS.h">
-      <Filter>Header Files\Internals\Components</Filter>
+      <Filter>Header Files\Internals\ECS</Filter>
     </ClInclude>
     <ClInclude Include="RenderComponent.h">
-      <Filter>Header Files\Internals\Components</Filter>
+      <Filter>Header Files\Internals\ECS</Filter>
     </ClInclude>
     <ClInclude Include="State.h">
       <Filter>Header Files\Internals\State</Filter>
@@ -108,10 +111,10 @@
       <Filter>Header Files\Internals\State</Filter>
     </ClInclude>
     <ClInclude Include="MeshComponent.h">
-      <Filter>Header Files\Internals\Components</Filter>
+      <Filter>Header Files\Internals\ECS</Filter>
     </ClInclude>
     <ClInclude Include="SimpleSprite.h">
-      <Filter>Header Files\Internals\Components</Filter>
+      <Filter>Header Files\Internals\ECS</Filter>
     </ClInclude>
     <ClInclude Include="InputSystem.h">
       <Filter>Header Files\Internals\InputSystem</Filter>
@@ -125,12 +128,6 @@
     <ClInclude Include="StartState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Struct.h">
-      <Filter>Header Files\Internals</Filter>
-    </ClInclude>
-    <ClInclude Include="SharedDataRef.h">
-      <Filter>Header Files\Internals</Filter>
-    </ClInclude>
     <ClInclude Include="logger.h">
       <Filter>Header Files\Internals\logger</Filter>
     </ClInclude>
@@ -140,11 +137,8 @@
     <ClInclude Include="NBody.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Blackboard.h">
-      <Filter>Header Files\Internals</Filter>
-    </ClInclude>
     <ClInclude Include="InputComponent.h">
-      <Filter>Header Files\Internals\Components</Filter>
+      <Filter>Header Files\Internals\ECS</Filter>
     </ClInclude>
     <ClInclude Include="BenchmarkState.h">
       <Filter>Header Files</Filter>
@@ -154,6 +148,21 @@
     </ClInclude>
     <ClInclude Include="AnimationSystem.h">
       <Filter>Header Files\Internals</Filter>
+    </ClInclude>
+    <ClInclude Include="Blackboard.h">
+      <Filter>Header Files\Internals\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Struct.h">
+      <Filter>Header Files\Internals\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="SharedDataRef.h">
+      <Filter>Header Files\Internals\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>Header Files\Internals\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="RigidBody.h">
+      <Filter>Header Files\Internals\ECS</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

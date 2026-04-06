@@ -302,6 +302,13 @@ void World::DisableSystem(StringId name)
     for (auto& s : render_systems_)
         if (s.name == name) { s.enabled = false; systems_dirty_ = true; return; }
 }
+void World::ToggleSystem(StringId name)
+{
+    for (auto& s : update_systems_)
+        if (s.name == name) { s.enabled = !s.enabled; systems_dirty_ = true; return; }
+    for (auto& s : render_systems_)
+        if (s.name == name) { s.enabled = !s.enabled; systems_dirty_ = true; return; }
+}
 
 void World::RebuildFusedGroups(std::vector<SystemEntry>& systems, std::vector<FusedGroup>& groups)
 {

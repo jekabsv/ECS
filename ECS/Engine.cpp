@@ -79,7 +79,7 @@ void Engine::Render(float dt)
         return;
     }
 
-    //SDL_RenderClear(_data->SDLrenderer);
+    SDL_RenderClear(_data->SDLrenderer);
 
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Render, dt);
     _data->state.GetActiveState()->Render(dt);
@@ -103,6 +103,9 @@ void Engine::run()
 
         _data->state.ProcessStateChanges();
         _data->inputs.Update(dt);
+        SDL_Event ev;
+        while (SDL_PollEvent(&ev))
+            _data->inputs.HandleEvent(ev, _data->quit);
         Update(dt);
         Render(dt);
 

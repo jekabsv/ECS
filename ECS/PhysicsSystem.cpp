@@ -245,7 +245,8 @@ void PhysicsSystem::MovementSystem(ECS::ArchetypeContext ctx, float dt, SharedDa
             continue;
 
         float dragFactor = 1.0f - rb.drag * dt;
-        if (dragFactor < 0.0f) dragFactor = 0.0f;
+        if (dragFactor < 0.0f) 
+            dragFactor = 0.0f;
         rb.vx *= dragFactor;
         rb.vy *= dragFactor;
 
@@ -286,12 +287,6 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
         float aw = bc.hw * 2.0f * rc.scale.x;
         float ah = bc.hh * 2.0f * rc.scale.y;
 
-        SDL_FRect rect = { ax, ay, aw, ah };
-        SDL_SetRenderDrawColor(data_->SDLrenderer, 255, 0, 0, 255);
-        SDL_RenderRect(data_->SDLrenderer, &rect);
-        SDL_SetRenderDrawColor(data_->SDLrenderer, 0, 0, 0, 255);
-
-
         quadTree_.Insert(entities[i], ax, ay, aw, ah);
     }
 }
@@ -320,10 +315,10 @@ void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedD
         auto& rc = rcs[i];
         auto& bc = bcs[i];
 
-        float ax = rc.position.x + bc.offsetX - bc.hw;
-        float ay = rc.position.y + bc.offsetY - bc.hh;
-        float aw = bc.hw * 2.0f;
-        float ah = bc.hh * 2.0f;
+        float ax = rc.position.x + (bc.offsetX * rc.scale.x) - (bc.hw * rc.scale.x);
+        float ay = rc.position.y + (bc.offsetY * rc.scale.y) - (bc.hh * rc.scale.y);
+        float aw = bc.hw * 2.0f * rc.scale.x;
+        float ah = bc.hh * 2.0f * rc.scale.y;
 
         std::size_t found = quadTree_.Query(ax, ay, aw, ah, candidates, QUERY_BUF_SIZE);
 
@@ -337,10 +332,10 @@ void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedD
             TransformComponent* otherRc = world_->TryGet<TransformComponent>(other);
             if (!otherBc || !otherRc) continue;
 
-            float bx = otherRc->position.x + otherBc->offsetX - otherBc->hw;
-            float by = otherRc->position.y + otherBc->offsetY - otherBc->hh;
-            float bw = otherBc->hw * 2.0f;
-            float bh = otherBc->hh * 2.0f;
+            float bx = otherRc->position.x + (otherBc->offsetX * otherRc->scale.x) - (otherBc->hw * otherRc->scale.x);
+            float by = otherRc->position.y + (otherBc->offsetY * otherRc->scale.y) - (otherBc->hh * otherRc->scale.y);
+            float bw = otherBc->hw * 2.0f * otherRc->scale.x;
+            float bh = otherBc->hh * 2.0f * otherRc->scale.y;
 
             if (!(ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by))
                 continue;
@@ -357,3 +352,5 @@ void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedD
         }
     }
 }
+
+

@@ -477,6 +477,13 @@ namespace ECS
         void DisableSystem(StringId name);
 
         /// <summary>
+        /// Toggle System
+        /// </summary>
+        /// <param name="group">Update/Render</param>
+        /// <param name="dt">time step</param>
+        void ToggleSystem(StringId name);
+
+        /// <summary>
         /// Run system assigned to Update/Render
         /// </summary>
         /// <param name="group">Update/Render</param>

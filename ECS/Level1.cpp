@@ -20,8 +20,8 @@ void Level1::Init()
 	e = ecs.Create();
 	playerEntity = ecs.Create();
 
-    ecs.Add<BoxCollider>(e, BoxCollider(100.0f, 100.0f, true));
-    ecs.Add<MeshComponent>(e, MeshComponent("square", "", true));
+    ecs.Add<BoxCollider>(e, BoxCollider(1.0f, 1.0f, true));
+    ecs.Add<MeshComponent>(e, MeshComponent("Triangle", "", true));
     ecs.Add<TransformComponent>(e, TransformComponent({ 500.0f, 500.0f }, { 100.0f, 100.0f }));
 
 
@@ -206,12 +206,13 @@ void Level1::Init()
             }
         }, 
         ECS::SystemGroup::Render);
-
-    ecs.DisableSystem("draw_colliders");
 }
 
 void Level1::Update(float dt)
 {
     if(_data->inputs.GetActionState("next") == InputSystem::Pressed)
         _data->state.AddState(StateRef(new NBody(_data)), 1);
+
+    if (_data->inputs.GetActionState("show_colliders") == InputSystem::Pressed)
+        ecs.ToggleSystem("draw_colliders");
 }

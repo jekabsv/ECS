@@ -242,7 +242,9 @@ namespace InputSystem
 
 		std::vector<std::shared_ptr<Internals::Device>> GetDevicesOfType(int player, DeviceType type);
 
+		
 		void Update(float dt);
+		void HandleEvent(SDL_Event& event, bool &quit);
 	};
 
 }
