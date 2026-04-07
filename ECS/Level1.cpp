@@ -4,6 +4,7 @@
 #include "InputComponent.h"
 #include "NBody.h"
 #include "Transform.h"
+#include "physSim.h"
 #include <iostream>
 
 void Level1::Init()
@@ -24,8 +25,7 @@ void Level1::Init()
     ecs.Add<TransformComponent>(playerEntity, TransformComponent({ 0.0f, 0.0f }, { 1.0f, 1.0f }));
     ecs.Add<InputComponent>(playerEntity, InputComponent());
     ecs.Add<AnimationPlayer>(playerEntity, AnimationPlayer{});
-    ecs.Add<BoxCollider>(playerEntity, BoxCollider(25.0f, 50.0f, false));
-    ecs.Add<CollisionEvent>(playerEntity, CollisionEvent());
+    ecs.Add<BoxCollider>(playerEntity, BoxCollider(25.0f, 50.0f, true));
 
 
     _data->animation.Play(ecs.Get<AnimationPlayer>(playerEntity), "player_idle_right");
@@ -76,21 +76,19 @@ void Level1::Init()
         },
         ECS::SystemGroup::Update);
 
-    ecs.RegisterSystem<CollisionEvent, TransformComponent>("onCollision",
+    ecs.RegisterSystem<BoxCollider, TransformComponent>("onCollision",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
         {
-            auto evs = ctx.Slice<CollisionEvent>();
             auto transforms = ctx.Slice<TransformComponent>();
-
-            for (std::size_t i = 0; i < evs.size(); i++)
+            auto entities = ctx.Slice<ECS::Entity>();
+            for (std::size_t i = 0; i < transforms.size(); i++)
             {
-                auto& ev = evs[i];
-                if (ev.count == 0)
+                auto& ev = data->physics.GetContacts(entities[i]);
+                if (ev.size() == 0)
                     continue;
-                for (std::size_t c = 0; c < ev.count; c++)
+                for (std::size_t j = 0; j < ev.size(); j++)
                 {
-                    ECS::Entity other = ev.Contacts()[c];
-
+                    ECS::Entity other = ev[j];
 
                     BoxCollider* otherBc = data->physics.GetWorld()->TryGet<BoxCollider>(other);
                     if (otherBc && otherBc->isTrigger)
@@ -206,7 +204,7 @@ void Level1::Init()
 void Level1::Update(float dt)
 {
     if(_data->inputs.GetActionState("next") == InputSystem::Pressed)
-        _data->state.AddState(StateRef(new NBody(_data)), 1);
+        _data->state.AddState(StateRef(new PhysSim(_data)), 1);
 
     if (_data->inputs.GetActionState("show_colliders") == InputSystem::Pressed)
         ecs.ToggleSystem("draw_colliders");

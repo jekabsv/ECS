@@ -17,3 +17,4 @@ private:
     static constexpr float SOFTENING_SQ = 300.0f;
     static constexpr float MAX_SPEED = 800.0f;
 };
+

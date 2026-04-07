@@ -3,15 +3,14 @@
 #include "SharedDataRef.h"
 #include "Transform.h"
 
-// ─── CollisionEvent ───────────────────────────────────────────────────────────
 
-ECS::Entity* CollisionEvent::Contacts()
+const std::vector<ECS::Entity> PhysicsSystem::emptyContacts_;
+
+const std::vector<ECS::Entity>& PhysicsSystem::GetContacts(ECS::Entity e) const
 {
-    return reinterpret_cast<ECS::Entity*>(buffer);
-}
-const ECS::Entity* CollisionEvent::Contacts() const
-{
-    return reinterpret_cast<const ECS::Entity*>(buffer);
+    auto it = contactMap_.find(e);
+    if (it == contactMap_.end()) return emptyContacts_;
+    return it->second;
 }
 
 bool QuadTree::Overlaps(float ax, float ay, float aw, float ah,
@@ -258,9 +257,7 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
 
     for (std::size_t i = 0; i < entities.size(); i++)
     {
-        CollisionEvent* ev = world_->TryGet<CollisionEvent>(entities[i]);
-        if (ev) 
-            ev->count = 0;
+        contactMap_[entities[i]].clear();
 
         auto& rc = rcs[i];
         auto& bc = bcs[i];
@@ -320,13 +317,13 @@ void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedD
 
             collisionPairs_.push_back({ entities[i], other });
 
-            CollisionEvent* evA = world_->TryGet<CollisionEvent>(entities[i]);
-            if (evA && evA->count < MAX_CONTACTS)
-                evA->Contacts()[evA->count++] = other;
+            auto& contactsA = contactMap_[entities[i]];
+            if (contactsA.size() < MAX_CONTACTS)
+                contactsA.push_back(other);
 
-            CollisionEvent* evB = world_->TryGet<CollisionEvent>(other);
-            if (evB && evB->count < MAX_CONTACTS)
-                evB->Contacts()[evB->count++] = entities[i];
+            auto& contactsB = contactMap_[other];
+            if (contactsB.size() < MAX_CONTACTS)
+                contactsB.push_back(entities[i]);
         }
     }
 }

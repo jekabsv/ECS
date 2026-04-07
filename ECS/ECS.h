@@ -581,10 +581,12 @@ namespace ECS
     template<typename T>
     T* World::TryGet(Entity e) noexcept
     {
-        if (!Alive(e)) return nullptr;
+        if (!Alive(e)) 
+            return nullptr;
         uint32_t eid = EntityId(e);
         auto& rec = records_[eid];
-        if (!rec.arch->HasComponent(GetComponentId<T>())) return nullptr;
+        if (!rec.arch->HasComponent(GetComponentId<T>()))
+            return nullptr;
         return &rec.arch->Get<T>(rec.chunk_idx, rec.row);
     }
 

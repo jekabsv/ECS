@@ -146,6 +146,7 @@
     <ClCompile Include="NBody.cpp" />
     <ClCompile Include="PhysicsSystem.cpp" />
     <ClCompile Include="PhysicsSystem.h" />
+    <ClCompile Include="physSim.cpp" />
     <ClCompile Include="StartState.cpp" />
     <ClCompile Include="State.cpp" />
     <ClCompile Include="StateMachine.cpp" />
@@ -164,6 +165,7 @@
     <ClInclude Include="logger.h" />
     <ClInclude Include="MeshComponent.h" />
     <ClInclude Include="NBody.h" />
+    <ClInclude Include="physSim.h" />
     <ClInclude Include="RigidBody.h" />
     <ClInclude Include="SharedDataRef.h" />
     <ClInclude Include="SimpleSprite.h" />
