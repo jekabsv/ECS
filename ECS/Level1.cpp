@@ -1,5 +1,4 @@
 #include "Level1.h"
-#include "RenderComponent.h"
 #include "MeshComponent.h"
 #include "SimpleSprite.h"
 #include "InputComponent.h"
@@ -96,7 +95,7 @@ void Level1::Init()
                     BoxCollider* otherBc = data->physics.GetWorld()->TryGet<BoxCollider>(other);
                     if (otherBc && otherBc->isTrigger)
                     {
-                        std::cout << "Trigger collision!\n"; //outputs this when should the other
+                        LOG_DEBUG(GlobalLogger(), "Collision", "Trigger collision!");
                     }
                     else
                     {

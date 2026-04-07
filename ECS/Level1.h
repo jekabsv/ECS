@@ -11,7 +11,6 @@ public:
     void Update(float dt) override;
 
 private:
-    //SharedDataRef _data;
     int TexX = 0;
     int TexY = 0;
     bool direction = 0;

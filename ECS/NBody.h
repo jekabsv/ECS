@@ -7,12 +7,10 @@ class NBody : public State
 public:
     using State::State;
     void Init() override;
+    void Update(float dt) override;
 
 private:
-    struct StarComponent
-    {
-        float mass = 1.0f;
-    };
+    struct StarComponent { float mass = 1.0f; };
 
     static constexpr int   N = 1000;
     static constexpr float G = 1200.0f;

@@ -1,5 +1,4 @@
 #include "PhysicsSystem.h"
-#include "RenderComponent.h"
 #include "logger.h"
 #include "SharedDataRef.h"
 #include "Transform.h"

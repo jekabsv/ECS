@@ -1,9 +1,8 @@
 #include "NBody.h"
 #include <cstdlib>
 #include <cmath>
-#include "RenderComponent.h"
 #include "Transform.h"
-
+#include "Level1.h"
 
 void NBody::Init()
 {
@@ -92,4 +91,12 @@ void NBody::Init()
             }
         },
         ECS::SystemGroup::Render);
+}
+
+
+
+void NBody::Update(float dt)
+{
+    if (_data->inputs.GetActionState("next") == InputSystem::Pressed)
+        _data->state.AddState(StateRef(new Level1(_data)), 1);
 }

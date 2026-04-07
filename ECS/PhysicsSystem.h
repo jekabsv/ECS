@@ -28,6 +28,8 @@ static_assert(std::is_trivially_copyable_v<BoxCollider>);
 static_assert(std::is_trivially_copyable_v<CollisionEvent>);
 
 
+//Change Phys Contacts storage from per Component to System wide storage
+//To system add a Getter GetContacts(Entity ID);
 
 
 
