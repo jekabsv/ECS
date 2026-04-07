@@ -160,6 +160,8 @@ The engine is designed to be modular, data-oriented, and suitable for both **run
 
 ### 7. Consitency
 - Change everything to have the same naming, logic conventions
+- Review InputComponent, preferably removed
+
 
 ## Technologies Used
 
