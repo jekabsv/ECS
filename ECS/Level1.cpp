@@ -5,26 +5,7 @@
 #include "NBody.h"
 #include "Transform.h"
 #include <iostream>
-
-
-bool Overlap(float x1, float y1, float w1, float h1,
-    float x2, float y2, float w2, float h2) 
-{
-    if (x1 + w1 <= x2 || x2 + w2 <= x1) 
-        return false;
-
-    if (y1 + h1 <= y2 || y2 + h2 <= y1) 
-        return false;
-    return true;
-}
-
-bool Contains(float px, float py, float x, float y, float w, float h) {
-    return (px >= x &&
-        px <= x + w &&
-        py >= y &&
-        py <= y + h);
-}
-
+#include "Utility.h"
 
 struct Clicked { bool clicked = false; };
 
@@ -48,7 +29,7 @@ void Level1::Init()
     ecs.Add<InputComponent>(playerEntity, InputComponent());
     ecs.Add<AnimationPlayer>(playerEntity, AnimationPlayer{});
     ecs.Add<BoxCollider>(playerEntity, BoxCollider(25.0f, 50.0f, true));
-	ecs.Add<Clicked>(playerEntity, Clicked());
+	//ecs.Add<Clicked>(playerEntity, Clicked());
 
 
     _data->animation.Play(ecs.Get<AnimationPlayer>(playerEntity), "player_idle_right");
@@ -128,6 +109,24 @@ void Level1::Init()
         ECS::SystemGroup::Update);
 
 
+
+
+    ecs.RegisterSystem<Clicked, TransformComponent>("click",
+        [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
+        {
+            auto transforms = ctx.Slice<TransformComponent>();
+            auto click = ctx.Slice<Clicked>();
+            for (std::size_t i = 0; i < transforms.size(); i++)
+            {
+                if(click[i].clicked)
+                {
+                    transforms[i].position.x = data->inputs.GetActionAxis("mousePos")[0];
+                    transforms[i].position.y = data->inputs.GetActionAxis("mousePos")[1];
+                    click[i].clicked = false;
+                }
+            }
+        },
+        ECS::SystemGroup::Update);
 
 
     ecs.RegisterSystem<SimpleSprite, TransformComponent>("renderSprite",
@@ -226,12 +225,10 @@ void Level1::Init()
 
 void Level1::Update(float dt)
 {
-    if (_data->inputs.GetActionState("click") == InputSystem::Pressed)
+    if (_data->inputs.GetActionState("click") == InputSystem::Held)
     {
         float mx = _data->inputs.GetActionAxis("mousePos")[0];
         float my = _data->inputs.GetActionAxis("mousePos")[1];
-
-        std::cout << "mouse: " << mx << ", " << my << '\n';
 
 		std::vector<ECS::Entity> foundEntities;
         _data->spatialIndex.QueryPoint(mx, my, foundEntities);
@@ -241,9 +238,7 @@ void Level1::Update(float dt)
 			auto pos = ecs.TryGet<TransformComponent>(e);
 			auto click = ecs.TryGet<Clicked>(e);
             if(col && pos && click)
-                if (Contains(mx, my, pos->position.x + col->offsetX * pos->scale.x - col->hw * pos->scale.x,
-                    pos->position.y + col->offsetY * pos->scale.y - col->hh * pos->scale.y,
-                    col->hw * 2.0f * pos->scale.x, col->hh * 2.0f * pos->scale.y)) {
+                if (Utility::Contains(mx, my, pos, col)) {
 					click->clicked = true;
                     std::cout << "  clicked on entity: " << e << '\n';
                 }

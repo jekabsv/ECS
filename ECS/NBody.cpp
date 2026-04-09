@@ -4,9 +4,11 @@
 #include "Transform.h"
 #include "Level1.h"
 
+
 void NBody::Init()
 {
-    _data->physics.EnableMovement();
+    _data->physics.EnableCollisionDetection();
+
     const float W = (float)_data->GAME_WIDTH;
     const float H = (float)_data->GAME_HEIGHT * 0.5f;
 
@@ -18,7 +20,7 @@ void NBody::Init()
         StarComponent star;
         TransformComponent tr;
 
-        rb.drag = 0.0f;
+        rb.drag = 0.1f;
         rb.isStatic = false;
         rb.vx = ((rand() % 400) - 200) * 0.3f;
         rb.vy = ((rand() % 400) - 200) * 0.3f;
@@ -31,6 +33,7 @@ void NBody::Init()
         ecs.Add<StarComponent>(e, star);
         ecs.Add<TransformComponent>(e, tr);
         ecs.Add<RigidBody>(e, rb);
+        ecs.Add<BoxCollider>(e, BoxCollider(1.5f, 1.5f));
     }
 
     ecs.RegisterSystem<StarComponent, TransformComponent, RigidBody>("applyGravity",
@@ -75,6 +78,10 @@ void NBody::Init()
         },
         ECS::SystemGroup::Update);
 
+
+
+
+
     ecs.RegisterSystem<StarComponent, TransformComponent>("renderStars",
         [](ECS::ArchetypeContext ctx, float, SharedDataRef data)
         {
@@ -91,12 +98,92 @@ void NBody::Init()
             }
         },
         ECS::SystemGroup::Render);
+
+
+    ecs.RegisterSystem<BoxCollider, TransformComponent>("draw_colliders",
+        [](ECS::ArchetypeContext ctx, float dt, SharedDataRef _data)
+        {
+            auto colliders = ctx.Slice<BoxCollider>();
+            auto transforms = ctx.Slice<TransformComponent>();
+
+            for (int i = 0; i < colliders.size(); i++)
+            {
+                auto& transform = transforms[i];
+                auto& col = colliders[i];
+                float ax = transform.position.x + col.offsetX * transform.scale.x - col.hw * transform.scale.x;
+                float ay = transform.position.y + col.offsetY * transform.scale.y - col.hh * transform.scale.y;
+                float aw = col.hw * 2.0f * transform.scale.x;
+                float ah = col.hh * 2.0f * transform.scale.y;
+
+
+                SDL_FRect rect = { ax, ay, aw, ah };
+                SDL_SetRenderDrawColor(_data->SDLrenderer, 255, 0, 0, 255);
+                SDL_RenderRect(_data->SDLrenderer, &rect);
+                SDL_SetRenderDrawColor(_data->SDLrenderer, 0, 0, 0, 255);
+
+            }
+        },
+        ECS::SystemGroup::Render);
 }
 
 
 
 void NBody::Update(float dt)
 {
+    if(_data->inputs.GetActionState("show_colliders") == InputSystem::Pressed)
+    {
+        running = !running;
+        _data->physics.EnableMovement(running);
+        //ecs.ToggleSystem("draw_colliders");/
+    }
     if (_data->inputs.GetActionState("next") == InputSystem::Pressed)
         _data->state.AddState(StateRef(new Level1(_data)), 1);
 }
+
+
+/*ecs.RegisterSystem<BoxCollider, TransformComponent, RigidBody>("onCollision",
+    [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
+    {
+        auto transforms = ctx.Slice<TransformComponent>();
+        auto entities = ctx.Slice<ECS::Entity>();
+        auto rbs = ctx.Slice<RigidBody>();
+        auto colliders = ctx.Slice<BoxCollider>();
+
+        for (std::size_t i = 0; i < transforms.size(); i++)
+        {
+            auto& ev = data->physics.GetContacts(entities[i]);
+            for (auto other : ev)
+            {
+                // 1. Get Other's Data
+                auto* otherTr = data->physics.GetWorld()->TryGet<TransformComponent>(other);
+                auto* otherCol = data->physics.GetWorld()->TryGet<BoxCollider>(other);
+                auto* otherRb = data->physics.GetWorld()->TryGet<RigidBody>(other);
+
+                if (!otherTr || !otherCol || otherCol->isTrigger) continue;
+
+                // 2. Calculate Overlap (Manifold)
+                float dx = otherTr->position.x - transforms[i].position.x;
+                float px = (otherCol->hw + colliders[i].hw) - std::abs(dx);
+
+                float dy = otherTr->position.y - transforms[i].position.y;
+                float py = (otherCol->hh + colliders[i].hh) - std::abs(dy);
+
+                if (px <= 0 || py <= 0) continue;
+
+                // 3. Positional Correction (The "De-Penetration")
+                // We move them out along the shallowest axis
+                if (px < py) {
+                    float sign = (dx > 0) ? -1.0f : 1.0f;
+                    transforms[i].position.x += px * sign;
+                    // 4. Velocity Reflection (Impulse)
+                    rbs[i].vx *= -0.5f; // Add "bounciness" factor (0.5 = lose half energy)
+                }
+                else {
+                    float sign = (dy > 0) ? -1.0f : 1.0f;
+                    transforms[i].position.y += py * sign;
+                    rbs[i].vy *= -0.5f;
+                }
+            }
+        }
+    },
+    ECS::SystemGroup::Update);*/

@@ -59,7 +59,7 @@ bool Engine::Initialize()
     _data->state.ProcessStateChanges();
     
 
-    _data->spatialIndex.Init(0.f, 0.f, _data->GAME_WIDTH, _data->GAME_HEIGHT);
+    _data->spatialIndex.Init(0.f, 0.f, _data->GAME_WIDTH, _data->GAME_HEIGHT, 32);
 
 
     return _data->SDLrenderer != nullptr;

@@ -2,6 +2,7 @@
 #include "logger.h"
 #include "SharedDataRef.h"
 #include "Transform.h"
+#include <chrono>
 
 
 const std::vector<ECS::Entity> PhysicsSystem::emptyContacts_;
@@ -16,6 +17,31 @@ const std::vector<ECS::Entity>& PhysicsSystem::GetContacts(ECS::Entity e) const
 void PhysicsSystem::Tie(ECS::World& world)
 {
     world_ = &world;
+    world_->RegisterSystem<BoxCollider, TransformComponent>("physicsBuild",
+        [this](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
+        {
+            BuildSystem(ctx, dt, data);
+        },
+        ECS::SystemGroup::Update);
+
+    world_->RegisterSystem<BoxCollider, TransformComponent>("physicsCollide",
+        [this](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
+        {
+            CollisionSystem(ctx, dt, data);
+        },
+        ECS::SystemGroup::Update);
+
+    world_->RegisterSystem<RigidBody, TransformComponent>("physicsMove",
+        [this](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
+        {
+            MovementSystem(ctx, dt, data);
+        },
+        ECS::SystemGroup::Update);
+
+    world.DisableSystem("physicsBuild");
+    world.DisableSystem("physicsCollide");
+    world.DisableSystem("physicsMove");
+
 }
 
 //void PhysicsSystem::SetWorldBounds(float x, float y, float w, float h, SharedDataRef data)
@@ -40,12 +66,7 @@ void PhysicsSystem::EnableMovement(bool enable)
 
     if (!enable) { world_->DisableSystem("physicsMove"); return; }
 
-    world_->RegisterSystem<RigidBody, TransformComponent>("physicsMove",
-        [this](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
-        {
-            MovementSystem(ctx, dt, data);
-        },
-        ECS::SystemGroup::Update);
+    world_->EnableSystem("physicsMove");
 }
 
 void PhysicsSystem::EnableCollisionDetection(bool enable)
@@ -63,19 +84,9 @@ void PhysicsSystem::EnableCollisionDetection(bool enable)
         return;
     }
 
-    world_->RegisterSystem<BoxCollider, TransformComponent>("physicsBuild",
-        [this](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
-        {
-            BuildSystem(ctx, dt, data);
-        },
-        ECS::SystemGroup::Update);
-
-    world_->RegisterSystem<BoxCollider, TransformComponent>("physicsCollide",
-        [this](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
-        {
-            CollisionSystem(ctx, dt, data);
-        },
-        ECS::SystemGroup::Update);
+    world_->EnableSystem("physicsBuild");
+    world_->EnableSystem("physicsCollide");
+    
 }
 
 void PhysicsSystem::MovementSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
@@ -102,6 +113,9 @@ void PhysicsSystem::MovementSystem(ECS::ArchetypeContext ctx, float dt, SharedDa
 
 void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
 {
+
+    auto t0 = std::chrono::high_resolution_clock::now();
+
     if (!_built)
     {
         data->spatialIndex.Clear();
@@ -116,7 +130,9 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
 
     for (std::size_t i = 0; i < entities.size(); i++)
     {
-        contactMap_[entities[i]].clear();
+        auto it = contactMap_.find(entities[i]);
+        if (it != contactMap_.end()) 
+            it->second.clear();
 
         auto& rc = rcs[i];
         auto& bc = bcs[i];
@@ -127,10 +143,17 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
 
         data->spatialIndex.InsertRectangle(entities[i], ax, ay, aw, ah);
     }
+
+    auto t1 = std::chrono::high_resolution_clock::now();
+    float ms = std::chrono::duration<float, std::milli>(t1 - t0).count();
+    if (ms > 1.0f) printf("BuildSystem: %.2f ms\n", ms);
 }
 
 void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
 {
+    auto t0 = std::chrono::high_resolution_clock::now();
+
+
     if (!_queried)
     {
         _built = false;
@@ -141,6 +164,9 @@ void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedD
     auto rcs = ctx.Slice<TransformComponent>();
     auto bcs = ctx.Slice<BoxCollider>();
 
+    std::vector<ECS::Entity> found;
+    found.reserve(64);
+
     for (std::size_t i = 0; i < entities.size(); i++)
     {
         auto& rc = rcs[i];
@@ -150,9 +176,9 @@ void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedD
         float ay = rc.position.y + (bc.offsetY * rc.scale.y) - (bc.hh * rc.scale.y);
         float aw = bc.hw * 2.0f * rc.scale.x;
         float ah = bc.hh * 2.0f * rc.scale.y;
-
-        std::vector<ECS::Entity> found;
-
+        
+        
+        found.clear();
         data->spatialIndex.QueryRectangle(ax, ay, aw, ah, found);
 
         for (auto x : found)
@@ -186,6 +212,11 @@ void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedD
                 contactsB.push_back(entities[i]);
         }
     }
+
+
+    auto t1 = std::chrono::high_resolution_clock::now();
+    float ms = std::chrono::duration<float, std::milli>(t1 - t0).count();
+    if (ms > 1.0f) printf("CollisionSystem: %.2f ms\n", ms);
 }
 
 

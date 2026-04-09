@@ -16,5 +16,6 @@ private:
     static constexpr float G = 1200.0f;
     static constexpr float SOFTENING_SQ = 300.0f;
     static constexpr float MAX_SPEED = 800.0f;
+    bool running = false;
 };
 

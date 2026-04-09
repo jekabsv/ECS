@@ -164,6 +164,9 @@
     <ClInclude Include="physSim.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Utility.h">
+      <Filter>Header Files\Internals\Util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="SpatialIndex.h">

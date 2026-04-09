@@ -4,6 +4,7 @@
 #include <string>
 #include <SDL3\SDL.h>
 #include "StartState.h"
+#include "Utility.h"
 
 static bool mainLoopRegistered = false;
 
