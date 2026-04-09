@@ -131,7 +131,6 @@ The engine is designed to be modular, data-oriented, and suitable for both **run
 ## ToDo
 
 ### 1. PhysicSystem
-- change quadtree for spatial hashing, open API for spatial hasher quierrying
 - add BoxCollider, SphereCollider, CapsuleCollider, MeshCollider, etc..
 - RigidBody - add gravity, angular velocity, Various constraints like freeze position/rotation axes etc..
 - Add Physics Materials — assigned to colliders that define friction and bounciness
@@ -161,6 +160,12 @@ The engine is designed to be modular, data-oriented, and suitable for both **run
 ### 7. Consitency
 - Change everything to have the same naming, logic conventions
 - Review InputComponent, preferably removed
+
+### 8. ECS
+- Review ECS system ordering:
+  - add Initialise, Pre-Update, Post-Update system groups
+  - add .before(System) .after(System) to System Builder
+  - remove swap remove
 
 
 ## Technologies Used
