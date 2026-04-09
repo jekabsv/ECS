@@ -7,6 +7,7 @@
 #include "Blackboard.h"
 #include "AnimationSystem.h"
 #include "PhysicsSystem.h"
+#include "SpatialIndex.h"
 
 struct SharedData
 {
@@ -22,6 +23,7 @@ struct SharedData
     Blackboard session;
     AnimationSystem animation;
     PhysicsSystem physics;
+	SpatialIndex spatialIndex;
 };
 
 typedef std::shared_ptr<SharedData> SharedDataRef;

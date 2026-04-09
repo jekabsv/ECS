@@ -4,8 +4,29 @@
 #include "InputComponent.h"
 #include "NBody.h"
 #include "Transform.h"
-#include "physSim.h"
 #include <iostream>
+
+
+bool Overlap(float x1, float y1, float w1, float h1,
+    float x2, float y2, float w2, float h2) 
+{
+    if (x1 + w1 <= x2 || x2 + w2 <= x1) 
+        return false;
+
+    if (y1 + h1 <= y2 || y2 + h2 <= y1) 
+        return false;
+    return true;
+}
+
+bool Contains(float px, float py, float x, float y, float w, float h) {
+    return (px >= x &&
+        px <= x + w &&
+        py >= y &&
+        py <= y + h);
+}
+
+
+struct Clicked { bool clicked = false; };
 
 void Level1::Init()
 {
@@ -19,6 +40,7 @@ void Level1::Init()
     ecs.Add<BoxCollider>(e, BoxCollider(1.0f, 1.0f, true));
     ecs.Add<MeshComponent>(e, MeshComponent("Triangle", "", true));
     ecs.Add<TransformComponent>(e, TransformComponent({ 500.0f, 500.0f }, { 100.0f, 100.0f }));
+    ecs.Add<Clicked>(e, Clicked());
 
 
     ecs.Add<SimpleSprite>(playerEntity, SimpleSprite({ -50, -50, 100, 100 }, { 0, 0, 64, 64 }, "player", true));
@@ -26,6 +48,7 @@ void Level1::Init()
     ecs.Add<InputComponent>(playerEntity, InputComponent());
     ecs.Add<AnimationPlayer>(playerEntity, AnimationPlayer{});
     ecs.Add<BoxCollider>(playerEntity, BoxCollider(25.0f, 50.0f, true));
+	ecs.Add<Clicked>(playerEntity, Clicked());
 
 
     _data->animation.Play(ecs.Get<AnimationPlayer>(playerEntity), "player_idle_right");
@@ -203,8 +226,33 @@ void Level1::Init()
 
 void Level1::Update(float dt)
 {
+    if (_data->inputs.GetActionState("click") == InputSystem::Pressed)
+    {
+        float mx = _data->inputs.GetActionAxis("mousePos")[0];
+        float my = _data->inputs.GetActionAxis("mousePos")[1];
+
+        std::cout << "mouse: " << mx << ", " << my << '\n';
+
+		std::vector<ECS::Entity> foundEntities;
+        _data->spatialIndex.QueryPoint(mx, my, foundEntities);
+        for(auto e : foundEntities)
+        {
+			auto col = ecs.TryGet<BoxCollider>(e);
+			auto pos = ecs.TryGet<TransformComponent>(e);
+			auto click = ecs.TryGet<Clicked>(e);
+            if(col && pos && click)
+                if (Contains(mx, my, pos->position.x + col->offsetX * pos->scale.x - col->hw * pos->scale.x,
+                    pos->position.y + col->offsetY * pos->scale.y - col->hh * pos->scale.y,
+                    col->hw * 2.0f * pos->scale.x, col->hh * 2.0f * pos->scale.y)) {
+					click->clicked = true;
+                    std::cout << "  clicked on entity: " << e << '\n';
+                }
+        }
+    }
+
+
     if(_data->inputs.GetActionState("next") == InputSystem::Pressed)
-        _data->state.AddState(StateRef(new PhysSim(_data)), 1);
+        _data->state.AddState(StateRef(new NBody(_data)), 1);
 
     if (_data->inputs.GetActionState("show_colliders") == InputSystem::Pressed)
         ecs.ToggleSystem("draw_colliders");

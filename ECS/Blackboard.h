@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include "Struct.h"
 #include "logger.h"
+#include "SpatialIndex.h"
 
 class Blackboard
 {
@@ -66,6 +67,7 @@ public:
         }
         _store.erase(it);
     }
+
 
     void Clear()
     {

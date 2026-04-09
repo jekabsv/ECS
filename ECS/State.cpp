@@ -3,5 +3,5 @@
 
 void State::SetData()
 {
-	_data->physics.Tie(ecs, _data); ecs.Tie(_data);
+	_data->physics.Tie(ecs); ecs.Tie(_data);
 }

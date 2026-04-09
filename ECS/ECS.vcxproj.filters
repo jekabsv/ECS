@@ -96,12 +96,12 @@
     <ClCompile Include="State.cpp">
       <Filter>Source Files\Internals\StateMachine</Filter>
     </ClCompile>
+    <ClCompile Include="physSim.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECS.h">
-      <Filter>Header Files\Internals\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderComponent.h">
       <Filter>Header Files\Internals\ECS</Filter>
     </ClInclude>
     <ClInclude Include="State.h">
@@ -161,5 +161,13 @@
     <ClInclude Include="BoxCollider.h">
       <Filter>Header Files\Internals\ECS</Filter>
     </ClInclude>
+    <ClInclude Include="physSim.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SpatialIndex.h">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

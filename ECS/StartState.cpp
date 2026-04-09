@@ -91,6 +91,12 @@ void StartState::Init()
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_E, 1)
         .AddProcessor(std::make_unique<ProcessQE>("qe"));
 
+    _data->inputs.GetActionMap("level1")->AddAction("click")
+		.AddBinding(InputSystem::Button, InputSystem::Mouse, SDL_BUTTON_LEFT);
+    _data->inputs.GetActionMap("level1")->AddAction("mousePos")
+		.AddBinding(InputSystem::Axis, InputSystem::Mouse, 0, 0)
+		.AddBinding(InputSystem::Axis, InputSystem::Mouse, 1, 1);
+
     //Animations
     _data->animation.AddClip("player_idle_right", { "player", 64, 64, 192, 192, 1, 0.1f });
     _data->animation.AddClip("player_idle_left", { "player", 64, 64, 192, 192, 3, 0.1f });

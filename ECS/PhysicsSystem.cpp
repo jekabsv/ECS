@@ -13,158 +13,17 @@ const std::vector<ECS::Entity>& PhysicsSystem::GetContacts(ECS::Entity e) const
     return it->second;
 }
 
-bool QuadTree::Overlaps(float ax, float ay, float aw, float ah,
-    float bx, float by, float bw, float bh)
-{
-    return ax < bx + bw && ax + aw > bx &&
-        ay < by + bh && ay + ah > by;
-}
-
-bool QuadTree::Contains(float nx, float ny, float nw, float nh,
-    float ax, float ay, float aw, float ah)
-{
-    return ax >= nx && ay >= ny &&
-        ax + aw <= nx + nw && ay + ah <= ny + nh;
-}
-
-void QuadTree::Init(float x, float y, float w, float h)
-{
-    nodes_.clear();
-    QuadNode root;
-    root.x = x; root.y = y; root.w = w; root.h = h;
-    nodes_.push_back(root);
-}
-
-void QuadTree::Clear()
-{
-    if (nodes_.empty()) return;
-    QuadNode root;
-    root.x = nodes_[0].x; root.y = nodes_[0].y;
-    root.w = nodes_[0].w; root.h = nodes_[0].h;
-    nodes_.clear();
-    nodes_.push_back(root);
-}
-
-void QuadTree::Subdivide(int nodeIdx)
-{
-    float x = nodes_[nodeIdx].x;
-    float y = nodes_[nodeIdx].y;
-    float hw = nodes_[nodeIdx].w * 0.5f;
-    float hh = nodes_[nodeIdx].h * 0.5f;
-
-    int base = (int)nodes_.size();
-
-    QuadNode nw, ne, sw, se;
-    nw.x = x;      nw.y = y;      nw.w = hw; nw.h = hh;
-    ne.x = x + hw; ne.y = y;      ne.w = hw; ne.h = hh;
-    sw.x = x;      sw.y = y + hh; sw.w = hw; sw.h = hh;
-    se.x = x + hw; se.y = y + hh; se.w = hw; se.h = hh;
-
-    nodes_.push_back(nw);
-    nodes_.push_back(ne);
-    nodes_.push_back(sw);
-    nodes_.push_back(se);
-
-    nodes_[nodeIdx].children[0] = base;
-    nodes_[nodeIdx].children[1] = base + 1;
-    nodes_[nodeIdx].children[2] = base + 2;
-    nodes_[nodeIdx].children[3] = base + 3;
-    nodes_[nodeIdx].isLeaf = false;
-}
-
-void QuadTree::InsertInto(int nodeIdx, int depth, ECS::Entity e,
-    float ax, float ay, float aw, float ah)
-{
-    if (!nodes_[nodeIdx].isLeaf)
-    {
-        for (int i = 0; i < 4; i++)
-        {
-            int ci = nodes_[nodeIdx].children[i];
-            if (Contains(nodes_[ci].x, nodes_[ci].y,
-                nodes_[ci].w, nodes_[ci].h,
-                ax, ay, aw, ah))
-            {
-                InsertInto(ci, depth + 1, e, ax, ay, aw, ah);
-                return;
-            }
-        }
-        if (nodes_[nodeIdx].entityCount < QuadNode::MAX_ENTITIES)
-            nodes_[nodeIdx].entities[nodes_[nodeIdx].entityCount++] = e;
-        return;
-    }
-
-    if (nodes_[nodeIdx].entityCount < QuadNode::MAX_ENTITIES || depth >= QuadNode::MAX_DEPTH)
-    {
-        if (nodes_[nodeIdx].entityCount < QuadNode::MAX_ENTITIES)
-            nodes_[nodeIdx].entities[nodes_[nodeIdx].entityCount++] = e;
-        return;
-    }
-
-    ECS::Entity existing[QuadNode::MAX_ENTITIES];
-    std::size_t existingCount = nodes_[nodeIdx].entityCount;
-    for (std::size_t i = 0; i < existingCount; i++)
-        existing[i] = nodes_[nodeIdx].entities[i];
-    nodes_[nodeIdx].entityCount = 0;
-
-    Subdivide(nodeIdx);
-
-    for (std::size_t i = 0; i < existingCount; i++)
-        nodes_[nodeIdx].entities[nodes_[nodeIdx].entityCount++] = existing[i];
-
-    InsertInto(nodeIdx, depth, e, ax, ay, aw, ah);
-}
-
-void QuadTree::Insert(ECS::Entity e, float ax, float ay, float aw, float ah)
-{
-    InsertInto(0, 0, e, ax, ay, aw, ah);
-}
-
-std::size_t QuadTree::QueryInto(int nodeIdx,
-    float ax, float ay, float aw, float ah,
-    ECS::Entity* out, std::size_t outSize,
-    std::size_t written) const
-{
-    const QuadNode& node = nodes_[nodeIdx];
-
-    for (std::size_t i = 0; i < node.entityCount && written < outSize; i++)
-        out[written++] = node.entities[i];
-
-    if (node.isLeaf) return written;
-
-    for (int i = 0; i < 4; i++)
-    {
-        int ci = node.children[i];
-        const QuadNode& child = nodes_[ci];
-        if (Overlaps(ax, ay, aw, ah, child.x, child.y, child.w, child.h))
-            written = QueryInto(ci, ax, ay, aw, ah, out, outSize, written);
-    }
-
-    return written;
-}
-
-std::size_t QuadTree::Query(float ax, float ay, float aw, float ah,
-    ECS::Entity* out, std::size_t outSize) const
-{
-    if (nodes_.empty()) return 0;
-    return QueryInto(0, ax, ay, aw, ah, out, outSize, 0);
-}
-
-void PhysicsSystem::Tie(ECS::World& world, SharedDataRef data)
+void PhysicsSystem::Tie(ECS::World& world)
 {
     world_ = &world;
-    boundsX_ = 0.0f;
-    boundsY_ = 0.0f;
-    boundsW_ = (float)data->GAME_WIDTH;
-    boundsH_ = (float)data->GAME_HEIGHT;
-    quadTree_.Init(boundsX_, boundsY_, boundsW_, boundsH_);
 }
 
-void PhysicsSystem::SetWorldBounds(float x, float y, float w, float h)
-{
-    boundsX_ = x; boundsY_ = y;
-    boundsW_ = w; boundsH_ = h;
-    quadTree_.Init(x, y, w, h);
-}
+//void PhysicsSystem::SetWorldBounds(float x, float y, float w, float h, SharedDataRef data)
+//{
+//    boundsX_ = x; boundsY_ = y;
+//    boundsW_ = w; boundsH_ = h;
+//    data->spatialIndex.Init(x, y, w, h);
+//}
 
 const std::vector<std::pair<ECS::Entity, ECS::Entity>>& PhysicsSystem::GetCollisionPairs() const
 {
@@ -245,7 +104,7 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
 {
     if (!_built)
     {
-        quadTree_.Clear();
+        data->spatialIndex.Clear();
         collisionPairs_.clear();
         _built = true;
         _queried = false;
@@ -266,7 +125,7 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
         float aw = bc.hw * 2.0f * rc.scale.x;
         float ah = bc.hh * 2.0f * rc.scale.y;
 
-        quadTree_.Insert(entities[i], ax, ay, aw, ah);
+        data->spatialIndex.InsertRectangle(entities[i], ax, ay, aw, ah);
     }
 }
 
@@ -282,9 +141,6 @@ void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedD
     auto rcs = ctx.Slice<TransformComponent>();
     auto bcs = ctx.Slice<BoxCollider>();
 
-    constexpr std::size_t QUERY_BUF_SIZE = 64;
-    ECS::Entity candidates[QUERY_BUF_SIZE];
-
     for (std::size_t i = 0; i < entities.size(); i++)
     {
         auto& rc = rcs[i];
@@ -295,13 +151,17 @@ void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedD
         float aw = bc.hw * 2.0f * rc.scale.x;
         float ah = bc.hh * 2.0f * rc.scale.y;
 
-        std::size_t found = quadTree_.Query(ax, ay, aw, ah, candidates, QUERY_BUF_SIZE);
+        std::vector<ECS::Entity> found;
 
-        for (std::size_t j = 0; j < found; j++)
+        data->spatialIndex.QueryRectangle(ax, ay, aw, ah, found);
+
+        for (auto x : found)
         {
-            ECS::Entity other = candidates[j];
-            if (other == entities[i]) continue;
-            if (entities[i] > other) continue;
+            ECS::Entity other = x;
+            if (other == entities[i]) 
+                continue;
+            if (entities[i] > other)
+                continue;
 
             BoxCollider* otherBc = world_->TryGet<BoxCollider>(other);
             TransformComponent* otherRc = world_->TryGet<TransformComponent>(other);
