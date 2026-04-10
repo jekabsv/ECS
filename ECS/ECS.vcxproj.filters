@@ -96,13 +96,10 @@
     <ClCompile Include="State.cpp">
       <Filter>Source Files\Internals\StateMachine</Filter>
     </ClCompile>
-    <ClCompile Include="physSim.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Sand.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SPH.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Boids.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -167,22 +164,19 @@
     <ClInclude Include="BoxCollider.h">
       <Filter>Header Files\Internals\ECS</Filter>
     </ClInclude>
-    <ClInclude Include="physSim.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Utility.h">
       <Filter>Header Files\Internals\Util</Filter>
     </ClInclude>
-    <ClInclude Include="Sand.h">
+    <ClInclude Include="SPH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SPH.h">
+    <ClInclude Include="Boids.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="SpatialIndex.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Internals</Filter>
     </None>
   </ItemGroup>
 </Project>

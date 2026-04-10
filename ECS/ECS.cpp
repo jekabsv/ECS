@@ -385,11 +385,20 @@ void World::Run(SystemGroup group, float dt)
     {
         RebuildFusedGroups(update_systems_, update_fused_);
         RebuildFusedGroups(render_systems_, render_fused_);
+        RebuildFusedGroups(initialise_systems_, initialise_fused_);
+        RebuildFusedGroups(pre_update_systems_, pre_update_fused_);
+        RebuildFusedGroups(post_update_systems_, post_update_fused_);
         systems_dirty_ = false;
     }
 
     if (group == SystemGroup::Update)
         RunSystems(update_fused_, dt);
-    else
+    else if (group == SystemGroup::Render)
         RunSystems(render_fused_, dt);
+    else if (group == SystemGroup::Initialise)
+        RunSystems(initialise_fused_, dt);
+    else if (group == SystemGroup::PostUpdate)
+        RunSystems(post_update_fused_, dt);
+    else
+        RunSystems(pre_update_fused_, dt);
 }

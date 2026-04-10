@@ -6,6 +6,7 @@
 #include "Transform.h"
 #include <iostream>
 #include "Utility.h"
+#include "Boids.h"
 
 struct Clicked { bool clicked = false; };
 
@@ -28,7 +29,7 @@ void Level1::Init()
     ecs.Add<InputComponent>(playerEntity, InputComponent());
     ecs.Add<AnimationPlayer>(playerEntity, AnimationPlayer{});
     ecs.Add<BoxCollider>(playerEntity, BoxCollider(25.0f, 50.0f, true));
-	//ecs.Add<Clicked>(playerEntity, Clicked());
+	ecs.Add<Clicked>(playerEntity, Clicked());
 
 
     _data->animation.Play(ecs.Get<AnimationPlayer>(playerEntity), "player_idle_right");
@@ -246,7 +247,7 @@ void Level1::Update(float dt)
 
 
     if(_data->inputs.GetActionState("next") == InputSystem::Pressed)
-        _data->state.AddState(StateRef(new NBody(_data)), 1);
+        _data->state.AddState(StateRef(new Boids(_data)), 1);
 
     if (_data->inputs.GetActionState("show_colliders") == InputSystem::Pressed)
         ecs.ToggleSystem("draw_colliders");

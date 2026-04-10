@@ -2,6 +2,7 @@
 #include "Level1.h"
 #include <windows.h>
 #include "SPH.h"
+#include "Boids.h"
 
 class ProcessWASD : public InputSystem::Processor
 {
@@ -108,5 +109,5 @@ void StartState::Init()
 
 
     //State Change
-    _data->state.AddState(StateRef(new SPH(_data)), 1);
+    _data->state.AddState(StateRef(new Level1(_data)), 1);
 }

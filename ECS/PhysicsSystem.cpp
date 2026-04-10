@@ -22,7 +22,7 @@ void PhysicsSystem::Tie(ECS::World& world)
         {
             BuildSystem(ctx, dt, data);
         },
-        ECS::SystemGroup::Update);
+        ECS::SystemGroup::Initialise);
 
     world_->RegisterSystem<BoxCollider, TransformComponent>("physicsCollide",
         [this](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
@@ -89,6 +89,25 @@ void PhysicsSystem::EnableCollisionDetection(bool enable)
     
 }
 
+void PhysicsSystem::EnableSpatialIndexBuild(bool enable)
+{
+    if (!world_)
+    {
+        LOG_WARN(GlobalLogger(), "PhysicsSystem", "EnableCollisionDetection called before Tie()");
+        return;
+    }
+
+    if (!enable)
+    {
+        world_->DisableSystem("physicsBuild");
+        return;
+    }
+
+    world_->EnableSystem("physicsBuild");
+
+}
+
+
 void PhysicsSystem::MovementSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
 {
     auto rbs = ctx.Slice<RigidBody>();
@@ -116,13 +135,9 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
 
     auto t0 = std::chrono::high_resolution_clock::now();
 
-    if (!_built)
-    {
-        data->spatialIndex.Clear();
-        collisionPairs_.clear();
-        _built = true;
-        _queried = false;
-    }
+    data->spatialIndex.Clear();
+    collisionPairs_.clear();
+
 
     auto entities = ctx.Slice<ECS::Entity>();
     auto rcs = ctx.Slice<TransformComponent>();
