@@ -144,6 +144,8 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
         data->spatialIndex.InsertRectangle(entities[i], ax, ay, aw, ah);
     }
 
+    data->spatialIndex.Build();
+
     auto t1 = std::chrono::high_resolution_clock::now();
     float ms = std::chrono::duration<float, std::milli>(t1 - t0).count();
     //if (ms > 1.0f) printf("BuildSystem: %.2f ms\n", ms);

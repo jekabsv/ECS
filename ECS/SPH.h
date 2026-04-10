@@ -11,7 +11,7 @@ public:
     void Update(float dt) override;
 
     // ── Tunables ──────────────────────────────────────────────────────────────
-    static constexpr int   N = 200;
+    static constexpr int   N = 5000;
     static constexpr float H = 20.0f;   // smoothing radius (px)
     static constexpr float REST_DENSITY = 30.0f;   // rest density
     static constexpr float GAS_CONSTANT = 200.0f;  // stiffness — keep low for stability

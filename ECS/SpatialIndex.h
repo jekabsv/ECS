@@ -1,47 +1,39 @@
 #pragma once
-
 #include <cstdint>
 #include <cstddef>
 #include <cmath>
 #include <vector>
-#include <unordered_map>
-#include <unordered_set>
+#include <algorithm>
 #include "ECS.H"
 
 class SpatialIndex
 {
 public:
-
     SpatialIndex() = default;
 
     void Init(float x, float y, float w, float h, float cellSz = 64.f)
     {
         m_originX = x;
         m_originY = y;
-        m_worldW = w;
-        m_worldH = h;
         m_cellSize = (cellSz > 0.f ? cellSz : 1.f);
         m_invCell = 1.f / m_cellSize;
-
-        const std::size_t cols = static_cast<std::size_t>(std::ceil(w * m_invCell)) + 1;
-        const std::size_t rows = static_cast<std::size_t>(std::ceil(h * m_invCell)) + 1;
-        m_cells.reserve(cols * rows);
-
-        m_cells.clear();
+        m_sorted = false;
     }
+
     void Clear()
     {
-        m_cells.clear();
+        m_entries.clear();
+        m_sorted = false;
     }
 
     void InsertRectangle(ECS::Entity e, float x, float y, float w, float h)
     {
         int minCX, minCY, maxCX, maxCY;
         rectToCells(x, y, w, h, minCX, minCY, maxCX, maxCY);
-
         for (int cy = minCY; cy <= maxCY; ++cy)
             for (int cx = minCX; cx <= maxCX; ++cx)
-                m_cells[cellKey(cx, cy)].push_back(e);
+                m_entries.push_back({ morton(cx, cy), e });
+        m_sorted = false;
     }
 
     void InsertCircle(ECS::Entity e, float x, float y, float r)
@@ -49,28 +41,32 @@ public:
         InsertRectangle(e, x - r, y - r, r * 2.f, r * 2.f);
     }
 
+    // Must be called after all inserts, before any queries.
+    void Build()
+    {
+        std::sort(m_entries.begin(), m_entries.end(),
+            [](const Entry& a, const Entry& b) { return a.key < b.key; });
+        m_sorted = true;
+    }
+
     std::size_t QueryRectangle(float x, float y, float w, float h,
         std::vector<ECS::Entity>& out) const
     {
         int minCX, minCY, maxCX, maxCY;
         rectToCells(x, y, w, h, minCX, minCY, maxCX, maxCY);
-
         const std::size_t before = out.size();
-        std::unordered_set<ECS::Entity> seen;
-
         for (int cy = minCY; cy <= maxCY; ++cy)
         {
             for (int cx = minCX; cx <= maxCX; ++cx)
             {
-                auto it = m_cells.find(cellKey(cx, cy));
-                if (it == m_cells.end()) continue;
-
-                for (ECS::Entity e : it->second)
-                    if (seen.insert(e).second)
-                        out.push_back(e);
+                const std::uint64_t key = morton(cx, cy);
+                auto lo = std::lower_bound(m_entries.begin(), m_entries.end(), key,
+                    [](const Entry& e, std::uint64_t k) { return e.key < k; });
+                for (auto it = lo; it != m_entries.end() && it->key == key; ++it)
+                    out.push_back(it->entity);
             }
         }
-
+        deduplicate(out, before);
         return out.size() - before;
     }
 
@@ -85,36 +81,29 @@ public:
     {
         const int cx = worldToCell(x - m_originX);
         const int cy = worldToCell(y - m_originY);
-
-        auto it = m_cells.find(cellKey(cx, cy));
-        if (it == m_cells.end()) return 0;
-
+        const std::uint64_t key = morton(cx, cy);
+        auto lo = std::lower_bound(m_entries.begin(), m_entries.end(), key,
+            [](const Entry& e, std::uint64_t k) { return e.key < k; });
         const std::size_t before = out.size();
-        std::unordered_set<ECS::Entity> seen;
-
-        for (ECS::Entity e : it->second)
-            if (seen.insert(e).second)
-                out.push_back(e);
-
+        for (auto it = lo; it != m_entries.end() && it->key == key; ++it)
+            out.push_back(it->entity);
         return out.size() - before;
     }
 
 private:
+    struct Entry
+    {
+        std::uint64_t key;
+        ECS::Entity   entity;
+    };
+
     int worldToCell(float localCoord) const
     {
         return static_cast<int>(std::floor(localCoord * m_invCell));
     }
 
-
-    static std::uint64_t cellKey(int cx, int cy)
-    {
-        return (static_cast<std::uint64_t>(static_cast<std::uint32_t>(cx)) << 32)
-            | static_cast<std::uint64_t>(static_cast<std::uint32_t>(cy));
-    }
-
     void rectToCells(float x, float y, float w, float h,
-        int& minCX, int& minCY,
-        int& maxCX, int& maxCY) const
+        int& minCX, int& minCY, int& maxCX, int& maxCY) const
     {
         minCX = worldToCell(x - m_originX);
         minCY = worldToCell(y - m_originY);
@@ -122,13 +111,35 @@ private:
         maxCY = worldToCell(y + h - m_originY);
     }
 
+    // Spreads bits of a 32-bit int into even positions for Morton interleaving.
+    static std::uint64_t spreadBits(std::uint32_t v)
+    {
+        std::uint64_t x = v;
+        x = (x | (x << 16)) & 0x0000'FFFF'0000'FFFFull;
+        x = (x | (x << 8)) & 0x00FF'00FF'00FF'00FFull;
+        x = (x | (x << 4)) & 0x0F0F'0F0F'0F0F'0F0Full;
+        x = (x | (x << 2)) & 0x3333'3333'3333'3333ull;
+        x = (x | (x << 1)) & 0x5555'5555'5555'5555ull;
+        return x;
+    }
+
+    static std::uint64_t morton(int cx, int cy)
+    {
+        return (spreadBits(static_cast<std::uint32_t>(cx)))
+            | (spreadBits(static_cast<std::uint32_t>(cy)) << 1);
+    }
+
+    static void deduplicate(std::vector<ECS::Entity>& out, std::size_t from)
+    {
+        std::sort(out.begin() + from, out.end());
+        out.erase(std::unique(out.begin() + from, out.end()), out.end());
+    }
 
     float m_originX = 0.f;
     float m_originY = 0.f;
-    float m_worldW = 0.f;
-    float m_worldH = 0.f;
     float m_cellSize = 1.f;
     float m_invCell = 1.f;
+    bool  m_sorted = false;
 
-    std::unordered_map<std::uint64_t, std::vector<ECS::Entity>> m_cells;
+    std::vector<Entry> m_entries;
 };
