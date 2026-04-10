@@ -15,9 +15,9 @@ private:
         float angle = 0.0f;
     };
 
-    static constexpr int   COUNT = 300;
+    static constexpr int   COUNT = 10000;
     static constexpr float PERCEPTION = 80.0f;
-    static constexpr float SEPARATION_DIST = 20.0f;
+    static constexpr float SEPARATION_DIST = 5.0f;
 
     static constexpr float MIN_SPEED = 80.0f;
     static constexpr float MAX_SPEED = 220.0f;
