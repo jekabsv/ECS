@@ -52,6 +52,8 @@ void Boids::Init()
         TransformComponent tr;
         tr.position.x = randf(0.0f, W);
         tr.position.y = randf(0.0f, H);
+        /*tr.position.x = W/2;
+        tr.position.y = H/2;*/
         tr.scale = { 1.0f, 1.0f };
 
         RigidBody rb;
