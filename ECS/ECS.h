@@ -197,7 +197,7 @@ namespace ECS
     };
 
 
-    enum class SystemGroup { Update, Render };
+    enum class SystemGroup { Initialise, PreUpdate, Update, PostUpdate, Render };
 
     class World;
 
@@ -313,11 +313,18 @@ namespace ECS
 
         std::unordered_map<ComponentMask, std::unique_ptr<Archetype>> archetypes_;
 
+        std::vector<SystemEntry> initialise_systems_;
+        std::vector<SystemEntry> pre_update_systems_;
         std::vector<SystemEntry> update_systems_;
+        std::vector<SystemEntry> post_update_systems_;
         std::vector<SystemEntry> render_systems_;
 
+        std::vector<FusedGroup> initialise_fused_;
+        std::vector<FusedGroup> pre_update_fused_;
         std::vector<FusedGroup> update_fused_;
+        std::vector<FusedGroup> post_update_fused_;
         std::vector<FusedGroup> render_fused_;
+
         bool systems_dirty_ = true;
 
         Archetype& GetOrCreateArchetype(ComponentMask mask, const std::vector<ComponentInfo>& info);
@@ -601,7 +608,16 @@ namespace ECS
     template<typename... Ts>
     SystemBuilder World::RegisterSystem(StringId name, SystemFn fn, SystemGroup group)
     {
-        auto& vec = (group == SystemGroup::Update) ? update_systems_ : render_systems_;
+        auto& vec = [&]() -> std::vector<SystemEntry>&{
+            switch (group) {
+            case SystemGroup::Initialise:  return initialise_systems_;
+            case SystemGroup::PreUpdate:   return pre_update_systems_;
+            case SystemGroup::PostUpdate:  return post_update_systems_;
+            case SystemGroup::Render:      return render_systems_;
+            default:                       return update_systems_;
+            }
+            }();
+        
         vec.push_back({ name, MakeMask<Ts...>(), std::move(fn), true, ~ComponentMask(0), ~ComponentMask(0) });
         systems_dirty_ = true;
         return SystemBuilder(vec.back());

@@ -290,21 +290,40 @@ bool World::Alive(Entity e) const noexcept
 
 void World::EnableSystem(StringId name)
 {
+    for (auto& s : initialise_systems_)
+        if (s.name == name) { s.enabled = true; systems_dirty_ = true; return; }
+    for (auto& s : pre_update_systems_)
+        if (s.name == name) { s.enabled = true; systems_dirty_ = true; return; }
     for (auto& s : update_systems_)
+        if (s.name == name) { s.enabled = true; systems_dirty_ = true; return; }
+    for (auto& s : post_update_systems_)
         if (s.name == name) { s.enabled = true; systems_dirty_ = true; return; }
     for (auto& s : render_systems_)
         if (s.name == name) { s.enabled = true; systems_dirty_ = true; return; }
+    
 }
 void World::DisableSystem(StringId name)
 {
+    for (auto& s : initialise_systems_)
+        if (s.name == name) { s.enabled = false; systems_dirty_ = true; return; }
+    for (auto& s : pre_update_systems_)
+        if (s.name == name) { s.enabled = false; systems_dirty_ = true; return; }
     for (auto& s : update_systems_)
+        if (s.name == name) { s.enabled = false; systems_dirty_ = true; return; }
+    for (auto& s : post_update_systems_)
         if (s.name == name) { s.enabled = false; systems_dirty_ = true; return; }
     for (auto& s : render_systems_)
         if (s.name == name) { s.enabled = false; systems_dirty_ = true; return; }
 }
 void World::ToggleSystem(StringId name)
 {
+    for (auto& s : initialise_systems_)
+        if (s.name == name) { s.enabled = !s.enabled; systems_dirty_ = true; return; }
+    for (auto& s : pre_update_systems_)
+        if (s.name == name) { s.enabled = !s.enabled; systems_dirty_ = true; return; }
     for (auto& s : update_systems_)
+        if (s.name == name) { s.enabled = !s.enabled; systems_dirty_ = true; return; }
+    for (auto& s : post_update_systems_)
         if (s.name == name) { s.enabled = !s.enabled; systems_dirty_ = true; return; }
     for (auto& s : render_systems_)
         if (s.name == name) { s.enabled = !s.enabled; systems_dirty_ = true; return; }

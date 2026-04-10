@@ -69,8 +69,10 @@ bool Engine::Initialize()
 
 void Engine::Update(float dt)
 {
+    _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::PreUpdate, dt);
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Update, dt);
     _data->state.GetActiveState()->Update(dt);
+    _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::PostUpdate, dt);
 }
 
 
@@ -110,6 +112,9 @@ void Engine::run()
         SDL_Event ev;
         while (SDL_PollEvent(&ev))
             _data->inputs.HandleEvent(ev, _data->quit);
+
+        _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Initialise, dt);
+
         Update(dt);
         Render(dt);
 

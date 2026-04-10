@@ -1,6 +1,7 @@
 #include "StartState.h"
 #include "Level1.h"
 #include <windows.h>
+#include "SPH.h"
 
 class ProcessWASD : public InputSystem::Processor
 {
@@ -103,7 +104,9 @@ void StartState::Init()
     _data->animation.AddClip("player_run_right", { "player", 64, 64, 0,   448, 0, 0.08f });
     _data->animation.AddClip("player_run_left", { "player", 64, 64, 0,   448, 2, 0.08f });
 
+    _data->inputs.AssignMapToPlayer("level1");
+
 
     //State Change
-    _data->state.AddState(StateRef(new Level1(_data)), 1);
+    _data->state.AddState(StateRef(new SPH(_data)), 1);
 }

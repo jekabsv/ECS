@@ -13,7 +13,6 @@ void Level1::Init()
 {
     _data->physics.EnableCollisionDetection();
     _data->physics.EnableMovement();
-    _data->inputs.AssignMapToPlayer("level1");
 
 	e = ecs.Create();
 	playerEntity = ecs.Create();
