@@ -101,46 +101,68 @@ void StartState::Init()
 		.AddBinding(InputSystem::Axis, InputSystem::Mouse, 0, 0)
 		.AddBinding(InputSystem::Axis, InputSystem::Mouse, 1, 1);
 
+    _data->inputs.AssignMapToPlayer("level1");
+
+
     //Animations
     _data->animation.AddClip("player_idle_right", { "player", 64, 64, 192, 192, 1, 0.1f });
     _data->animation.AddClip("player_idle_left", { "player", 64, 64, 192, 192, 3, 0.1f });
     _data->animation.AddClip("player_run_right", { "player", 64, 64, 0,   448, 0, 0.08f });
     _data->animation.AddClip("player_run_left", { "player", 64, 64, 0,   448, 2, 0.08f });
 
-    _data->inputs.AssignMapToPlayer("level1");
 
 	
     
     
     _data->assets.LoadFont("main", "../OpenSans-Regular.ttf");
 
-    _data->ui.Init(_data->SDLrenderer, (float)_data->GAME_WIDTH, (float)_data->GAME_HEIGHT);
+    ui.Init(_data->SDLrenderer, (float)_data->GAME_WIDTH, (float)_data->GAME_HEIGHT);
 
     printf("Font registered: %p\n", _data->assets.GetFont("main"));
 
 
-    _data->ui.GetTheme().LoadDarkDefaults();
+    ui.GetTheme().LoadDarkDefaults();
 
     // Register your font (loaded via AssetManager)
-    _data->ui.RegisterFont("main", _data->assets.GetFont("main"));
+    ui.RegisterFont("main", _data->assets.GetFont("main"));
 
     // Root container — centered column
-    UI::NodeHandle root = _data->ui.AddContainer();
-    _data->ui.SetSize(root, UI::SizeValue::Px(500), UI::SizeValue::Auto());
-    _data->ui.SetFlexDirection(root, UI::FlexDirection::Column);
-    _data->ui.SetJustify(root, UI::JustifyContent::Center);
-    _data->ui.SetAlignItems(root, UI::AlignItems::Stretch);
-    _data->ui.SetGap(root, 12.0f);
-    _data->ui.SetPadding(root, UI::Edges::All(20.0f));
+    UI::NodeHandle root = ui.AddContainer();
+    ui.SetSize(root, UI::SizeValue::Px(500), UI::SizeValue::Auto());
+    ui.SetFlexDirection(root, UI::FlexDirection::Column);
+    ui.SetJustify(root, UI::JustifyContent::Center);
+    ui.SetAlignItems(root, UI::AlignItems::Stretch);
+    ui.SetGap(root, 12.0f);
+    ui.SetPadding(root, UI::Edges::All(20.0f));
+    
 
-    _data->ui.AddImage(_data->assets.GetTexture("player"), { 0, 0, 64, 64 }, root);
-    btnSillyGame = _data->ui.AddButton("Silly game", root);
-    btnBoids = _data->ui.AddButton("Boids", root);
-    btnQuit_ = _data->ui.AddButton("Quit", root);
-	btnSlider = _data->ui.AddSlider(0.5f, 0.0f, 1.0f, root);
-	_data->ui.AddLabel("Made by Claude", root);
-
+    ui.AddImage(_data->assets.GetTexture("player"), { 0, 0, 64, 64 }, root);
+    btnSillyGame = ui.AddButton("Silly game", root);
+    btnBoids = ui.AddButton("Boids", root);
+    btnQuit_ = ui.AddButton("Quit", root);
+	btnSlider = ui.AddSlider(0.5f, 0.0f, 1.0f, root);
+	ui.AddLabel("Made by Claude", root);
+	ui.AddInputField("Type here...", root);
 
     //State Change
     //_data->state.AddState(StateRef(new Level1(_data)), 1);
 }
+
+void StartState::Update(float dt)
+{
+	if(ui.IsClicked(btnSillyGame))
+    {
+		ui.ClearChildren(0);
+        _data->state.AddState(StateRef(new Level1(_data)), 0);
+    }
+    else if(ui.IsClicked(btnBoids))
+    {
+        ui.ClearChildren(0);
+        _data->state.AddState(StateRef(new Boids(_data)), 0);
+    }
+    else if(ui.IsClicked(btnQuit_))
+    {
+        _data->quit = true;
+	}
+}
+

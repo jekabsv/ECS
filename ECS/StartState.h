@@ -7,7 +7,8 @@ class StartState : public State
 public:
     using State::State;
     void Init() override;
-    void HandleInput() override {}
+	void Update(float dt) override;
+
 
     UI::NodeHandle btnBoids = UI::NULL_HANDLE;
     UI::NodeHandle btnSillyGame = UI::NULL_HANDLE;

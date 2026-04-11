@@ -1,6 +1,6 @@
 #pragma once
 #include "ECS.h"
-
+#include "Uicontext.h"
 #include <memory>
 struct SharedData;
 using SharedDataRef = std::shared_ptr<SharedData>;
@@ -23,4 +23,5 @@ public:
 
 	ECS::World ecs;
 	SharedDataRef _data;
+	UI::Context ui;
 };

@@ -116,6 +116,20 @@ void Engine::run()
             _data->inputs.HandleEvent(ev, _data->quit);
 
         UI::InputState inp;
+		inp.keyBackspace = _data->inputs.GetKey(SDL_SCANCODE_BACKSPACE);
+		inp.keyDelete = _data->inputs.GetKey(SDL_SCANCODE_DELETE);
+		inp.keyLeft = _data->inputs.GetKey(SDL_SCANCODE_LEFT);
+		inp.keyRight = _data->inputs.GetKey(SDL_SCANCODE_RIGHT);
+		inp.keyHome = _data->inputs.GetKey(SDL_SCANCODE_HOME);
+		inp.keyEnd = _data->inputs.GetKey(SDL_SCANCODE_END);
+		inp.keyEnter = _data->inputs.GetKey(SDL_SCANCODE_RETURN);
+		inp.keyTab = _data->inputs.GetKey(SDL_SCANCODE_TAB);
+		inp.mouseX = _data->inputs.GetActionAxis("mousePos")[0];
+		inp.mouseY = _data->inputs.GetActionAxis("mousePos")[1];
+		inp.mouseDown = _data->inputs.GetActionState("click") == InputSystem::Held;
+		inp.mousePressed = _data->inputs.GetActionState("click") == InputSystem::Pressed;
+		inp.mouseReleased = _data->inputs.GetActionState("click") == InputSystem::Released;
+
 
         _data->inputs.Update(dt);
 
@@ -123,7 +137,7 @@ void Engine::run()
 
         Update(dt);
         SDL_RenderClear(_data->SDLrenderer);
-        _data->ui.Update(inp, dt);
+        _data->state.GetActiveState()->ui.Update(inp, dt);
 
         Render(dt);
 

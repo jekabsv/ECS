@@ -224,6 +224,41 @@ int System::RemoveDeviceFromPlayer(const std::shared_ptr<Device>& device, int pl
 	return 0;
 }
 
+Vec2 System::GetMousePosition(int playerID)
+{
+	auto it = PlayerMousePool.find(playerID);
+	if (it == PlayerMousePool.end() || it->second.empty())
+	{
+		LOG_WARN(GlobalLogger(), "InputSystem", "GetMousePosition: no mouse for player " + std::to_string(playerID));
+		return Vec2{ 0.0f, 0.0f };
+	}
+	auto* mouse = static_cast<Internals::MouseDevice*>(it->second[0].get());
+	return Vec2{ mouse->GetAxis(0), mouse->GetAxis(1) };
+}
+
+bool System::GetMouseButton(int button, int playerID)
+{
+	auto it = PlayerMousePool.find(playerID);
+	if (it == PlayerMousePool.end() || it->second.empty())
+	{
+		LOG_WARN(GlobalLogger(), "InputSystem", "GetMouseButton: no mouse for player " + std::to_string(playerID));
+		return false;
+	}
+	return it->second[0]->IsPressed(button) != 0.0f;
+}
+
+bool System::GetKey(int key, int playerID)
+{
+	auto it = PlayerKeyboardPool.find(playerID);
+	if (it == PlayerKeyboardPool.end() || it->second.empty())
+	{
+		LOG_WARN(GlobalLogger(), "InputSystem", "GetKey: no keyboard for player " + std::to_string(playerID));
+		return false;
+	}
+	return it->second[0]->IsPressed(key) != 0.0f;
+}
+
+
 std::vector<std::shared_ptr<Device>> System::GetDevicesOfType(int player, DeviceType type)
 {
 	const auto* pool = (type == Keyboard) ? &PlayerKeyboardPool

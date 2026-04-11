@@ -25,7 +25,6 @@ struct SharedData
     AnimationSystem animation;
     PhysicsSystem physics;
 	SpatialIndex spatialIndex;
-	UI::Context ui;
 };
 
 typedef std::shared_ptr<SharedData> SharedDataRef;
