@@ -158,8 +158,17 @@ void SPH::Init()
                 auto& nb_list = (*cache)[i];
                 nb_list.clear();
 
+
+                int   neighbors = 0;
+
+
                 for (ECS::Entity nb : found)
                 {
+
+                    if (neighbors >= 16) 
+                        break;
+
+
                     if (nb == entities[i]) continue;
 
                     TransformComponent* nbTr = world->TryGet<TransformComponent>(nb);
@@ -187,6 +196,8 @@ void SPH::Init()
                     nb_entry.pressure_j = nbSph->pressure;
 
                     nb_list.push_back(nb_entry);
+
+                    neighbors++;
                 }
             }
         },

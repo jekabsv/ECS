@@ -8,6 +8,7 @@
 #include "AnimationSystem.h"
 #include "PhysicsSystem.h"
 #include "SpatialIndex.h"
+#include "Uicontext.h"
 
 struct SharedData
 {
@@ -24,6 +25,7 @@ struct SharedData
     AnimationSystem animation;
     PhysicsSystem physics;
 	SpatialIndex spatialIndex;
+	UI::Context ui;
 };
 
 typedef std::shared_ptr<SharedData> SharedDataRef;

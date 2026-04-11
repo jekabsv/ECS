@@ -7,6 +7,7 @@
 #include <iostream>
 #include "Utility.h"
 #include "Boids.h"
+#include "SPH.h"
 
 struct Clicked { bool clicked = false; };
 

@@ -38,6 +38,9 @@ bool Engine::Initialize()
         LOG_ERROR(GlobalLogger(), "Engine", "SDL_Init failed");
     }
 
+    TTF_Init();
+
+
     _data->window = SDL_CreateWindow("window", _data->GAME_WIDTH, _data->GAME_HEIGHT, 0);
     if (!_data->window)
     {
@@ -84,7 +87,7 @@ void Engine::Render(float dt)
         return;
     }
 
-    SDL_RenderClear(_data->SDLrenderer);
+	SDL_SetRenderDrawColor(_data->SDLrenderer, 0, 0, 0, 255);
 
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Render, dt);
     _data->state.GetActiveState()->Render(dt);
@@ -108,15 +111,23 @@ void Engine::run()
 
         _data->state.ProcessStateChanges();
         
-        _data->inputs.Update(dt);
         SDL_Event ev;
         while (SDL_PollEvent(&ev))
             _data->inputs.HandleEvent(ev, _data->quit);
 
+        UI::InputState inp;
+
+        _data->inputs.Update(dt);
+
         _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Initialise, dt);
 
         Update(dt);
+        SDL_RenderClear(_data->SDLrenderer);
+        _data->ui.Update(inp, dt);
+
         Render(dt);
+
+
 
 
         uint64_t frameTicks = SDL_GetTicks() - currentTicks;

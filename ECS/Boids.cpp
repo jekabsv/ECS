@@ -52,8 +52,6 @@ void Boids::Init()
         TransformComponent tr;
         tr.position.x = randf(0.0f, W);
         tr.position.y = randf(0.0f, H);
-        /*tr.position.x = W/2;
-        tr.position.y = H/2;*/
         tr.scale = { 1.0f, 1.0f };
 
         RigidBody rb;
@@ -108,7 +106,10 @@ void Boids::Init()
 
                 for (ECS::Entity other : found)
                 {
-                    if (other == entities[i]) continue;
+					if (neighbors > 16) 
+                        break;
+                    if (other == entities[i]) 
+                        continue;
 
                     TransformComponent* otherTr = data->physics.GetWorld()->TryGet<TransformComponent>(other);
                     RigidBody* otherRb = data->physics.GetWorld()->TryGet<RigidBody>(other);
@@ -153,7 +154,6 @@ void Boids::Init()
                     continue;
                 }
 
-                // Blend desired angles from each rule using circular mean
                 float blendSin = 0, blendCos = 0;
 
                 // Alignment

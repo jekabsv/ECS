@@ -49,6 +49,12 @@
     <Filter Include="Header Files\Internals\Util">
       <UniqueIdentifier>{c460774d-cde3-4e37-a9fa-0663553ad269}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Internals\UISystem">
+      <UniqueIdentifier>{22d9892c-8261-48e9-a241-ecd77ed5c2ac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Internals\UiSystem">
+      <UniqueIdentifier>{ed11fbc8-4bb7-475c-beca-acd3768f6640}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="InputSystem.cpp">
@@ -101,6 +107,18 @@
     </ClCompile>
     <ClCompile Include="Boids.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Uitypes.h">
+      <Filter>Header Files\Internals\UISystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Uinode.h">
+      <Filter>Header Files\Internals\UISystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Uicontext.cpp">
+      <Filter>Source Files\Internals\UiSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Uitheme.cpp">
+      <Filter>Source Files\Internals\UiSystem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -172,6 +190,12 @@
     </ClInclude>
     <ClInclude Include="Boids.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Uitheme.h">
+      <Filter>Header Files\Internals\UISystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Uicontext.h">
+      <Filter>Header Files\Internals\UISystem</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

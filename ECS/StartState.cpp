@@ -3,6 +3,8 @@
 #include <windows.h>
 #include "SPH.h"
 #include "Boids.h"
+#include "Uicontext.h";
+#include <iostream>
 
 class ProcessWASD : public InputSystem::Processor
 {
@@ -107,7 +109,34 @@ void StartState::Init()
 
     _data->inputs.AssignMapToPlayer("level1");
 
+	
+    
+    
+    _data->assets.LoadFont("main", "../OpenSans-Regular.ttf");
+
+    _data->ui.Init(_data->SDLrenderer, (float)_data->GAME_WIDTH, (float)_data->GAME_HEIGHT);
+
+    printf("Font registered: %p\n", _data->assets.GetFont("main"));
+
+
+    _data->ui.GetTheme().LoadDarkDefaults();
+
+    // Register your font (loaded via AssetManager)
+    _data->ui.RegisterFont("main", _data->assets.GetFont("main"));
+
+    // Root container — centered column
+    UI::NodeHandle root = _data->ui.AddContainer();
+    _data->ui.SetSize(root, UI::SizeValue::Px(500), UI::SizeValue::Auto());
+    _data->ui.SetFlexDirection(root, UI::FlexDirection::Column);
+    _data->ui.SetJustify(root, UI::JustifyContent::Center);
+    _data->ui.SetAlignItems(root, UI::AlignItems::Stretch);
+    _data->ui.SetGap(root, 12.0f);
+
+    btnPlay_ = _data->ui.AddButton("Play", root);
+    btnQuit_ = _data->ui.AddButton("Quit", root);
+
+
 
     //State Change
-    _data->state.AddState(StateRef(new Level1(_data)), 1);
+    //_data->state.AddState(StateRef(new Level1(_data)), 1);
 }
