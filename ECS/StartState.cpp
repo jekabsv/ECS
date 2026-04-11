@@ -116,7 +116,6 @@ void StartState::Init()
     
     _data->assets.LoadFont("main", "../OpenSans-Regular.ttf");
 
-    ui.Init(_data->SDLrenderer, (float)_data->GAME_WIDTH, (float)_data->GAME_HEIGHT);
 
     printf("Font registered: %p\n", _data->assets.GetFont("main"));
 

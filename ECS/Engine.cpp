@@ -86,28 +86,42 @@ void Engine::Update(float dt)
 
 void Engine::HandleInput(float dt)
 {
+    UI::InputState inp;
+
     SDL_Event ev;
     while (SDL_PollEvent(&ev))
+    {
         _data->inputs.HandleEvent(ev, _data->quit);
+
+        if (ev.type == SDL_EVENT_TEXT_INPUT)
+            inp.textInput += ev.text.text;
+
+        if (ev.type == SDL_EVENT_KEY_DOWN)
+        {
+            switch (ev.key.scancode)
+            {
+            case SDL_SCANCODE_BACKSPACE: inp.keyBackspace = true; break;
+            case SDL_SCANCODE_DELETE:    inp.keyDelete = true; break;
+            case SDL_SCANCODE_LEFT:      inp.keyLeft = true; break;
+            case SDL_SCANCODE_RIGHT:     inp.keyRight = true; break;
+            case SDL_SCANCODE_HOME:      inp.keyHome = true; break;
+            case SDL_SCANCODE_END:       inp.keyEnd = true; break;
+            case SDL_SCANCODE_RETURN:    inp.keyEnter = true; break;
+            case SDL_SCANCODE_TAB:       inp.keyTab = true; break;
+            default: break;
+            }
+        }
+    }
+
     _data->inputs.Update(dt);
 
-    UI::InputState inp;
-    inp.keyBackspace = _data->inputs.GetKey(SDL_SCANCODE_BACKSPACE);
-    inp.keyDelete = _data->inputs.GetKey(SDL_SCANCODE_DELETE);
-    inp.keyLeft = _data->inputs.GetKey(SDL_SCANCODE_LEFT);
-    inp.keyRight = _data->inputs.GetKey(SDL_SCANCODE_RIGHT);
-    inp.keyHome = _data->inputs.GetKey(SDL_SCANCODE_HOME);
-    inp.keyEnd = _data->inputs.GetKey(SDL_SCANCODE_END);
-    inp.keyEnter = _data->inputs.GetKey(SDL_SCANCODE_RETURN);
-    inp.keyTab = _data->inputs.GetKey(SDL_SCANCODE_TAB);
-    inp.mouseX = _data->inputs.GetActionAxis("mousePos")[0];
-    inp.mouseY = _data->inputs.GetActionAxis("mousePos")[1];
-    inp.mouseDown = _data->inputs.GetActionState("click") == InputSystem::Held;
+    inp.mouseX = _data->inputs.GetMousePosition().x;
+    inp.mouseY = _data->inputs.GetMousePosition().y;
+    inp.mouseDown = _data->inputs.GetActionState("click") == InputSystem::Held || _data->inputs.GetActionState("click") == InputSystem::Pressed;
     inp.mousePressed = _data->inputs.GetActionState("click") == InputSystem::Pressed;
     inp.mouseReleased = _data->inputs.GetActionState("click") == InputSystem::Released;
 
-
-    _data->state.GetActiveState()->ui.ProcessInput(inp, dt);
+    _data->state.GetActiveState()->ui.Update(inp, dt);
 }
 
 void Engine::Render(float dt)

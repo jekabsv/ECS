@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 #include <optional>
+#include <SDL3/SDL_video.h>
 
 struct SDL_Renderer;
 struct TTF_Font;
@@ -60,7 +61,7 @@ namespace UI
         // -- Lifecycle --------------------------------------------------------
 
         /// Call once. Provide renderer + initial canvas size.
-        void Init(SDL_Renderer* renderer, float canvasW, float canvasH);
+        void Init(SDL_Renderer* renderer, float canvasW, float canvasH, SDL_Window* window);
 
         /// Call when the window is resized.
         void Resize(float canvasW, float canvasH);
@@ -167,6 +168,9 @@ namespace UI
         void RenderPass();
 
     private:
+
+
+		SDL_Window* window_ = nullptr;
         // -- Internal node management -----------------------------------------
 
         Node& GetNode(NodeHandle handle);

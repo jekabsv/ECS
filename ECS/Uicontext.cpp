@@ -15,8 +15,9 @@ namespace UI
     // Lifecycle
     // =============================================================================
 
-    void Context::Init(SDL_Renderer* renderer, float canvasW, float canvasH)
+    void Context::Init(SDL_Renderer* renderer, float canvasW, float canvasH, SDL_Window *window)
     {
+		window_ = window;
         renderer_ = renderer;
         canvasW_ = canvasW;
         canvasH_ = canvasH;
@@ -427,7 +428,8 @@ namespace UI
                 {
                     it->second.widget.focused = false;
                     focusedNode_ = NULL_HANDLE;
-                    SDL_StopTextInput(nullptr);
+                    bool result = SDL_StopTextInput(window_);
+                    //printf("SDL_StartTextInput: %d\n", result);
                 }
             }
         }
@@ -515,7 +517,7 @@ namespace UI
                         }
                         focusedNode_ = h;
                         node.widget.focused = true;
-                        SDL_StartTextInput(nullptr);
+                        SDL_StartTextInput(window_);
                     }
                     // Place cursor at end (could be improved with click-to-position)
                     node.widget.cursorPos = (uint32_t)node.widget.inputValue.size();
