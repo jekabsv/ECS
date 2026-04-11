@@ -3,6 +3,7 @@
 #include "SharedDataRef.h"
 #include "Transform.h"
 #include <chrono>
+#include <iostream>
 
 
 const std::vector<ECS::Entity> PhysicsSystem::emptyContacts_;
