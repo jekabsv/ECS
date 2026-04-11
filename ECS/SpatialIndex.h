@@ -19,10 +19,6 @@ static constexpr std::size_t SPATIAL_RADIX_THRESHOLD = 2048;
 static constexpr std::size_t SPATIAL_TABLE_SIZE = 1 << 16;
 static constexpr std::size_t SPATIAL_TABLE_MASK = SPATIAL_TABLE_SIZE - 1;
 
-// Upper bound on entity IDs for the generation-stamp visited set.
-// Raise if your ECS issues IDs beyond this value.
-static constexpr std::size_t SPATIAL_MAX_ENTITY = 1 << 17; // 131 072
-
 // ---------------------------------------------------------------------------
 
 class SpatialIndex
@@ -31,7 +27,6 @@ public:
     SpatialIndex()
     {
         m_table.assign(SPATIAL_TABLE_SIZE, EMPTY);
-        m_visited.assign(SPATIAL_MAX_ENTITY, 0u);
     }
 
     // -----------------------------------------------------------------------
@@ -123,20 +118,10 @@ public:
         }
 
         m_sorted = true;
-
-        // Advance generation for the visited set so stale stamps from the
-        // previous frame are ignored without clearing the whole array.
-        ++m_generation;
-        if (m_generation == 0u)
-        {
-            // Wraparound: reset all stamps so no false "already visited" hits.
-            std::fill(m_visited.begin(), m_visited.end(), 0u);
-            m_generation = 1u;
-        }
     }
 
     std::size_t QueryRectangle(float x, float y, float w, float h,
-                               std::vector<ECS::Entity>& out) const
+        std::vector<ECS::Entity>& out) const
     {
         int minCX, minCY, maxCX, maxCY;
         rectToCells(x, y, w, h, minCX, minCY, maxCX, maxCY);
@@ -144,22 +129,26 @@ public:
         for (int cy = minCY; cy <= maxCY; ++cy)
             for (int cx = minCX; cx <= maxCX; ++cx)
                 collectCell(morton(cx, cy), out);
+        auto mid = out.begin() + before;
+        std::sort(mid, out.end());
+        out.erase(std::unique(mid, out.end()), out.end());
         return out.size() - before;
     }
 
     std::size_t QueryCircle(float x, float y, float r,
-                            std::vector<ECS::Entity>& out) const
+        std::vector<ECS::Entity>& out) const
     {
         return QueryRectangle(x - r, y - r, r * 2.f, r * 2.f, out);
     }
 
     std::size_t QueryPoint(float x, float y,
-                           std::vector<ECS::Entity>& out) const
+        std::vector<ECS::Entity>& out) const
     {
         const int cx = worldToCell(x - m_originX);
         const int cy = worldToCell(y - m_originY);
         const std::size_t before = out.size();
         collectCell(morton(cx, cy), out);
+        // single cell — no duplicates possible, no sort needed
         return out.size() - before;
     }
 
@@ -260,33 +249,22 @@ private:
     void collectCell(std::uint64_t key, std::vector<ECS::Entity>& out) const
     {
         std::uint32_t slot = static_cast<std::uint32_t>(key & SPATIAL_TABLE_MASK);
-
         while (m_table[slot] != EMPTY)
         {
             const std::size_t idx = m_table[slot];
             if (m_entries[idx].key == key)
             {
-                // Walk all entries sharing this key.
                 for (std::size_t i = idx;
-                     i < m_entries.size() && m_entries[i].key == key;
-                     ++i)
+                    i < m_entries.size() && m_entries[i].key == key;
+                    ++i)
                 {
-                    const ECS::Entity eid = m_entries[i].entity;
-                    // Entity IDs outside the stamp array fall back to a plain push.
-                    if (static_cast<std::size_t>(eid) < m_visited.size())
-                    {
-                        if (m_visited[eid] == m_generation) continue;
-                        m_visited[eid] = m_generation;
-                    }
-                    out.push_back(eid);
+                    out.push_back(m_entries[i].entity);
                 }
                 return;
             }
             slot = static_cast<std::uint32_t>((slot + 1u) & SPATIAL_TABLE_MASK);
         }
-        // Key not found — cell is empty.
     }
-
     // -----------------------------------------------------------------------
     //  Data members
     // -----------------------------------------------------------------------
@@ -303,8 +281,4 @@ private:
     // Hash table: slot → index of first Entry in m_entries with that key.
     std::vector<std::uint32_t> m_table;
     std::vector<std::uint32_t> m_usedSlots; // tracks which slots need clearing
-
-    // Generation-stamp deduplication: avoids sort+unique on query output.
-    mutable std::vector<std::uint32_t> m_visited;
-    mutable std::uint32_t              m_generation = 1u;
 };

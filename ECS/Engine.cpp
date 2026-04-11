@@ -133,7 +133,17 @@ void Engine::run()
 
         _data->inputs.Update(dt);
 
+        _data->spatialIndex.Clear();
         _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Initialise, dt);
+        _data->spatialIndex.Build();
+        std::vector<ECS::Entity> test;
+        /*_data->spatialIndex.QueryRectangle(400, 400, 200, 200, test);
+        LOG_DEBUG(GlobalLogger(), "SpatialIndex", "Direct query found: " + std::to_string(test.size()) + " entitie: ");
+        if(test.size() > 0)
+        {
+            for (auto e : test)
+                LOG_DEBUG(GlobalLogger(), "SpatialIndex", "  entity: " + std::to_string(e));
+		} */  
 
         Update(dt);
         SDL_RenderClear(_data->SDLrenderer);

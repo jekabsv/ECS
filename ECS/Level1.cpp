@@ -226,13 +226,15 @@ void Level1::Init()
 }
 
 void Level1::Update(float dt)
-{
+{ 
+
+
     if (_data->inputs.GetActionState("click") == InputSystem::Held)
     {
         float mx = _data->inputs.GetActionAxis("mousePos")[0];
         float my = _data->inputs.GetActionAxis("mousePos")[1];
 
-		std::vector<ECS::Entity> foundEntities;
+        std::vector<ECS::Entity> foundEntities;
         _data->spatialIndex.QueryPoint(mx, my, foundEntities);
 
         for(auto e : foundEntities)

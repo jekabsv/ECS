@@ -136,7 +136,7 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
 
     auto t0 = std::chrono::high_resolution_clock::now();
 
-    data->spatialIndex.Clear();
+    //data->spatialIndex.Clear();
     collisionPairs_.clear();
 
 
@@ -144,11 +144,11 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
     auto rcs = ctx.Slice<TransformComponent>();
     auto bcs = ctx.Slice<BoxCollider>();
 
-	LOG_DEBUG(GlobalLogger(), "PhysicsSystem", "Building spatial index for " + std::to_string(entities.size()) +  " entities...");
+	//LOG_DEBUG(GlobalLogger(), "PhysicsSystem", "Building spatial index for " + std::to_string(entities.size()) +  " entities...");
 
     for (std::size_t i = 0; i < entities.size(); i++)
     {
-		LOG_DEBUG(GlobalLogger(), "PhysicsSystem", "Inserting entity " + std::to_string(entities[i]) + " into spatial index...");
+		//LOG_DEBUG(GlobalLogger(), "PhysicsSystem", "Inserting entity " + std::to_string(entities[i]) + " into spatial index...");
 
         auto it = contactMap_.find(entities[i]);
         if (it != contactMap_.end()) 
@@ -161,10 +161,12 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
         float aw = bc.hw * 2.0f * rc.scale.x;
         float ah = bc.hh * 2.0f * rc.scale.y;
 
+		//LOG_DEBUG(GlobalLogger(), "PhysicsSystem", "Inserting entity " + std::to_string(entities[i]) + " into spatial index at (" + std::to_string(ax) + ", " + std::to_string(ay) + ", " + std::to_string(aw) + ", " + std::to_string(ah) + ")...");
+
         data->spatialIndex.InsertRectangle(entities[i], ax, ay, aw, ah);
     }
 
-    data->spatialIndex.Build();
+    //data->spatialIndex.Build();
 
     auto t1 = std::chrono::high_resolution_clock::now();
     float ms = std::chrono::duration<float, std::milli>(t1 - t0).count();
