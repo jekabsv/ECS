@@ -9,7 +9,9 @@ public:
     void Init() override;
     void HandleInput() override {}
 
-    UI::NodeHandle btnPlay_ = UI::NULL_HANDLE;
+    UI::NodeHandle btnBoids = UI::NULL_HANDLE;
+    UI::NodeHandle btnSillyGame = UI::NULL_HANDLE;
+    UI::NodeHandle btnSlider = UI::NULL_HANDLE;
     UI::NodeHandle btnQuit_ = UI::NULL_HANDLE;
 };
 

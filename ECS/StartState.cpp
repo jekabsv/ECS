@@ -131,10 +131,14 @@ void StartState::Init()
     _data->ui.SetJustify(root, UI::JustifyContent::Center);
     _data->ui.SetAlignItems(root, UI::AlignItems::Stretch);
     _data->ui.SetGap(root, 12.0f);
+    _data->ui.SetPadding(root, UI::Edges::All(20.0f));
 
-    btnPlay_ = _data->ui.AddButton("Play", root);
+    _data->ui.AddImage(_data->assets.GetTexture("player"), { 0, 0, 64, 64 }, root);
+    btnSillyGame = _data->ui.AddButton("Silly game", root);
+    btnBoids = _data->ui.AddButton("Boids", root);
     btnQuit_ = _data->ui.AddButton("Quit", root);
-
+	btnSlider = _data->ui.AddSlider(0.5f, 0.0f, 1.0f, root);
+	_data->ui.AddLabel("Made by Claude", root);
 
 
     //State Change

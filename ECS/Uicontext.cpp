@@ -114,11 +114,12 @@ namespace UI
         return h;
     }
 
-    NodeHandle Context::AddImage(SDL_Texture* texture, SDL_FRect sourceRect, NodeHandle parent, std::string_view id)
+    NodeHandle Context::AddImage(const SDL_Texture* texture, SDL_FRect sourceRect, NodeHandle parent, std::string_view id)
     {
+		SDL_Texture *tex = const_cast<SDL_Texture*>(texture);
         NodeHandle h = AllocNode(WidgetType::Image, parent, id);
         auto& w = nodes_[h].widget;
-        w.texture = texture;
+        w.texture = tex;
         w.textureRect = sourceRect;
         return h;
     }

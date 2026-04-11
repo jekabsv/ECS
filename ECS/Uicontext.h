@@ -88,7 +88,7 @@ namespace UI
         NodeHandle AddInputField(std::string_view placeholder = "", NodeHandle parent = NULL_HANDLE, std::string_view id = "");
 
         /// Add an image widget.
-        NodeHandle AddImage(SDL_Texture* texture, SDL_FRect sourceRect = { 0,0,0,0 }, NodeHandle parent = NULL_HANDLE, std::string_view id = "");
+        NodeHandle AddImage(const SDL_Texture* texture, SDL_FRect sourceRect = { 0,0,0,0 }, NodeHandle parent = NULL_HANDLE, std::string_view id = "");
 
         /// Remove a node (and all its children) from the tree.
         void Remove(NodeHandle handle);
