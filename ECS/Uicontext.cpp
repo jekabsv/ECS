@@ -408,6 +408,7 @@ namespace UI
 
     void Context::ProcessInput(const InputState& input, float dt)
     {
+        currentInput_ = input;
         // Reset per-frame flags on all nodes
         for (auto& [h, node] : nodes_)
         {

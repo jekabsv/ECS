@@ -19,6 +19,7 @@ public:
 
     bool Initialize();
     void Update(float dt);
+    void HandleInput(float dt);
     void Render(float dt);
     
     void run();

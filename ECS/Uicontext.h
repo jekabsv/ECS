@@ -160,6 +160,12 @@ namespace UI
         Theme& GetTheme() { return theme_; }
         const Theme& GetTheme() const { return theme_; }
 
+        // -- Per-frame passes -------------------------------------------------
+
+        void ProcessInput(const InputState& input, float dt);
+        void LayoutPass();
+        void RenderPass();
+
     private:
         // -- Internal node management -----------------------------------------
 
@@ -168,11 +174,8 @@ namespace UI
         NodeHandle  AllocNode(WidgetType type, NodeHandle parent, std::string_view id);
         void        RemoveRecursive(NodeHandle handle);
 
-        // -- Per-frame passes -------------------------------------------------
 
-        void ProcessInput(const InputState& input, float dt);
-        void LayoutPass();
-        void RenderPass();
+        
 
         // -- Layout internals -------------------------------------------------
 

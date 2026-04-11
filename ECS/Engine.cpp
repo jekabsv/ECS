@@ -72,12 +72,43 @@ bool Engine::Initialize()
 
 void Engine::Update(float dt)
 {
+    _data->state.GetActiveState()->ui.LayoutPass();
+
+    _data->spatialIndex.Clear();
+    _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Initialise, dt);
+    _data->spatialIndex.Build();
+
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::PreUpdate, dt);
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Update, dt);
     _data->state.GetActiveState()->Update(dt);
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::PostUpdate, dt);
 }
 
+void Engine::HandleInput(float dt)
+{
+    SDL_Event ev;
+    while (SDL_PollEvent(&ev))
+        _data->inputs.HandleEvent(ev, _data->quit);
+    _data->inputs.Update(dt);
+
+    UI::InputState inp;
+    inp.keyBackspace = _data->inputs.GetKey(SDL_SCANCODE_BACKSPACE);
+    inp.keyDelete = _data->inputs.GetKey(SDL_SCANCODE_DELETE);
+    inp.keyLeft = _data->inputs.GetKey(SDL_SCANCODE_LEFT);
+    inp.keyRight = _data->inputs.GetKey(SDL_SCANCODE_RIGHT);
+    inp.keyHome = _data->inputs.GetKey(SDL_SCANCODE_HOME);
+    inp.keyEnd = _data->inputs.GetKey(SDL_SCANCODE_END);
+    inp.keyEnter = _data->inputs.GetKey(SDL_SCANCODE_RETURN);
+    inp.keyTab = _data->inputs.GetKey(SDL_SCANCODE_TAB);
+    inp.mouseX = _data->inputs.GetActionAxis("mousePos")[0];
+    inp.mouseY = _data->inputs.GetActionAxis("mousePos")[1];
+    inp.mouseDown = _data->inputs.GetActionState("click") == InputSystem::Held;
+    inp.mousePressed = _data->inputs.GetActionState("click") == InputSystem::Pressed;
+    inp.mouseReleased = _data->inputs.GetActionState("click") == InputSystem::Released;
+
+
+    _data->state.GetActiveState()->ui.ProcessInput(inp, dt);
+}
 
 void Engine::Render(float dt)
 {
@@ -88,12 +119,17 @@ void Engine::Render(float dt)
     }
 
 	SDL_SetRenderDrawColor(_data->SDLrenderer, 0, 0, 0, 255);
+    SDL_RenderClear(_data->SDLrenderer);
 
+    _data->state.GetActiveState()->ui.RenderPass();
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Render, dt);
     _data->state.GetActiveState()->Render(dt);
 
     SDL_RenderPresent(_data->SDLrenderer);
 }
+
+
+
 
 void Engine::run()
 {
@@ -109,48 +145,13 @@ void Engine::run()
         if (dt > 0.1f)
             dt = 0.1f;
 
+
+
         _data->state.ProcessStateChanges();
         
-        SDL_Event ev;
-        while (SDL_PollEvent(&ev))
-            _data->inputs.HandleEvent(ev, _data->quit);
-
-        UI::InputState inp;
-		inp.keyBackspace = _data->inputs.GetKey(SDL_SCANCODE_BACKSPACE);
-		inp.keyDelete = _data->inputs.GetKey(SDL_SCANCODE_DELETE);
-		inp.keyLeft = _data->inputs.GetKey(SDL_SCANCODE_LEFT);
-		inp.keyRight = _data->inputs.GetKey(SDL_SCANCODE_RIGHT);
-		inp.keyHome = _data->inputs.GetKey(SDL_SCANCODE_HOME);
-		inp.keyEnd = _data->inputs.GetKey(SDL_SCANCODE_END);
-		inp.keyEnter = _data->inputs.GetKey(SDL_SCANCODE_RETURN);
-		inp.keyTab = _data->inputs.GetKey(SDL_SCANCODE_TAB);
-		inp.mouseX = _data->inputs.GetActionAxis("mousePos")[0];
-		inp.mouseY = _data->inputs.GetActionAxis("mousePos")[1];
-		inp.mouseDown = _data->inputs.GetActionState("click") == InputSystem::Held;
-		inp.mousePressed = _data->inputs.GetActionState("click") == InputSystem::Pressed;
-		inp.mouseReleased = _data->inputs.GetActionState("click") == InputSystem::Released;
-
-
-        _data->inputs.Update(dt);
-
-        _data->spatialIndex.Clear();
-        _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Initialise, dt);
-        _data->spatialIndex.Build();
-        std::vector<ECS::Entity> test;
-        /*_data->spatialIndex.QueryRectangle(400, 400, 200, 200, test);
-        LOG_DEBUG(GlobalLogger(), "SpatialIndex", "Direct query found: " + std::to_string(test.size()) + " entitie: ");
-        if(test.size() > 0)
-        {
-            for (auto e : test)
-                LOG_DEBUG(GlobalLogger(), "SpatialIndex", "  entity: " + std::to_string(e));
-		} */  
-
+        HandleInput(dt);
         Update(dt);
-        SDL_RenderClear(_data->SDLrenderer);
-        _data->state.GetActiveState()->ui.Update(inp, dt);
-
         Render(dt);
-
 
 
 
