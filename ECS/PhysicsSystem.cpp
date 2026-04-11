@@ -3,6 +3,7 @@
 #include "SharedDataRef.h"
 #include "Transform.h"
 #include <chrono>
+#include <iostream>
 
 
 const std::vector<ECS::Entity> PhysicsSystem::emptyContacts_;
@@ -143,8 +144,12 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
     auto rcs = ctx.Slice<TransformComponent>();
     auto bcs = ctx.Slice<BoxCollider>();
 
+	LOG_DEBUG(GlobalLogger(), "PhysicsSystem", "Building spatial index for " + std::to_string(entities.size()) +  " entities...");
+
     for (std::size_t i = 0; i < entities.size(); i++)
     {
+		LOG_DEBUG(GlobalLogger(), "PhysicsSystem", "Inserting entity " + std::to_string(entities[i]) + " into spatial index...");
+
         auto it = contactMap_.find(entities[i]);
         if (it != contactMap_.end()) 
             it->second.clear();
