@@ -144,6 +144,8 @@ The engine is designed to be modular, data-oriented, and suitable for both **run
 - Camera abstraction.
 - Shader abstraction.
 - Batch rendering for performance.
+- Automatic render systems
+- Z-order of rendering
 
 ### 4. Resource Management
 - Improved asset lifetime control.
