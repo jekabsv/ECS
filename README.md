@@ -138,7 +138,7 @@ The engine is designed to be modular, data-oriented, and suitable for both **run
 - Add Querries like Raycast, OverlapBox, SphereCast, etc..
 
 ### 2. UI
-- Add UI system
+- extend UI system
 
 ### 3. Core Game Loop
 - Deterministic update order:  
@@ -162,8 +162,7 @@ The engine is designed to be modular, data-oriented, and suitable for both **run
 - Review InputComponent, preferably removed
 
 ### 8. ECS
-- Review ECS system ordering:
-  - add Initialise, Pre-Update, Post-Update system groups
+-Update system groups
   - add .before(System) .after(System) to System Builder
   - remove swap remove
 
@@ -173,6 +172,7 @@ The engine is designed to be modular, data-oriented, and suitable for both **run
 - **C++20**
 - **Visual Studio 2022**
 - **SDL 3**
+- **SDL_TTF**
 - **Emscripten** (WASM builds / preview workflow)
 - **JavaScript**
 - **ES Modules (mjs)**
