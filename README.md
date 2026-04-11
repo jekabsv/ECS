@@ -140,28 +140,24 @@ The engine is designed to be modular, data-oriented, and suitable for both **run
 ### 2. UI
 - extend UI system
 
-### 3. Core Game Loop
-- Deterministic update order:  
-  **Input → Update → Physics → Render**
-
-### 4. Rendering Pipeline
+### 3. Rendering Pipeline
 - Camera abstraction.
 - Shader abstraction.
 - Batch rendering for performance.
 
-### 5. Resource Management
+### 4. Resource Management
 - Improved asset lifetime control.
 - Explicit load/unload policies.
 
-### 6. Debugging & Tooling
+### 5. Debugging & Tooling
 - Debug overlays (FPS, input states).
 - Runtime diagnostics and validation tools.
 
-### 7. Consitency
+### 6. Consitency
 - Change everything to have the same naming, logic conventions
 - Review InputComponent, preferably removed
 
-### 8. ECS
+### 7. ECS
 -Update system groups
   - add .before(System) .after(System) to System Builder
   - remove swap remove
@@ -172,7 +168,7 @@ The engine is designed to be modular, data-oriented, and suitable for both **run
 - **C++20**
 - **Visual Studio 2022**
 - **SDL 3**
-- **SDL_TTF**
+- **SDL3_TTF**
 - **Emscripten** (WASM builds / preview workflow)
 - **JavaScript**
 - **ES Modules (mjs)**
