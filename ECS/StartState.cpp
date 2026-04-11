@@ -143,9 +143,6 @@ void StartState::Init()
 	btnSlider = ui.AddSlider(0.5f, 0.0f, 1.0f, root);
 	ui.AddLabel("Made by Claude", root);
 	ui.AddInputField("Type here...", root);
-
-    //State Change
-    //_data->state.AddState(StateRef(new Level1(_data)), 1);
 }
 
 void StartState::Update(float dt)
