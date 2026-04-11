@@ -219,6 +219,10 @@ namespace InputSystem
 		int AssignDevicesToPlayer(const std::vector<std::shared_ptr<Internals::Device>>&, int PlayerID = -1);
 		int RemoveDeviceFromPlayer(const std::shared_ptr<Internals::Device>& device, int playerID = -1);
 
+		Vec2 GetMousePosition(int playerID = -1);
+		bool GetMouseButton(int button, int playerID = -1);
+		bool GetKey(int key, int playerID = -1);
+
 		std::vector<std::shared_ptr<Internals::Device>> GetDevicesOfType(int player, DeviceType type);
 
 		
