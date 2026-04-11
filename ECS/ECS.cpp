@@ -300,6 +300,8 @@ void World::EnableSystem(StringId name)
         if (s.name == name) { s.enabled = true; systems_dirty_ = true; return; }
     for (auto& s : render_systems_)
         if (s.name == name) { s.enabled = true; systems_dirty_ = true; return; }
+    for (auto& s : physics_systems_)
+        if (s.name == name) { s.enabled = true; systems_dirty_ = true; return; }
     
 }
 void World::DisableSystem(StringId name)
@@ -314,6 +316,8 @@ void World::DisableSystem(StringId name)
         if (s.name == name) { s.enabled = false; systems_dirty_ = true; return; }
     for (auto& s : render_systems_)
         if (s.name == name) { s.enabled = false; systems_dirty_ = true; return; }
+    for (auto& s : physics_systems_)
+        if (s.name == name) { s.enabled = false; systems_dirty_ = true; return; }
 }
 void World::ToggleSystem(StringId name)
 {
@@ -326,6 +330,8 @@ void World::ToggleSystem(StringId name)
     for (auto& s : post_update_systems_)
         if (s.name == name) { s.enabled = !s.enabled; systems_dirty_ = true; return; }
     for (auto& s : render_systems_)
+        if (s.name == name) { s.enabled = !s.enabled; systems_dirty_ = true; return; }
+    for (auto& s : physics_systems_)
         if (s.name == name) { s.enabled = !s.enabled; systems_dirty_ = true; return; }
 }
 
@@ -388,6 +394,8 @@ void World::Run(SystemGroup group, float dt)
         RebuildFusedGroups(initialise_systems_, initialise_fused_);
         RebuildFusedGroups(pre_update_systems_, pre_update_fused_);
         RebuildFusedGroups(post_update_systems_, post_update_fused_);
+        RebuildFusedGroups(physics_systems_, physics_fused_);
+
         systems_dirty_ = false;
     }
 
@@ -399,6 +407,8 @@ void World::Run(SystemGroup group, float dt)
         RunSystems(initialise_fused_, dt);
     else if (group == SystemGroup::PostUpdate)
         RunSystems(post_update_fused_, dt);
+	else if (group == SystemGroup::Physics)
+		RunSystems(physics_fused_, dt);
     else
         RunSystems(pre_update_fused_, dt);
 }

@@ -197,7 +197,7 @@ namespace ECS
     };
 
 
-    enum class SystemGroup { Initialise, PreUpdate, Update, PostUpdate, Render };
+    enum class SystemGroup { Initialise, PreUpdate, Update, PostUpdate, Render, Physics };
 
     class World;
 
@@ -318,12 +318,14 @@ namespace ECS
         std::vector<SystemEntry> update_systems_;
         std::vector<SystemEntry> post_update_systems_;
         std::vector<SystemEntry> render_systems_;
+        std::vector<SystemEntry> physics_systems_;
 
         std::vector<FusedGroup> initialise_fused_;
         std::vector<FusedGroup> pre_update_fused_;
         std::vector<FusedGroup> update_fused_;
         std::vector<FusedGroup> post_update_fused_;
         std::vector<FusedGroup> render_fused_;
+        std::vector<FusedGroup> physics_fused_;
 
         bool systems_dirty_ = true;
 
@@ -614,6 +616,7 @@ namespace ECS
             case SystemGroup::PreUpdate:   return pre_update_systems_;
             case SystemGroup::PostUpdate:  return post_update_systems_;
             case SystemGroup::Render:      return render_systems_;
+            case SystemGroup::Physics:     return physics_systems_;
             default:                       return update_systems_;
             }
             }();

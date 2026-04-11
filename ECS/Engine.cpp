@@ -128,6 +128,11 @@ void Engine::Render(float dt)
     SDL_RenderPresent(_data->SDLrenderer);
 }
 
+void Engine::Physics(float dt)
+{
+	_data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Physics, dt);
+}
+
 
 
 
@@ -151,6 +156,7 @@ void Engine::run()
         
         HandleInput(dt);
         Update(dt);
+        Physics(dt);
         Render(dt);
 
 

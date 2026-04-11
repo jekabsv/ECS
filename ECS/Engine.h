@@ -21,6 +21,7 @@ public:
     void Update(float dt);
     void HandleInput(float dt);
     void Render(float dt);
+    void Physics(float dt);
     
     void run();
 

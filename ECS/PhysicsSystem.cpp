@@ -37,7 +37,7 @@ void PhysicsSystem::Tie(ECS::World& world)
         {
             MovementSystem(ctx, dt, data);
         },
-        ECS::SystemGroup::Update);
+        ECS::SystemGroup::Physics);
 
     world.DisableSystem("physicsBuild");
     world.DisableSystem("physicsCollide");

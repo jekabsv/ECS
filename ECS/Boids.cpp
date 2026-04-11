@@ -212,7 +212,6 @@
             ECS::SystemGroup::Update);
 
 
-
         ecs.RegisterSystem<TransformComponent, MeshComponent>(
             "RenderMesh",
             [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
