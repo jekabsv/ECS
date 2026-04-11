@@ -223,10 +223,30 @@ void Level1::Init()
             }
         }, 
         ECS::SystemGroup::Render);
+
+
+
+    ui.GetTheme().LoadDarkDefaults();
+
+    ui.RegisterFont("main", _data->assets.GetFont("main"));
+
+
+    UI::NodeHandle root = ui.AddContainer();
+    ui.SetSize(root, UI::SizeValue::Px(500), UI::SizeValue::Auto());
+    ui.SetFlexDirection(root, UI::FlexDirection::Column);
+    ui.SetJustify(root, UI::JustifyContent::FlexStart);
+    ui.SetAlignItems(root, UI::AlignItems::Stretch);
+    ui.SetGap(root, 12.0f);
+    ui.SetPadding(root, UI::Edges::All(20.0f));
+
+	back = ui.AddButton("Back to menu", root);
 }
 
 void Level1::Update(float dt)
 { 
+    if(ui.IsClicked(back))
+		_data->state.RemoveState();
+
     if (_data->inputs.GetActionState("click") == InputSystem::Held)
     {
         float mx = _data->inputs.GetActionAxis("mousePos")[0];
@@ -251,7 +271,6 @@ void Level1::Update(float dt)
 
     if(_data->inputs.GetActionState("next") == InputSystem::Pressed)
 		_data->state.RemoveState();
-        //_data->state.AddState(StateRef(new Boids(_data)), 1);
 
     if (_data->inputs.GetActionState("show_colliders") == InputSystem::Pressed)
         ecs.ToggleSystem("draw_colliders");

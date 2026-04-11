@@ -28,4 +28,6 @@ private:
     static constexpr float W_SEPARATION = 3.8f;
     static constexpr float W_ALIGNMENT = 1.0f;
     static constexpr float W_COHESION = 0.9f;
+
+	UI::NodeHandle back;
 };

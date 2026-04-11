@@ -243,11 +243,31 @@
                 }
             },
             ECS::SystemGroup::Render);
+
+
+        ui.GetTheme().LoadDarkDefaults();
+
+        ui.RegisterFont("main", _data->assets.GetFont("main"));
+
+
+        UI::NodeHandle root = ui.AddContainer();
+        ui.SetSize(root, UI::SizeValue::Px(500), UI::SizeValue::Auto());
+        ui.SetFlexDirection(root, UI::FlexDirection::Column);
+        ui.SetJustify(root, UI::JustifyContent::FlexStart);
+        ui.SetAlignItems(root, UI::AlignItems::Stretch);
+        ui.SetGap(root, 12.0f);
+        ui.SetPadding(root, UI::Edges::All(20.0f));
+
+        back = ui.AddButton("Back to menu", root);
+
+
     }
 
     void Boids::Update(float dt)
     {
+        if (ui.IsClicked(back))
+            _data->state.RemoveState();
+
         if (_data->inputs.GetActionState("next") == InputSystem::Pressed)
 		    _data->state.RemoveState();
-            //_data->state.AddState(StateRef(new Boids(_data)), 1);
     }

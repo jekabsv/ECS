@@ -111,9 +111,6 @@ void StartState::Init()
     _data->animation.AddClip("player_run_left", { "player", 64, 64, 0,   448, 2, 0.08f });
 
 
-	
-    
-    
     _data->assets.LoadFont("main", "../OpenSans-Regular.ttf");
 
 
@@ -122,10 +119,8 @@ void StartState::Init()
 
     ui.GetTheme().LoadDarkDefaults();
 
-    // Register your font (loaded via AssetManager)
     ui.RegisterFont("main", _data->assets.GetFont("main"));
 
-    // Root container — centered column
     UI::NodeHandle root = ui.AddContainer();
     ui.SetSize(root, UI::SizeValue::Px(500), UI::SizeValue::Auto());
     ui.SetFlexDirection(root, UI::FlexDirection::Column);
@@ -140,7 +135,7 @@ void StartState::Init()
     btnBoids = ui.AddButton("Boids", root);
     btnQuit_ = ui.AddButton("Quit", root);
 	btnSlider = ui.AddSlider(0.5f, 0.0f, 1.0f, root);
-	ui.AddLabel("Made by Claude", root);
+	ui.AddLabel("This is a label", root);
 	ui.AddInputField("Type here...", root);
 }
 
