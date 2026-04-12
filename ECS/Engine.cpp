@@ -48,6 +48,12 @@ bool Engine::Initialize()
         return false;
     }
 
+    
+    SDL_GLContext ctx = SDL_GL_CreateContext(_data->window);
+	bool context = SDL_GL_MakeCurrent(_data->window, ctx);
+    if(!context)
+		LOG_ERROR(GlobalLogger(), "Engine", std::string("SDL_GL_MakeCurrent failed: ") + SDL_GetError());
+
     bool setSwap;
     if(!(setSwap = SDL_GL_SetSwapInterval(1)))
 		LOG_WARN(GlobalLogger(), "Engine", std::string("SDL_GL_SetSwapInterval failed: ") + SDL_GetError());
@@ -166,7 +172,6 @@ void Engine::run()
         lastTicks = currentTicks;
         if (dt > 0.1f)
             dt = 0.1f;
-
 
 
         _data->state.ProcessStateChanges();
