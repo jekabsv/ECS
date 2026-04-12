@@ -187,8 +187,8 @@ int System::AssignDevicesToPlayer(const std::vector<std::shared_ptr<Device>>& de
 {
 	if (devices.empty())
 	{
-		return 0;
 		LOG_WARN(GlobalLogger(), "InputSystem", "AssignDevicesToPlayer called with no devices");
+		return 0;
 	}
 	for (auto& x : devices)
 	{
@@ -206,8 +206,8 @@ int System::AssignDevicesToPlayer(const std::vector<std::shared_ptr<Device>>& de
 int System::RemoveDeviceFromPlayer(const std::shared_ptr<Device>& device, int playerID) {
 	if (!device)
 	{
-		return -1;
 		LOG_WARN(GlobalLogger(), "InputSystem", "Called RemoveDeviceFromPlayer with null device");
+		return -1;
 	}
 
 	auto removeFrom = [&](auto& pool) {

@@ -21,7 +21,7 @@ public:
     void Tie(ECS::World& world);
     void EnableMovement(bool enable = true);
     void EnableCollisionDetection(bool enable = true);
-    void EnableSpatialIndexBuild(bool enable);
+    void EnableSpatialIndexBuild(bool enable = true);
     //void SetWorldBounds(float x, float y, float w, float h, SharedDataRef data);
     const std::vector<std::pair<ECS::Entity, ECS::Entity>>& GetCollisionPairs() const;
     const std::vector<ECS::Entity>& GetContacts(ECS::Entity e) const;

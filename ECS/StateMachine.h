@@ -13,7 +13,7 @@ public:
     ~StateMachine();
 
     void AddState(StateRef newState, bool isReplacing);
-    void RemoveState();
+    int RemoveState();
     void ProcessStateChanges();
 
     StateRef& GetActiveState();
@@ -21,5 +21,5 @@ public:
 private:
     std::stack<StateRef> _states;
     StateRef _newState;
-    bool _isRemoving, _isAdding, _isreplacing;
+    bool _isRemoving, _isAdding, _isReplacing;
 };

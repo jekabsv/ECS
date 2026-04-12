@@ -1,9 +1,12 @@
 #include "AnimationSystem.h"
 #include "logger.h"
+#include <string>
 
-void AnimationSystem::AddClip(StringId name, const AnimationClip& clip)
+int AnimationSystem::AddClip(StringId name, const AnimationClip& clip)
 {
     _clips[name] = clip;
+	LOG_DEBUG(GlobalLogger(), "AnimationSystem", "Added clip: " + std::to_string(name.id));
+    return 0;
 }
 
 const AnimationClip* AnimationSystem::GetClip(StringId name) const
@@ -29,13 +32,13 @@ int AnimationSystem::RemoveClip(StringId name)
     return 0;
 }
 
-void AnimationSystem::Play(AnimationPlayer& player, StringId clipName, bool loop)
+int AnimationSystem::Play(AnimationPlayer& player, StringId clipName, bool loop)
 {
     const AnimationClip* clip = GetClip(clipName);
     if (!clip)
     {
         LOG_WARN(GlobalLogger(), "AnimationSystem", "Play: clip not found, player unchanged");
-        return;
+        return -1;
     }
 
     player.currentClip = clipName;
@@ -51,12 +54,15 @@ void AnimationSystem::Play(AnimationPlayer& player, StringId clipName, bool loop
         (float)clip->frameWidth,
         (float)clip->frameHeight
     };
+	LOG_DEBUG(GlobalLogger(), "AnimationSystem", "Playing clip: " + std::to_string(clipName.id) + ", loop: " + (loop ? "true" : "false"));
+    return 0;
 }
 
 void AnimationSystem::Stop(AnimationPlayer& player)
 {
     player.playing = false;
     player.elapsed = 0.0f;
+	LOG_DEBUG(GlobalLogger(), "AnimationSystem", "Stopped animation player");
 }
 
 void AnimationSystem::Update(AnimationPlayer& player, float dt)

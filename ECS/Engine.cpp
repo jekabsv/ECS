@@ -29,16 +29,16 @@ bool Engine::InitializeWeb(const std::string& elementId)
 }
 #endif // __EMSCRIPTEN__
 
-
 bool Engine::Initialize()
 {
     GlobalLogger().AddSink(std::make_shared<ConsoleSink>());
 
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS)) {
-        LOG_ERROR(GlobalLogger(), "Engine", "SDL_Init failed");
-    }
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS))
+        LOG_ERROR(GlobalLogger(), "Engine", "SDL_Init failed: " + std::string(SDL_GetError()));
 
-    TTF_Init();
+    bool ttf_init;
+    if (!(ttf_init = TTF_Init()))
+        LOG_ERROR(GlobalLogger(), "Engine", "TTF_Init failed: " + std::string(SDL_GetError()));
 
 
     _data->window = SDL_CreateWindow("window", _data->GAME_WIDTH, _data->GAME_HEIGHT, 0);
@@ -46,10 +46,11 @@ bool Engine::Initialize()
     {
         LOG_ERROR(GlobalLogger(), "Engine", std::string("SDL_CreateWindow failed: ") + SDL_GetError());
         return false;
-
     }
 
-    SDL_GL_SetSwapInterval(1);
+    bool setSwap;
+    if(!(setSwap = SDL_GL_SetSwapInterval(1)))
+		LOG_WARN(GlobalLogger(), "Engine", std::string("SDL_GL_SetSwapInterval failed: ") + SDL_GetError());
 
     _data->SDLrenderer = SDL_CreateRenderer(_data->window, nullptr);
     if (!_data->SDLrenderer) 
@@ -156,6 +157,8 @@ void Engine::run()
     const float TARGET_FRAME_TIME = 1000.0f / TARGET_FPS;
     uint64_t lastTicks = SDL_GetTicks();
 
+	LOG_INFO(GlobalLogger(), "Engine", "Starting main loop");
+
     while (!_data->quit)
     {
         uint64_t currentTicks = SDL_GetTicks();
@@ -181,4 +184,6 @@ void Engine::run()
             SDL_Delay((uint32_t)(TARGET_FRAME_TIME - frameTicks));
         }
     }
+
+	LOG_INFO(GlobalLogger(), "Engine", "Exiting main loop");
 }

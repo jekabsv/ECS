@@ -1,4 +1,5 @@
 #pragma once
+
 #include <cstddef>
 #include <vector>
 #include <memory>
@@ -8,8 +9,10 @@
 #include <string_view>
 #include <cassert>
 #include <cstring>
-#include "Struct.h"
 #include <span>
+
+#include "Struct.h"
+
 
 struct SharedData;
 typedef std::shared_ptr<SharedData> SharedDataRef;
@@ -27,7 +30,8 @@ namespace ECS
     /// </summary>
     /// <param name="e"></param>
     /// <returns></returns>
-    constexpr uint32_t EntityId(Entity e) {
+    constexpr uint32_t EntityId(Entity e)
+    {
         return (uint32_t)(e >> 32);
     }
     /// <summary>
@@ -35,7 +39,8 @@ namespace ECS
     /// </summary>
     /// <param name="e"></param>
     /// <returns></returns>
-    constexpr uint32_t EntityGeneration(Entity e) {
+    constexpr uint32_t EntityGeneration(Entity e)
+    {
         return (uint32_t)(e & 0xFFFFFFFF);
     }
     /// <summary>
@@ -44,7 +49,8 @@ namespace ECS
     /// <param name="id"></param>
     /// <param name="gen"></param>
     /// <returns></returns>
-    constexpr Entity MakeEntity(uint32_t id, uint32_t gen) {
+    constexpr Entity MakeEntity(uint32_t id, uint32_t gen)
+    {
         return ((uint64_t)id << 32) | gen;
     }
 
@@ -582,7 +588,11 @@ namespace ECS
     template<typename T>
     T& World::Get(Entity e)
     {
-        assert(Alive(e));
+        if(!Alive(e))
+        {
+			//LOG_ERROR(GlobalLogger(), "ECS", "Get: Entity: " + std::to_string(e) + " is not alive");
+			return *reinterpret_cast<T*>(nullptr);
+        }
         uint32_t eid = EntityId(e);
         return records_[eid].arch->Get<T>(records_[eid].chunk_idx, records_[eid].row);
     }

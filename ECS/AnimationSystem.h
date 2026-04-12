@@ -34,11 +34,11 @@ class AnimationSystem
 public:
     AnimationSystem() = default;
 
-    void AddClip(StringId name, const AnimationClip& clip);
+    int AddClip(StringId name, const AnimationClip& clip);
     const AnimationClip* GetClip(StringId name) const;
     int RemoveClip(StringId name);
 
-    void Play(AnimationPlayer& player, StringId clipName, bool loop = true);
+    int Play(AnimationPlayer& player, StringId clipName, bool loop = true);
     void Stop(AnimationPlayer& player);
 
     void Update(AnimationPlayer& player, float dt);

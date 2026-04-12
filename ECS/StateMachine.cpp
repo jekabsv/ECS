@@ -3,23 +3,25 @@
 #include "logger.h"
 
 
-StateMachine::StateMachine() : _isRemoving(false), _isAdding(false), _isreplacing(false){}
+StateMachine::StateMachine() : _isRemoving(false), _isAdding(false), _isReplacing(false){}
 
 StateMachine::~StateMachine() {};
 
 void StateMachine::AddState(StateRef newState, bool isreplacing)
 {
 	_isAdding = 1;
-	_isreplacing = isreplacing;
+	_isReplacing = isreplacing;
 	_newState = std::move(newState);
 }
-void StateMachine::RemoveState()
+int StateMachine::RemoveState()
 {
 	if (_states.empty()) {
-		LOG_WARN(GlobalLogger(), "StateMachine", "RemoveState called on empty stack"); return; 
+		LOG_WARN(GlobalLogger(), "StateMachine", "RemoveState called on empty stack"); 
+		return -1; 
 	}
 
 	_isRemoving = 1;
+	return 0;
 }
 
 void StateMachine::ProcessStateChanges()
@@ -35,7 +37,7 @@ void StateMachine::ProcessStateChanges()
 	}
 	if (_isAdding)
 	{
-		if (_isreplacing && !_states.empty())
+		if (_isReplacing && !_states.empty())
 			_states.pop();
 		else if (!_states.empty())
 		{ 
@@ -52,6 +54,10 @@ void StateMachine::ProcessStateChanges()
 StateRef& StateMachine::GetActiveState()
 {
 	if (_states.empty())
+	{
+		static StateRef errorState = nullptr;
 		LOG_ERROR(GlobalLogger(), "StateMachine", "GetActiveState called on empty stack");
+		return errorState;
+	}
 	return _states.top();
 }
