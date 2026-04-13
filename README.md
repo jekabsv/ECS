@@ -143,23 +143,13 @@ The engine is designed to be modular, data-oriented, and suitable for both **run
 ### 3. Rendering Pipeline
 - Camera abstraction.
 - Shader abstraction.
-- Batch rendering for performance.
 - Automatic render systems
 - Z-order of rendering
 
-### 4. Resource Management
-- Improved asset lifetime control.
-- Explicit load/unload policies.
+### 4. Audio System
+- add sound system
 
-### 5. Debugging & Tooling
-- Debug overlays (FPS, input states).
-- Runtime diagnostics and validation tools.
-
-### 6. Consitency
-- Change everything to have the same naming, logic conventions
-- Review InputComponent, preferably removed
-
-### 7. ECS
+### 6. ECS
 -Update system groups
   - add .before(System) .after(System) to System Builder
   - remove swap remove
