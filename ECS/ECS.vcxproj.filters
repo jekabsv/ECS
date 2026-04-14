@@ -120,6 +120,15 @@
     <ClCompile Include="Uitheme.cpp">
       <Filter>Source Files\Internals\UiSystem</Filter>
     </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GPUState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECS.h">
@@ -197,10 +206,25 @@
     <ClInclude Include="Uicontext.h">
       <Filter>Header Files\Internals\UISystem</Filter>
     </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderManager.h">
+      <Filter>Header Files\Internals</Filter>
+    </ClInclude>
+    <ClInclude Include="GPUState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="SpatialIndex.h">
       <Filter>Header Files\Internals</Filter>
+    </None>
+    <None Include="basic.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="basic.frag">
+      <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
 </Project>

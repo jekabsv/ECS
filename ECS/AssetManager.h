@@ -6,6 +6,9 @@
 
 struct SDL_Renderer;
 struct SDL_Texture;
+enum ShaderStage;
+struct ShaderAsset;
+
 
 class AssetManager
 {
@@ -25,6 +28,16 @@ public:
 	int LoadFont(StringId FontName, const std::string& filename);
 	TTF_Font* GetFont(StringId TextureName) const;
 
+
+	int LoadShader(StringId shaderName, const std::string& filename,
+               SDL_GPUDevice* device, ShaderStage stage,
+               uint32_t numSamplers        = 0,
+               uint32_t numStorageTextures = 0,
+               uint32_t numStorageBuffers  = 0,
+               uint32_t numUniformBuffers  = 0);
+	const ShaderAsset* GetShader(StringId shaderName) const;
+
+
 	
 private:
 
@@ -32,6 +45,8 @@ private:
     std::unordered_map<StringId, Mesh> _meshes;
 	std::unordered_map<StringId, SDL_Texture*> _textures;
 	std::unordered_map<StringId, TTF_Font*> _fonts;
+	std::unordered_map<StringId, ShaderAsset> _shaders;
+
 
 	//textures, fonts, sounds, etc.
 };

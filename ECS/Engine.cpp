@@ -41,6 +41,94 @@ bool Engine::Initialize()
         LOG_ERROR(GlobalLogger(), "Engine", "TTF_Init failed: " + std::string(SDL_GetError()));
 
 
+
+
+
+    //GPU
+    SDL_GPUDevice* _device = SDL_CreateGPUDevice(
+        SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_MSL,
+        true,
+        NULL
+    );
+
+    SDL_ClaimWindowForGPUDevice(_data->device, _data->window);
+
+
+    if (0)
+    {
+        _data->assets.LoadShader("basicVert", ".../", _data->device, ShaderStage::Vertex);
+        _data->assets.LoadShader("basicFrag", ".../", _data->device, ShaderStage::Fragment);
+
+        _data->shaders.CreatePipeline("basic", "basicVert", "basicFrag", _data->assets.GetShader("basicVert"), _data->assets.GetShader("basicFrag"));
+
+        SDL_GPURenderPass *pass;
+        _data->shaders.BindPipeline("basic", pass);
+
+        SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(_data->device);
+        SDL_GPUTexture* swapchainTexture;
+        SDL_AcquireGPUSwapchainTexture(cmdbuf, _data->window, &swapchainTexture, NULL, NULL);
+
+
+        if (swapchainTexture != NULL) 
+        {
+            SDL_GPUColorTargetInfo colorTarget = {
+                .texture = swapchainTexture,
+                .clear_color = { 0.2f, 0.2f, 0.2f, 1.0f },
+                .load_op = SDL_GPU_LOADOP_CLEAR,
+                .store_op = SDL_GPU_STOREOP_STORE
+            };
+
+            SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTarget, 1, NULL);
+
+            SDL_Vertex triangleData = { 0, 0, 0, 0, 0, 0, };
+
+            SDL_GPUBufferCreateInfo bufferInfo = {
+                .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
+                .size = sizeof(triangleData)
+            };
+
+            SDL_GPUBuffer* myVertexBuffer = SDL_CreateGPUBuffer(_data->device, &bufferInfo);
+
+            SDL_GPUTransferBufferCreateInfo tbufInfo = {
+                .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
+                .size = sizeof(triangleData)
+            };
+            SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(_data->device, &tbufInfo);
+
+            void* map = SDL_MapGPUTransferBuffer(device, transferBuffer, false);
+            SDL_memcpy(map, triangleData, sizeof(triangleData));
+            SDL_UnmapGPUTransferBuffer(device, transferBuffer);
+
+
+            SDL_GPUBufferBinding vertexBinding = {
+                .buffer = myVertexBuffer,
+                .offset = 0
+            };
+
+            SDL_BindGPUVertexBuffers(renderPass, 0, &vertexBinding, 1);
+
+
+            SDL_GPUBufferBinding vertexBinding = { .buffer = myVertexBuffer, .offset = 0 };
+            SDL_BindGPUGraphicsPipeline(renderPass, _data->shaders.GetPipeline("basic")->handle);
+
+            SDL_BindGPUVertexBuffers(renderPass, 0, &vertexBinding, 1);
+            SDL_DrawGPUPrimitives(renderPass, 3, 1, 0, 0);
+
+            SDL_EndGPURenderPass(renderPass);
+        }
+
+        SDL_SubmitGPUCommandBuffer(cmdbuf);
+
+    }
+
+
+    if (_device == NULL) {
+        SDL_Log("GPU Device creation failed: %s", SDL_GetError());
+    }
+
+    _data->device = _device;
+
+
     _data->window = SDL_CreateWindow("window", _data->GAME_WIDTH, _data->GAME_HEIGHT, 0);
     if (!_data->window)
     {

@@ -5,6 +5,26 @@
 namespace Utility
 {
 
+    static std::string ExtractExtension(const std::string& filename)
+    {
+        auto pos = filename.rfind('.');
+        if (pos == std::string::npos)
+            return "";
+        return filename.substr(pos + 1);
+    }
+
+    static std::vector<uint8_t> ReadFileBinary(const std::string& path)
+    {
+        std::ifstream f(path, std::ios::binary | std::ios::ate);
+        if (!f)
+            return {};
+        std::streamsize size = f.tellg();
+        f.seekg(0, std::ios::beg);
+        std::vector<uint8_t> buf(size);
+        f.read(reinterpret_cast<char*>(buf.data()), size);
+        return buf;
+    }
+
     //true if rectangle x1|y1|w1|h1 overlaps rectangle x2|y2|w2|h2
     inline bool Overlap(float x1, float y1, float w1, float h1,
         float x2, float y2, float w2, float h2)

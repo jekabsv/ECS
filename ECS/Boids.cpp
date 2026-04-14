@@ -33,11 +33,11 @@
             { { -5.0f,  4.0f }, { 0.5f, 0.6f, 1.0f, 1.0f } },
         };
 
-        for(auto &x : boidMesh)
+        /*for(auto &x : boidMesh)
         {
 		    x.position.x /= 2.0f;
 		    x.position.y /= 2.0f;
-	    }
+	    }*/
 
         _data->assets.AddMesh("boid", boidMesh);
 

@@ -125,6 +125,8 @@ void StartState::Init()
     ui.SetSize(root, UI::SizeValue::Px(500), UI::SizeValue::Auto());
     ui.SetFlexDirection(root, UI::FlexDirection::Column);
     ui.SetJustify(root, UI::JustifyContent::Center);
+
+
     ui.SetAlignItems(root, UI::AlignItems::Stretch);
     ui.SetGap(root, 12.0f);
     ui.SetPadding(root, UI::Edges::All(20.0f));

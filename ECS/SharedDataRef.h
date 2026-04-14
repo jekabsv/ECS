@@ -9,6 +9,7 @@
 #include "PhysicsSystem.h"
 #include "SpatialIndex.h"
 #include "Uicontext.h"
+#include "ShaderManager.h"
 
 struct SharedData
 {
@@ -25,6 +26,9 @@ struct SharedData
     AnimationSystem animation;
     PhysicsSystem physics;
 	SpatialIndex spatialIndex;
+    ShaderManager shaders;
+    SDL_GPUDevice* device;
+
 };
 
 typedef std::shared_ptr<SharedData> SharedDataRef;
