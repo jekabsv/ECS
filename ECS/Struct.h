@@ -25,7 +25,7 @@ struct Vec3
 using Triangle = std::array<SDL_Vertex, 3>;
 
 using MeshVertices = std::vector<SDL_Vertex>;
-using MeshIndices = std::vector<uint16_t>;
+using MeshIndices = std::vector<uint32_t>;
 
 struct StringId
 {

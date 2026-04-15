@@ -135,6 +135,7 @@ int Renderer::DrawMesh(MeshInstance mesh, MaterialInstance material, Vec2 Positi
     MeshBase* meshBase = _assets->GetMesh(mesh.meshName);
     MaterialBase* matBase = _assets->GetMaterial(material.materialName);
 
+
     if (!meshBase || !matBase)
         return -1;
 

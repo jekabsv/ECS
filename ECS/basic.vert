@@ -1,16 +1,6 @@
 #version 450
-
-layout(location = 0) in vec2 inPosition;
-layout(location = 1) in vec4 inColor;
-layout(location = 2) in vec2 inTexCoord;
-
-layout(location = 0) out vec4 fragColor;
-layout(location = 1) out vec2 fragTexCoord;
-
 void main() {
-    // We pass the data through. 
-    // Remember: inPosition must be between -1.0 and 1.0 to see it!
-    gl_Position = vec4(inPosition, 0.0, 1.0);
-    fragColor = inColor;
-    fragTexCoord = inTexCoord;
+    // Hardcoded triangle in NDC space
+    vec2 pos[3] = vec2[3](vec2(0.0, 0.5), vec2(0.5, -0.5), vec2(-0.5, -0.5));
+    gl_Position = vec4(pos[gl_VertexIndex], 0.0, 1.0);
 }
