@@ -47,6 +47,50 @@ public:
 void StartState::Init()
 {
 
+    _data->inputs.AddActionMap("level1").AddAction("move")
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_W, 0)
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_A, 1)
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_S, 2)
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_D, 3)
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_UP, 0)
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_LEFT, 1)
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_DOWN, 2)
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_RIGHT, 3)
+        .AddProcessor(std::make_unique<ProcessWASD>("wasd"));
+    _data->inputs.GetActionMap("level1")->AddAction("click")
+        .AddBinding(InputSystem::Button, InputSystem::Mouse, SDL_BUTTON_LEFT);
+    _data->inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current());
+    _data->inputs.AssignMapToPlayer("level1");
+
+
+    MeshVertices triangleVertices = {
+    { {-1.0f,  1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f} },
+    { { 1.0f,  1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 0.0f} },
+    { { 0.0f, -1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 0.0f} }
+    };
+
+    MeshIndices triangleIndices = {
+        0, 1, 2
+    };
+
+
+
+	_data->assets.LoadMesh("triangle", triangleVertices, triangleIndices);
+
+
+    _data->assets.LoadShader("basicVert", "../ECS/vert.spv", _data->device,
+        ShaderStage::Vertex, 0, 0, 0, 1);
+    _data->assets.LoadShader("basicFrag", "../ECS/frag.spv", _data->device, ShaderStage::Fragment);
+
+	_data->renderer.BindShader("basicVert");
+	_data->renderer.BindShader("basicFrag");
+
+
+
+
+
+    /*
+
     //Assets
     MeshVertices triangleMesh = {
         {-1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f},
@@ -63,8 +107,8 @@ void StartState::Init()
     {{ 1,  1}, {0.0f, 0.0f, 1.0f, 1.0f}}
     };
 
-    /*_data->assets.AddMesh("Triangle", triangleMesh);
-    _data->assets.AddMesh("square", squareMesh);*/
+    //_data->assets.AddMesh("Triangle", triangleMesh);
+    //_data->assets.AddMesh("square", squareMesh);
 
     _data->assets.LoadBMPSurface("test", "../image.bmp");
     _data->assets.LoadBMPSurface("player", "../player.bmp");
@@ -139,11 +183,31 @@ void StartState::Init()
 	btnSlider = ui.AddSlider(0.5f, 0.0f, 1.0f, root);
 	ui.AddLabel("This is a label", root);
 	ui.AddInputField("Type here...", root);
+    
+    
+    */
+
 }
 
 void StartState::Update(float dt)
 {
-	if(ui.IsClicked(btnSillyGame))
+    angle += dt * 1.5f;
+
+	_data->renderer.BeginFrame();
+	_data->renderer.StartRenderPass();
+
+    _data->renderer.PushVertexUniform(0, &angle, sizeof(float));
+
+	_data->renderer.MeshDraw("triangle");
+
+
+
+	_data->renderer.EndRenderPass();
+	_data->renderer.Present();
+
+
+
+	/*if(ui.IsClicked(btnSillyGame))
     {
 		ui.ClearChildren(0);
         _data->state.AddState(StateRef(new Level1(_data)), 0);
@@ -156,6 +220,6 @@ void StartState::Update(float dt)
     else if(ui.IsClicked(btnQuit_))
     {
         _data->quit = true;
-	}
+	}*/
 }
 

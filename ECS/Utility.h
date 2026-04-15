@@ -5,6 +5,23 @@
 namespace Utility
 {
 
+
+    static std::string GetBackendExtension(SDL_GPUDevice* device)
+    {
+        if (!device)
+            return "";
+        const char* driver = SDL_GetGPUDeviceDriver(device);
+        if (!driver)
+            return "";
+        std::string d(driver);
+        if (d == "vulkan")      return "spv";
+        else if (d == "direct3d12")  return "dxil";
+        else if (d == "metal")       return "msl";
+        return "";
+    }
+
+
+
     static std::string ExtractExtension(const std::string& filename)
     {
         auto pos = filename.rfind('.');

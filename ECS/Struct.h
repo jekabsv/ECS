@@ -108,14 +108,3 @@ struct MeshEntry
 };
 
 
-
-
-
-class Renderer
-{
-public:
-    SDL_Renderer* SDLrenderer = nullptr;
-    Renderer() = default;
-    Renderer(SDL_Renderer* _SDLrenderer) : SDLrenderer(_SDLrenderer) {};
-    int Render(const SDL_Texture* texture, const SDL_FRect* srect, const SDL_FRect* dsrect) const;
-};

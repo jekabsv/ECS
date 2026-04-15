@@ -14,6 +14,9 @@ public:
     UI::NodeHandle btnSillyGame = UI::NULL_HANDLE;
     UI::NodeHandle btnSlider = UI::NULL_HANDLE;
     UI::NodeHandle btnQuit_ = UI::NULL_HANDLE;
+
+    float angle = 0.0f;
+
 };
 
 

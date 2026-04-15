@@ -41,39 +41,46 @@ bool Engine::Initialize()
         LOG_ERROR(GlobalLogger(), "Engine", "TTF_Init failed: " + std::string(SDL_GetError()));
 
 
-
     _data->window = SDL_CreateWindow("window", _data->GAME_WIDTH, _data->GAME_HEIGHT, 0);
-    if (!_data->window)
-    {
+    if (!_data->window) {
         LOG_ERROR(GlobalLogger(), "Engine", std::string("SDL_CreateWindow failed: ") + SDL_GetError());
         return false;
     }
 
-    
-    SDL_GLContext ctx = SDL_GL_CreateContext(_data->window);
-	bool context = SDL_GL_MakeCurrent(_data->window, ctx);
-    if(!context)
-		LOG_ERROR(GlobalLogger(), "Engine", std::string("SDL_GL_MakeCurrent failed: ") + SDL_GetError());
 
-    bool setSwap;
-    if(!(setSwap = SDL_GL_SetSwapInterval(1)))
-		LOG_WARN(GlobalLogger(), "Engine", std::string("SDL_GL_SetSwapInterval failed: ") + SDL_GetError());
+    SDL_GPUDevice* device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, nullptr);
+    SDL_ClaimWindowForGPUDevice(device, _data->window);
+    
+    _data->device = device;
+
+    _data->renderer.Init(device, _data->window, &_data->assets);
+
+
+
+    
+    
+
 
     _data->SDLrenderer = SDL_CreateRenderer(_data->window, nullptr);
     if (!_data->SDLrenderer) 
         LOG_ERROR(GlobalLogger(), "Engine", std::string("SDL_CreateRenderer failed: ") + SDL_GetError());
 
+
+
+
+
+
+
+
     _data->inputs.Init();
-    _data->renderer.SDLrenderer = _data->SDLrenderer;
 
     _data->state.AddState(StateRef(new StartState(_data)), 0);
     _data->state.ProcessStateChanges();
     
-
     _data->spatialIndex.Init(0.f, 0.f, _data->GAME_WIDTH, _data->GAME_HEIGHT, 32);
 
 
-    return _data->SDLrenderer != nullptr;
+    return 0;
     
 }
 
@@ -134,20 +141,9 @@ void Engine::HandleInput(float dt)
 
 void Engine::Render(float dt)
 {
-    if (!_data->SDLrenderer)
-    {
-        LOG_ERROR(GlobalLogger(), "Renderer", std::string("Render failed: ") + SDL_GetError());
-        return;
-    }
-
-	SDL_SetRenderDrawColor(_data->SDLrenderer, 0, 0, 0, 255);
-    SDL_RenderClear(_data->SDLrenderer);
-
     _data->state.GetActiveState()->ui.RenderPass();
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Render, dt);
     _data->state.GetActiveState()->Render(dt);
-
-    SDL_RenderPresent(_data->SDLrenderer);
 }
 
 void Engine::Physics(float dt)

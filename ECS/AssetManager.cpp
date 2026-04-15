@@ -3,7 +3,6 @@
 #include <iostream>
 #include <SDL3/SDL.h>
 #include "logger.h"
-#include "ShaderManager.h"
 #include "Utility.h"
 
 
@@ -52,7 +51,7 @@ int AssetManager::LoadShader(StringId shaderName, const std::string& filename,
     uint32_t numUniformBuffers)
 {
     std::string ext = Utility::ExtractExtension(filename);
-    std::string expected = ShaderManager::GetBackendExtension(device);
+    std::string expected = Utility::GetBackendExtension(device);
 
     if (!expected.empty() && ext != expected)
         LOG_WARN(GlobalLogger(), "AssetManager",
