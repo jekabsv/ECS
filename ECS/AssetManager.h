@@ -32,7 +32,7 @@ public:
 
 
 
-	int LoadMesh(StringId meshName, const MeshVertices& vertices, const MeshIndices& indices);
+	int AddMesh(StringId meshName, const MeshVertices& vertices, const MeshIndices& indices);
 	MeshEntry* GetMesh(StringId);
 
 
@@ -40,7 +40,8 @@ public:
 	TextureEntry* GetTextureEntry(StringId);
 
 
-
+	int LoadMaterial(StringId materialName, const std::string filepath) { return 0; };
+	Material* GetMaterial(StringId materialName);
 
 	
 private:
@@ -53,6 +54,8 @@ private:
 	std::unordered_map<StringId, ShaderAsset> _shaders;
 
 	std::unordered_map<StringId, MeshEntry> _meshes;
+
+	std::unordered_map<StringId, Material> _materials;
 
 
 

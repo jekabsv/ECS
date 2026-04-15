@@ -66,9 +66,11 @@ struct ShaderAsset
 {
     ShaderAsset(SDL_GPUShader* _handle) : handle(_handle) {};
     ShaderAsset() = default;
+
     SDL_GPUShader* handle = nullptr;
     ShaderStage stage = ShaderStage::Vertex;
     std::string format = {};
+
     uint32_t numSamplers = 0;
     uint32_t numStorageTextures = 0;
     uint32_t numStorageBuffers = 0;
@@ -101,6 +103,7 @@ struct MeshEntry
     uint64_t lastUsed = 0;
     bool isUploaded = false;
     size_t size = 0;
+
     void Release(SDL_GPUDevice* device) {
         if (vertexBuffer) SDL_ReleaseGPUBuffer(device, vertexBuffer);
         if (indexBuffer)  SDL_ReleaseGPUBuffer(device, indexBuffer);
@@ -108,3 +111,41 @@ struct MeshEntry
 };
 
 
+
+
+
+inline void hash_combine(std::size_t& seed, std::size_t v) {
+    seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+
+struct Material
+{
+	StringId name;
+
+	StringId vertShaderId;
+	StringId fragShaderId;
+
+    bool blendMode = false;
+
+
+    std::vector<uint8_t> uniformBufferData;
+
+    std::unordered_map<StringId, TextureEntry> textures;
+
+    void setData(size_t offset, const void* data, size_t size) {
+        if (uniformBufferData.size() < offset + size) {
+            uniformBufferData.resize(offset + size);
+        }
+        memcpy(uniformBufferData.data() + offset, data, size);
+    }
+
+    size_t getPipelineHash() const {
+        size_t h = 0;
+
+        hash_combine(h, std::hash<uint64_t>{}(vertShaderId.id));
+        hash_combine(h, std::hash<uint64_t>{}(fragShaderId.id));
+        hash_combine(h, std::hash<bool>{}(blendMode));
+        return h;
+    }
+};

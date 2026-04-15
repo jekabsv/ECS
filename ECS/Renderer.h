@@ -46,24 +46,29 @@ public:
 
     int BeginFrame();
     int StartRenderPass();
+
     int EndRenderPass();
     int Present();
 
-    int BindShader(StringId shaderId);
-    int SetVertexAttributes(SDL_GPUVertexAttribute* attrs, size_t count);
-    int SetVertexBufferDescription(SDL_GPUVertexBufferDescription vbd);
-    int SetBlendEnabled(bool enabled);
-    int SetPrimitiveType(SDL_GPUPrimitiveType type);
 
-    int PushVertexUniform(uint32_t slot, const void* data, uint32_t size);
-    int PushFragmentUniform(uint32_t slot, const void* data, uint32_t size);
+    
 
     int MeshDraw(StringId meshId);
     int SpriteDraw(StringId textureId);
     int DrawText(StringId fontId, const std::string& text, float x, float y, SDL_Color color);
 
 private:
+
+    int BindShader(StringId shaderId);
+    int BindSpriteShader(StringId shaderId);
+    int SetVertexAttributes(SDL_GPUVertexAttribute* attrs, size_t count);
+    int SetVertexBufferDescription(SDL_GPUVertexBufferDescription vbd);
+    int SetPrimitiveType(SDL_GPUPrimitiveType type);
+    int PushVertexUniform(uint32_t slot, const void* data, uint32_t size);
+    int PushFragmentUniform(uint32_t slot, const void* data, uint32_t size);
+
     SDL_GPUGraphicsPipeline* GetOrCreatePipeline(StringId pipelineId);
+    SDL_GPUGraphicsPipeline* GetOrCreateSpritePipeline();
     int ApplyPipeline();
 
     int UploadMesh(MeshEntry* entry);
@@ -85,6 +90,8 @@ private:
 
     StringId activeVertShaderId;
     StringId activeFragShaderId;
+    StringId activeSpriteVertShaderId;
+    StringId activeSpriteFragShaderId;
 
     SDL_GPUVertexBufferDescription vbd = {};
     SDL_GPUVertexAttribute attrs[8] = {};
@@ -92,6 +99,7 @@ private:
     SDL_GPUPrimitiveType primitiveType = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
     bool blendEnabled = false;
     bool pipelineDirty = true;
+    bool spritePipelineDirty = true;
 
     SDL_GPUGraphicsPipeline* pipeline = nullptr;
     SDL_GPUGraphicsPipeline* spritePipeline = nullptr;

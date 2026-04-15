@@ -117,7 +117,7 @@ const ShaderAsset* AssetManager::GetShader(StringId shaderName) const
     return &it->second;
 }
 
-int AssetManager::LoadMesh(StringId meshName, const MeshVertices& vertices, const MeshIndices& indices)
+int AssetManager::AddMesh(StringId meshName, const MeshVertices& vertices, const MeshIndices& indices)
 {
 	MeshEntry entry;
 	entry.MeshVertices = vertices;
@@ -128,12 +128,18 @@ int AssetManager::LoadMesh(StringId meshName, const MeshVertices& vertices, cons
 
 MeshEntry* AssetManager::GetMesh(StringId meshName)
 {
-    return &_meshes[meshName];
+    auto it = _meshes.find(meshName);
+    if (it == _meshes.end())
+        return nullptr;
+    return &it->second;
 }
 
 SDL_Surface* AssetManager::GetSurface(StringId surfaceName)
 {
-    return _surfaces[surfaceName];
+    auto it = _surfaces.find(surfaceName);
+    if (it == _surfaces.end())
+        return nullptr;
+    return it->second;
 }
 
 int AssetManager::LoadTexture(StringId TextureName, TextureEntry texture)
@@ -145,5 +151,16 @@ int AssetManager::LoadTexture(StringId TextureName, TextureEntry texture)
 
 TextureEntry* AssetManager::GetTextureEntry(StringId textureName)
 {
-    return &_textures[textureName];
+    auto it = _textures.find(textureName);
+    if (it == _textures.end())
+        return nullptr;
+    return &it->second;
+}
+
+Material* AssetManager::GetMaterial(StringId materialName)
+{
+    auto it = _materials.find(materialName);
+    if (it == _materials.end())
+        return nullptr;
+    return &it->second;
 }

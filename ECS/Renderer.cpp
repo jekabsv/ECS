@@ -158,6 +158,21 @@ int Renderer::BindShader(StringId shaderId)
     return 0;
 }
 
+int Renderer::BindSpriteShader(StringId shaderId)
+{
+    const ShaderAsset* shader = assets->GetShader(shaderId);
+    if (!shader || !shader->handle)
+        return -1;
+
+    if (shader->stage == ShaderStage::Vertex)
+        activeSpriteVertShaderId = shaderId;
+    else if (shader->stage == ShaderStage::Fragment)
+        activeSpriteFragShaderId = shaderId;
+
+    spritePipelineDirty = true;
+    return 0;
+}
+
 int Renderer::SetVertexAttributes(SDL_GPUVertexAttribute* inAttrs, size_t count)
 {
     if (count > 8) 
@@ -171,13 +186,6 @@ int Renderer::SetVertexAttributes(SDL_GPUVertexAttribute* inAttrs, size_t count)
 int Renderer::SetVertexBufferDescription(SDL_GPUVertexBufferDescription inVbd)
 {
     vbd = inVbd;
-    pipelineDirty = true;
-    return 0;
-}
-
-int Renderer::SetBlendEnabled(bool enabled)
-{
-    blendEnabled = enabled;
     pipelineDirty = true;
     return 0;
 }
@@ -259,6 +267,52 @@ SDL_GPUGraphicsPipeline* Renderer::GetOrCreatePipeline(StringId pipelineId)
         pipelineCache[pipelineId] = p;
 
     return p;
+}
+
+SDL_GPUGraphicsPipeline* Renderer::GetOrCreateSpritePipeline()
+{
+    if (!spritePipelineDirty && spritePipeline)
+        return spritePipeline;
+
+    const ShaderAsset* vert = assets->GetShader(activeSpriteVertShaderId);
+    const ShaderAsset* frag = assets->GetShader(activeSpriteFragShaderId);
+    if (!vert || !frag)
+        return nullptr;
+
+    SDL_GPUColorTargetBlendState blendState = {};
+    blendState.enable_blend = true;
+    blendState.src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA;
+    blendState.dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+    blendState.color_blend_op = SDL_GPU_BLENDOP_ADD;
+    blendState.src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE;
+    blendState.dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+    blendState.alpha_blend_op = SDL_GPU_BLENDOP_ADD;
+
+    SDL_GPUColorTargetDescription colorTarget = colorDesc;
+    colorTarget.blend_state = blendState;
+
+    SDL_GPUGraphicsPipelineTargetInfo targetInfo = {};
+    targetInfo.color_target_descriptions = &colorTarget;
+    targetInfo.num_color_targets = 1;
+
+    SDL_GPUVertexInputState vertexInput = {};
+    vertexInput.num_vertex_buffers = 0;
+    vertexInput.num_vertex_attributes = 0;
+
+    SDL_GPUGraphicsPipelineCreateInfo ci = {};
+    ci.vertex_shader = vert->handle;
+    ci.fragment_shader = frag->handle;
+    ci.vertex_input_state = vertexInput;
+    ci.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+    ci.target_info = targetInfo;
+
+    if (spritePipeline)
+        SDL_ReleaseGPUGraphicsPipeline(device, spritePipeline);
+
+    spritePipeline = SDL_CreateGPUGraphicsPipeline(device, &ci);
+    spritePipelineDirty = false;
+
+    return spritePipeline;
 }
 
 int Renderer::ApplyPipeline()
@@ -546,11 +600,18 @@ int Renderer::MeshDraw(StringId meshId)
 
 int Renderer::SpriteDraw(StringId textureId)
 {
-    if (!currentPass || !spritePipeline)
+    if (!currentPass)
         return -1;
 
+    SDL_GPUGraphicsPipeline* p = GetOrCreateSpritePipeline();
+    if (!p)
+        return -1;
+
+    SDL_BindGPUGraphicsPipeline(currentPass, p);
+
     TextureEntry* texEntry = assets->GetTextureEntry(textureId);
-    if (!texEntry) return -1;
+    if (!texEntry) 
+        return -1;
 
 
     if (!texEntry->texture)
@@ -560,8 +621,7 @@ int Renderer::SpriteDraw(StringId textureId)
     }
 
     SDL_BindGPUGraphicsPipeline(currentPass, spritePipeline);
-    pipeline = spritePipeline;
-    pipelineDirty = true;
+
 
     SDL_GPUTextureSamplerBinding binding = {};
     binding.texture = texEntry->texture;
