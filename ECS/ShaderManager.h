@@ -5,24 +5,6 @@
 #include "Struct.h"
 #include "logger.h"
 
-enum ShaderStage
-{
-    Vertex,
-    Fragment
-};
-
-struct ShaderAsset
-{
-    ShaderAsset(SDL_GPUShader* _handle) : handle(_handle) {};
-    ShaderAsset() = default;
-    SDL_GPUShader* handle = nullptr;
-    ShaderStage stage = ShaderStage::Vertex;
-    std::string format = {};
-    uint32_t numSamplers = 0;
-    uint32_t numStorageTextures = 0;
-    uint32_t numStorageBuffers = 0;
-    uint32_t numUniformBuffers = 0;
-};
 
 struct GPUPipeline
 {

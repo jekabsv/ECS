@@ -48,12 +48,12 @@ void StartState::Init()
 {
 
     //Assets
-    Mesh triangleMesh = {
+    MeshVertices triangleMesh = {
         {-1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f},
         {1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f},
         {0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f} 
     };
-    Mesh squareMesh = {
+    MeshVertices squareMesh = {
     {{-1,  1}, {1.0f, 0.0f, 0.0f, 1.0f}},
     {{-1, -1}, {0.0f, 1.0f, 0.0f, 1.0f}},
     {{ 1,  1}, {0.0f, 0.0f, 1.0f, 1.0f}},
@@ -63,11 +63,11 @@ void StartState::Init()
     {{ 1,  1}, {0.0f, 0.0f, 1.0f, 1.0f}}
     };
 
-    _data->assets.AddMesh("Triangle", triangleMesh);
-    _data->assets.AddMesh("square", squareMesh);
+    /*_data->assets.AddMesh("Triangle", triangleMesh);
+    _data->assets.AddMesh("square", squareMesh);*/
 
-    _data->assets.LoadBMPTexture("test", "../image.bmp", _data->SDLrenderer);
-    _data->assets.LoadBMPTexture("player", "../player.bmp", _data->SDLrenderer);
+    _data->assets.LoadBMPSurface("test", "../image.bmp");
+    _data->assets.LoadBMPSurface("player", "../player.bmp");
 
 
     //Inputs
@@ -132,7 +132,7 @@ void StartState::Init()
     ui.SetPadding(root, UI::Edges::All(20.0f));
     
 
-    ui.AddImage(_data->assets.GetTexture("player"), { 0, 0, 64, 64 }, root);
+    //ui.AddImage(_data->assets.GetTexture("player"), { 0, 0, 64, 64 }, root);
     btnSillyGame = ui.AddButton("Silly game", root);
     btnBoids = ui.AddButton("Boids", root);
     btnQuit_ = ui.AddButton("Quit", root);

@@ -27,7 +27,7 @@
         const float W = (float)_data->GAME_WIDTH;
         const float H = (float)_data->GAME_HEIGHT;
 
-        Mesh boidMesh = {
+        MeshVertices boidMesh = {
             { {  8.0f,  0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
             { { -5.0f, -4.0f }, { 0.5f, 0.6f, 1.0f, 1.0f } },
             { { -5.0f,  4.0f }, { 0.5f, 0.6f, 1.0f, 1.0f } },
@@ -39,7 +39,7 @@
 		    x.position.y /= 2.0f;
 	    }*/
 
-        _data->assets.AddMesh("boid", boidMesh);
+        //_data->assets.AddMesh("boid", boidMesh);
 
 
         for (int i = 0; i < COUNT; i++)
@@ -223,13 +223,13 @@
                 {
                     if (!meshes[i].render) continue;
 
-                    const Mesh* mesh = data->assets.GetMesh(meshes[i].MeshName);
+                    const MeshEntry* mesh = data->assets.GetMesh(meshes[i].MeshName);
                     if (!mesh) continue;
 
                     float cosA = std::cos(trs[i].rotation);
                     float sinA = std::sin(trs[i].rotation);
 
-                    std::vector<SDL_Vertex> verts = *mesh;
+                    std::vector<SDL_Vertex> verts = mesh->MeshVertices;
                     for (auto& v : verts)
                     {
                         float rx = v.position.x * cosA - v.position.y * sinA;

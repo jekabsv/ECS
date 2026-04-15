@@ -8,62 +8,16 @@
 
 
 
-int AssetManager::AddMesh(StringId meshName, const Mesh& mesh)
-{
-    _meshes[meshName] = mesh;
-    LOG_DEBUG(GlobalLogger(), "AssetManager", "Adding mesh: " + std::to_string(meshName.id));
-    return 0;
-}
-const Mesh* AssetManager::GetMesh(StringId meshName) const
-{
-    auto it = _meshes.find(meshName);
-    if (it == _meshes.end())
-    {
-        LOG_WARN(GlobalLogger(), "AssetManager", "Mesh not found");
-        return nullptr;
-    }
-    return &it->second;
-}
 
-int AssetManager::MoveMeshOrigin(StringId meshName, float dx, float dy)
-{
-    Mesh *mesh = GetEditableMesh(meshName);
-    if (!mesh)
-        return -1;
-    for (auto &m : *mesh)
-    {
-        m.position.x -= dx;
-        m.position.y -= dy;
-    }
-    return 0;
-}
-
-int AssetManager::LoadBMPTexture(StringId TextureName, const std::string& filename, SDL_Renderer* renderer)
+int AssetManager::LoadBMPSurface(StringId TextureName, const std::string& filename)
 {
     SDL_Surface* surface = SDL_LoadBMP(filename.c_str());
     if (!surface) {
         LOG_ERROR(GlobalLogger(), "AssetManager", std::string("Failed to load BMP: ") + SDL_GetError());
         return -1;
     }
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_DestroySurface(surface);
-    if (!texture) {
-        LOG_ERROR(GlobalLogger(), "AssetManager", std::string("Failed to create texture: ") + SDL_GetError());
-        return -1;
-    }
-    _textures[TextureName] = texture;
+	_surfaces[TextureName] = surface;
     return 0;
-}
-
-const SDL_Texture* AssetManager::GetTexture(StringId TextureName) const
-{
-    auto it = _textures.find(TextureName);
-    if (it == _textures.end())
-    {
-        //LOG_WARN(GlobalLogger(), "AssetManager", "Texture not found");
-        return nullptr;
-    }
-    return it->second;
 }
 
 int AssetManager::LoadFont(StringId FontName, const std::string& filename)
@@ -89,16 +43,6 @@ TTF_Font* AssetManager::GetFont(StringId FontName) const
     return it->second;
 }
 
-Mesh* AssetManager::GetEditableMesh(StringId meshName)
-{
-    auto it = _meshes.find(meshName);
-    if (it == _meshes.end())
-    {
-        LOG_WARN(GlobalLogger(), "AssetManager", "Mesh not found");
-        return nullptr;
-    }
-    return &it->second;
-}
 
 int AssetManager::LoadShader(StringId shaderName, const std::string& filename,
     SDL_GPUDevice* device, ShaderStage stage,
@@ -172,4 +116,35 @@ const ShaderAsset* AssetManager::GetShader(StringId shaderName) const
     if (it == _shaders.end())
         return nullptr;
     return &it->second;
+}
+
+int AssetManager::LoadMesh(StringId meshName, const MeshVertices& vertices, const MeshIndices& indices)
+{
+	MeshEntry entry;
+	entry.MeshVertices = vertices;
+	entry.MeshIndices = indices;
+	_meshes[meshName] = entry;
+    return 0;
+}
+
+MeshEntry* AssetManager::GetMesh(StringId meshName)
+{
+    return &_meshes[meshName];
+}
+
+SDL_Surface* AssetManager::GetSurface(StringId surfaceName)
+{
+    return _surfaces[surfaceName];
+}
+
+int AssetManager::LoadTexture(StringId TextureName, TextureEntry texture)
+{
+	MeshEntry entry;
+	_textures[TextureName] = texture;
+    return 0;
+}
+
+TextureEntry* AssetManager::GetTextureEntry(StringId textureName)
+{
+    return &_textures[textureName];
 }
