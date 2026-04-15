@@ -152,10 +152,10 @@ void Level1::Init()
                 RectToDraw.x += transform.position.x;
                 RectToDraw.y += transform.position.y;
 
-                if (!sprite.TextureRect.h || !sprite.TextureRect.w)
-                    _data->renderer.Render(_data->assets.GetTexture(sprite.TextureName), nullptr, &RectToDraw);
-                else
-                    _data->renderer.Render(_data->assets.GetTexture(sprite.TextureName), &sprite.TextureRect, &RectToDraw);
+                //if (!sprite.TextureRect.h || !sprite.TextureRect.w)
+                    //_data->renderer.Render(_data->assets.GetTexture(sprite.TextureName), nullptr, &RectToDraw);
+                //else
+                    //_data->renderer.Render(_data->assets.GetTexture(sprite.TextureName), &sprite.TextureRect, &RectToDraw);
             }
         },
         ECS::SystemGroup::Render);
@@ -174,27 +174,20 @@ void Level1::Init()
                 if (!meshC.render)
                     continue;
 
-                const Mesh* mesh = _data->assets.GetMesh(meshC.MeshName);
+                const MeshBase* mesh = _data->assets.GetMesh(meshC.MeshName);
                 if (!mesh)
                     continue;
 
-                const SDL_Texture* texture = _data->assets.GetTexture(meshC.TextureName);
+                //const SDL_Texture* texture = _data->assets.GetTexture(meshC.TextureName);
 
-                std::vector<SDL_Vertex> transformed = *mesh;
+                std::vector<SDL_Vertex> transformed = mesh->meshVertices;
                 for (auto& v : transformed)
                 {
                     v.position.x = v.position.x * transform.scale.x + transform.position.x;
                     v.position.y = v.position.y * transform.scale.y + transform.position.y;
                 }
 
-                SDL_RenderGeometry(
-                    _data->SDLrenderer,
-                    const_cast<SDL_Texture*>(texture),
-                    transformed.data(),
-                    (int)transformed.size(),
-                    nullptr,
-                    0
-                );
+                //SDL_RenderGeometry( _data->SDLrenderer, const_cast<SDL_Texture*>(texture), transformed.data(), (int)transformed.size(),nullptr, 0 );
             }
         },
         ECS::SystemGroup::Render);

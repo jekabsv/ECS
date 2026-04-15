@@ -55,6 +55,9 @@
     <Filter Include="Source Files\Internals\UiSystem">
       <UniqueIdentifier>{ed11fbc8-4bb7-475c-beca-acd3768f6640}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Internals\GPU">
+      <UniqueIdentifier>{4c69ba24-a46d-4a70-a3a4-fecc66c03ea3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="InputSystem.cpp">
@@ -96,9 +99,6 @@
     <ClCompile Include="PhysicsSystem.cpp">
       <Filter>Source Files\Internals</Filter>
     </ClCompile>
-    <ClCompile Include="Struct.cpp">
-      <Filter>Source Files\Internals</Filter>
-    </ClCompile>
     <ClCompile Include="State.cpp">
       <Filter>Source Files\Internals\StateMachine</Filter>
     </ClCompile>
@@ -121,12 +121,9 @@
       <Filter>Source Files\Internals\UiSystem</Filter>
     </ClCompile>
     <ClCompile Include="Camera.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Internals</Filter>
     </ClCompile>
-    <ClCompile Include="ShaderManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GPUState.cpp">
+    <ClCompile Include="Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -206,14 +203,14 @@
     <ClInclude Include="Uicontext.h">
       <Filter>Header Files\Internals\UISystem</Filter>
     </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="GPUAssets.h">
+      <Filter>Header Files\Internals\GPU</Filter>
     </ClInclude>
-    <ClInclude Include="ShaderManager.h">
+    <ClInclude Include="Camera.h">
       <Filter>Header Files\Internals</Filter>
     </ClInclude>
-    <ClInclude Include="GPUState.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Renderer.h">
+      <Filter>Header Files\Internals\GPU</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

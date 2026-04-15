@@ -3,11 +3,12 @@
 #include <string>
 #include "Struct.h"
 #include <SDL3_ttf/SDL_ttf.h>
+#include "GPUAssets.h"
 
 struct SDL_Renderer;
 struct SDL_Texture;
 enum ShaderStage;
-struct ShaderAsset;
+struct Shader;
 
 
 class AssetManager
@@ -16,14 +17,11 @@ public:
 	AssetManager() = default;
 	~AssetManager() = default;
 
-	int AddMesh(StringId meshName, const Mesh& mesh);
-	const Mesh* GetMesh(StringId meshName) const;
-	int MoveMeshOrigin(StringId meshName, float dx, float dy);
 
 
-	int LoadBMPTexture(StringId TextureName, const std::string& filename, SDL_Renderer* renderer);
-	const SDL_Texture* GetTexture(StringId TextureName) const;
 
+	int LoadBMPSurface(StringId TextureName, const std::string& filename);
+	SDL_Surface* GetSurface(StringId TextureName);
 
 	int LoadFont(StringId FontName, const std::string& filename);
 	TTF_Font* GetFont(StringId TextureName) const;
@@ -35,18 +33,30 @@ public:
                uint32_t numStorageTextures = 0,
                uint32_t numStorageBuffers  = 0,
                uint32_t numUniformBuffers  = 0);
-	const ShaderAsset* GetShader(StringId shaderName) const;
+	const Shader* GetShader(StringId shaderName) const;
 
-
+	int LoadMesh(StringId meshName, const std::string& filename) { return 0; };
+	int AddMesh(StringId meshName, const MeshVertices& vertices, const MeshIndices& indices);
+	MeshBase *GetMesh(StringId meshName);
 	
+
+	int AddMaterial(StringId materialName, const MaterialBase& material);
+	int LoadMaterial(StringId materialName, const std::string filename) { return 0; };
+	MaterialBase* GetMaterial(StringId materialName);
+
+	int AddTexture(StringId textureName, const TextureBase& texture);
+	TextureBase* GetTexture(StringId textureName);
+
+
 private:
 
-	Mesh* GetEditableMesh(StringId meshName);
-    std::unordered_map<StringId, Mesh> _meshes;
-	std::unordered_map<StringId, SDL_Texture*> _textures;
 	std::unordered_map<StringId, TTF_Font*> _fonts;
-	std::unordered_map<StringId, ShaderAsset> _shaders;
 
+	std::unordered_map<StringId, SDL_Surface*> _surfaces;
+	std::unordered_map<StringId, MeshBase> _meshBases;
+	std::unordered_map<StringId, Shader> _shaders;
+	std::unordered_map<StringId, MaterialBase> _materialBases;
+	std::unordered_map<StringId, TextureBase> _textureBases;
 
 	//textures, fonts, sounds, etc.
 };

@@ -53,75 +53,6 @@ bool Engine::Initialize()
 
     SDL_ClaimWindowForGPUDevice(_data->device, _data->window);
 
-
-    if (0)
-    {
-        _data->assets.LoadShader("basicVert", ".../", _data->device, ShaderStage::Vertex);
-        _data->assets.LoadShader("basicFrag", ".../", _data->device, ShaderStage::Fragment);
-
-        _data->shaders.CreatePipeline("basic", "basicVert", "basicFrag", _data->assets.GetShader("basicVert"), _data->assets.GetShader("basicFrag"));
-
-        SDL_GPURenderPass *pass;
-        _data->shaders.BindPipeline("basic", pass);
-
-        SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(_data->device);
-        SDL_GPUTexture* swapchainTexture;
-        SDL_AcquireGPUSwapchainTexture(cmdbuf, _data->window, &swapchainTexture, NULL, NULL);
-
-
-        if (swapchainTexture != NULL) 
-        {
-            SDL_GPUColorTargetInfo colorTarget = {
-                .texture = swapchainTexture,
-                .clear_color = { 0.2f, 0.2f, 0.2f, 1.0f },
-                .load_op = SDL_GPU_LOADOP_CLEAR,
-                .store_op = SDL_GPU_STOREOP_STORE
-            };
-
-            SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTarget, 1, NULL);
-
-            SDL_Vertex triangleData = { 0, 0, 0, 0, 0, 0, };
-
-            SDL_GPUBufferCreateInfo bufferInfo = {
-                .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
-                .size = sizeof(triangleData)
-            };
-
-            SDL_GPUBuffer* myVertexBuffer = SDL_CreateGPUBuffer(_data->device, &bufferInfo);
-
-            SDL_GPUTransferBufferCreateInfo tbufInfo = {
-                .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
-                .size = sizeof(triangleData)
-            };
-            SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(_data->device, &tbufInfo);
-
-            void* map = SDL_MapGPUTransferBuffer(device, transferBuffer, false);
-            SDL_memcpy(map, triangleData, sizeof(triangleData));
-            SDL_UnmapGPUTransferBuffer(device, transferBuffer);
-
-
-            SDL_GPUBufferBinding vertexBinding = {
-                .buffer = myVertexBuffer,
-                .offset = 0
-            };
-
-            SDL_BindGPUVertexBuffers(renderPass, 0, &vertexBinding, 1);
-
-
-            SDL_GPUBufferBinding vertexBinding = { .buffer = myVertexBuffer, .offset = 0 };
-            SDL_BindGPUGraphicsPipeline(renderPass, _data->shaders.GetPipeline("basic")->handle);
-
-            SDL_BindGPUVertexBuffers(renderPass, 0, &vertexBinding, 1);
-            SDL_DrawGPUPrimitives(renderPass, 3, 1, 0, 0);
-
-            SDL_EndGPURenderPass(renderPass);
-        }
-
-        SDL_SubmitGPUCommandBuffer(cmdbuf);
-
-    }
-
-
     if (_device == NULL) {
         SDL_Log("GPU Device creation failed: %s", SDL_GetError());
     }
@@ -136,31 +67,28 @@ bool Engine::Initialize()
         return false;
     }
 
-    
-    SDL_GLContext ctx = SDL_GL_CreateContext(_data->window);
-	bool context = SDL_GL_MakeCurrent(_data->window, ctx);
-    if(!context)
-		LOG_ERROR(GlobalLogger(), "Engine", std::string("SDL_GL_MakeCurrent failed: ") + SDL_GetError());
+    SDL_ClaimWindowForGPUDevice(_data->device, _data->window);
 
-    bool setSwap;
-    if(!(setSwap = SDL_GL_SetSwapInterval(1)))
-		LOG_WARN(GlobalLogger(), "Engine", std::string("SDL_GL_SetSwapInterval failed: ") + SDL_GetError());
+	_data->renderer.Init(_data->device, _data->window, &_data->assets, _data->GAME_WIDTH, _data->GAME_HEIGHT);
+
+
+
 
     _data->SDLrenderer = SDL_CreateRenderer(_data->window, nullptr);
     if (!_data->SDLrenderer) 
         LOG_ERROR(GlobalLogger(), "Engine", std::string("SDL_CreateRenderer failed: ") + SDL_GetError());
 
+
+
+
     _data->inputs.Init();
-    _data->renderer.SDLrenderer = _data->SDLrenderer;
 
     _data->state.AddState(StateRef(new StartState(_data)), 0);
     _data->state.ProcessStateChanges();
-    
 
     _data->spatialIndex.Init(0.f, 0.f, _data->GAME_WIDTH, _data->GAME_HEIGHT, 32);
 
-
-    return _data->SDLrenderer != nullptr;
+    return 0;
     
 }
 
@@ -221,20 +149,15 @@ void Engine::HandleInput(float dt)
 
 void Engine::Render(float dt)
 {
-    if (!_data->SDLrenderer)
-    {
-        LOG_ERROR(GlobalLogger(), "Renderer", std::string("Render failed: ") + SDL_GetError());
-        return;
-    }
 
-	SDL_SetRenderDrawColor(_data->SDLrenderer, 0, 0, 0, 255);
-    SDL_RenderClear(_data->SDLrenderer);
+	//SDL_SetRenderDrawColor(_data->SDLrenderer, 0, 0, 0, 255);
+    //SDL_RenderClear(_data->SDLrenderer);
 
     _data->state.GetActiveState()->ui.RenderPass();
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Render, dt);
     _data->state.GetActiveState()->Render(dt);
 
-    SDL_RenderPresent(_data->SDLrenderer);
+    //SDL_RenderPresent(_data->SDLrenderer);
 }
 
 void Engine::Physics(float dt)

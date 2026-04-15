@@ -3,64 +3,26 @@
 #include <iostream>
 #include <SDL3/SDL.h>
 #include "logger.h"
-#include "ShaderManager.h"
 #include "Utility.h"
 
 
-
-int AssetManager::AddMesh(StringId meshName, const Mesh& mesh)
-{
-    _meshes[meshName] = mesh;
-    LOG_DEBUG(GlobalLogger(), "AssetManager", "Adding mesh: " + std::to_string(meshName.id));
-    return 0;
-}
-const Mesh* AssetManager::GetMesh(StringId meshName) const
-{
-    auto it = _meshes.find(meshName);
-    if (it == _meshes.end())
-    {
-        LOG_WARN(GlobalLogger(), "AssetManager", "Mesh not found");
-        return nullptr;
-    }
-    return &it->second;
-}
-
-int AssetManager::MoveMeshOrigin(StringId meshName, float dx, float dy)
-{
-    Mesh *mesh = GetEditableMesh(meshName);
-    if (!mesh)
-        return -1;
-    for (auto &m : *mesh)
-    {
-        m.position.x -= dx;
-        m.position.y -= dy;
-    }
-    return 0;
-}
-
-int AssetManager::LoadBMPTexture(StringId TextureName, const std::string& filename, SDL_Renderer* renderer)
+int AssetManager::LoadBMPSurface(StringId TextureName, const std::string& filename)
 {
     SDL_Surface* surface = SDL_LoadBMP(filename.c_str());
     if (!surface) {
         LOG_ERROR(GlobalLogger(), "AssetManager", std::string("Failed to load BMP: ") + SDL_GetError());
         return -1;
     }
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_DestroySurface(surface);
-    if (!texture) {
-        LOG_ERROR(GlobalLogger(), "AssetManager", std::string("Failed to create texture: ") + SDL_GetError());
-        return -1;
-    }
-    _textures[TextureName] = texture;
+
+    _surfaces[TextureName] = surface;
     return 0;
 }
 
-const SDL_Texture* AssetManager::GetTexture(StringId TextureName) const
+SDL_Surface* AssetManager::GetSurface(StringId TextureName)
 {
-    auto it = _textures.find(TextureName);
-    if (it == _textures.end())
+    auto it = _surfaces.find(TextureName);
+    if (it == _surfaces.end())
     {
-        //LOG_WARN(GlobalLogger(), "AssetManager", "Texture not found");
         return nullptr;
     }
     return it->second;
@@ -89,17 +51,6 @@ TTF_Font* AssetManager::GetFont(StringId FontName) const
     return it->second;
 }
 
-Mesh* AssetManager::GetEditableMesh(StringId meshName)
-{
-    auto it = _meshes.find(meshName);
-    if (it == _meshes.end())
-    {
-        LOG_WARN(GlobalLogger(), "AssetManager", "Mesh not found");
-        return nullptr;
-    }
-    return &it->second;
-}
-
 int AssetManager::LoadShader(StringId shaderName, const std::string& filename,
     SDL_GPUDevice* device, ShaderStage stage,
     uint32_t numSamplers,
@@ -108,7 +59,7 @@ int AssetManager::LoadShader(StringId shaderName, const std::string& filename,
     uint32_t numUniformBuffers)
 {
     std::string ext = Utility::ExtractExtension(filename);
-    std::string expected = ShaderManager::GetBackendExtension(device);
+    std::string expected = Utility::GetBackendExtension(device);
 
     if (!expected.empty() && ext != expected)
         LOG_WARN(GlobalLogger(), "AssetManager",
@@ -123,7 +74,7 @@ int AssetManager::LoadShader(StringId shaderName, const std::string& filename,
         return -1;
     }
 
-    SDL_GPUShaderStage gpuStage = (stage == ShaderStage::Vertex)
+    SDL_GPUShaderStage gpuStage = (stage == ShaderStage::VERTEX)
         ? SDL_GPU_SHADERSTAGE_VERTEX
         : SDL_GPU_SHADERSTAGE_FRAGMENT;
 
@@ -154,7 +105,7 @@ int AssetManager::LoadShader(StringId shaderName, const std::string& filename,
         return -1;
     }
 
-    ShaderAsset asset(handle);
+    Shader asset(handle);
     asset.stage = stage;
     asset.format = ext;
     asset.numSamplers = numSamplers;
@@ -166,10 +117,56 @@ int AssetManager::LoadShader(StringId shaderName, const std::string& filename,
     return 0;
 }
 
-const ShaderAsset* AssetManager::GetShader(StringId shaderName) const
+const Shader* AssetManager::GetShader(StringId shaderName) const
 {
     auto it = _shaders.find(shaderName);
     if (it == _shaders.end())
+        return nullptr;
+    return &it->second;
+}
+
+int AssetManager::AddMesh(StringId meshName, const MeshVertices& vertices, const MeshIndices& indices)
+{
+	MeshBase mesh;
+	mesh.name = meshName;
+	mesh.meshVertices = vertices;
+	mesh.meshIndices = indices;
+	_meshBases[meshName] = mesh;
+    return 0;
+}
+
+MeshBase* AssetManager::GetMesh(StringId meshName)
+{
+    auto it = _meshBases.find(meshName);
+    if (it == _meshBases.end())
+        return nullptr;
+	return &it->second;
+}
+
+MaterialBase* AssetManager::GetMaterial(StringId materialName)
+{
+    auto it = _materialBases.find(materialName);
+    if (it == _materialBases.end())
+        return nullptr;
+    return &it->second;
+}
+
+int AssetManager::AddMaterial(StringId materialName, const MaterialBase& material)
+{
+    _materialBases[materialName] = material;
+    return 0;
+}
+
+int AssetManager::AddTexture(StringId textureName, const TextureBase& texture)
+{
+    _textureBases[textureName] = texture;
+    return 0;
+}
+
+TextureBase* AssetManager::GetTexture(StringId textureName)
+{
+    auto it = _textureBases.find(textureName);
+    if (it == _textureBases.end())
         return nullptr;
     return &it->second;
 }

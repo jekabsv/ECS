@@ -24,7 +24,8 @@ struct Vec3
 
 using Triangle = std::array<SDL_Vertex, 3>;
 
-using Mesh = std::vector<SDL_Vertex>;
+using MeshVertices = std::vector<SDL_Vertex>;
+using MeshIndices = std::vector<uint16_t>;
 
 struct StringId
 {
@@ -48,14 +49,4 @@ template<>
 struct std::hash<StringId>
 {
     size_t operator()(const StringId& s) const noexcept { return s.id; }
-};
-
-
-class Renderer
-{
-public:
-    SDL_Renderer* SDLrenderer = nullptr;
-    Renderer() = default;
-    Renderer(SDL_Renderer* _SDLrenderer) : SDLrenderer(_SDLrenderer) {};
-    int Render(const SDL_Texture* texture, const SDL_FRect* srect, const SDL_FRect* dsrect) const;
 };
