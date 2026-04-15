@@ -13,7 +13,6 @@
 
 #include "Struct.h"
 
-
 struct SharedData;
 typedef std::shared_ptr<SharedData> SharedDataRef;
 

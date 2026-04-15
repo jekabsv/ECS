@@ -24,56 +24,45 @@ struct TextCacheKeyHash {
     size_t operator()(const TextCacheKey& k) const;
 };
 
-struct TextEntry
-{
-    SDL_GPUTexture* texture = nullptr;
-    SDL_GPUSampler* sampler = nullptr;
-    uint32_t width = 0;
-    uint32_t height = 0;
-    uint64_t lastUsed = 0;
-    void Release(SDL_GPUDevice* device) {
-        if (texture) SDL_ReleaseGPUTexture(device, texture);
-        if (sampler) SDL_ReleaseGPUSampler(device, sampler);
-    }
-};
 
 
 class Renderer
 {
 public:
-    int Init(SDL_GPUDevice* gpuDevice, SDL_Window* sdlWindow, AssetManager* assets);
-    int Shutdown();
 
-    int BeginFrame();
+    //Material stores ShaderIds
+	//when a material is used renderer gets material hash, checks if identical pipeline exists in cache,
+    //if not creates pipeline with the shaders and stores it in cache with the material hash as key
+    //Material 
+
+    int Init(SDL_GPUDevice* gpuDevice, SDL_Window* sdlWindow, AssetManager* assets);
+
     int StartRenderPass();
 
     int EndRenderPass();
     int Present();
-
-
     
 
-    int MeshDraw(StringId meshId);
-    int SpriteDraw(StringId textureId);
-    int DrawText(StringId fontId, const std::string& text, float x, float y, SDL_Color color);
+    int MeshDraw(StringId meshId, StringId materialId, 
+        Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f);
+
+
+    int SpriteDraw(StringId materialId,
+        Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f);
+
+    //int DrawText(StringId fontId, const std::string& text, float x, float y, SDL_Color color); //Later
 
 private:
 
-    int BindShader(StringId shaderId);
-    int BindSpriteShader(StringId shaderId);
-    int SetVertexAttributes(SDL_GPUVertexAttribute* attrs, size_t count);
-    int SetVertexBufferDescription(SDL_GPUVertexBufferDescription vbd);
-    int SetPrimitiveType(SDL_GPUPrimitiveType type);
     int PushVertexUniform(uint32_t slot, const void* data, uint32_t size);
     int PushFragmentUniform(uint32_t slot, const void* data, uint32_t size);
 
-    SDL_GPUGraphicsPipeline* GetOrCreatePipeline(StringId pipelineId);
-    SDL_GPUGraphicsPipeline* GetOrCreateSpritePipeline();
     int ApplyPipeline();
 
     int UploadMesh(MeshEntry* entry);
     int UploadTexture(StringId textureId);
-    int UploadTextSurface(TextEntry& entry, SDL_Surface* surface);
+    //int UploadTextSurface(TextEntry& entry, SDL_Surface* surface); //Later
+    
     int ReserveTransferBuffer(size_t size);
 
     int EvictTextCache(uint64_t maxAge);
@@ -97,15 +86,8 @@ private:
     SDL_GPUVertexAttribute attrs[8] = {};
     size_t attrCount = 0;
     SDL_GPUPrimitiveType primitiveType = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
-    bool blendEnabled = false;
-    bool pipelineDirty = true;
-    bool spritePipelineDirty = true;
-
-    SDL_GPUGraphicsPipeline* pipeline = nullptr;
-    SDL_GPUGraphicsPipeline* spritePipeline = nullptr;
 
     SDL_GPUColorTargetDescription colorDesc = {};
 
-    std::unordered_map<StringId, SDL_GPUGraphicsPipeline*> pipelineCache;
-    std::unordered_map<TextCacheKey, TextEntry, TextCacheKeyHash> textCache;
+
 };

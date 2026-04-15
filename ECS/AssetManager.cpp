@@ -164,3 +164,31 @@ Material* AssetManager::GetMaterial(StringId materialName)
         return nullptr;
     return &it->second;
 }
+
+int AssetManager::loadText(StringId textId, TextEntry text)
+{
+    _textCache[textId] = text;
+	return 0;
+}
+
+TextEntry* AssetManager::GetTextEntry(StringId textId)
+{
+    auto it = _textCache.find(textId);
+    if (it == _textCache.end())
+        return nullptr;
+    return &it->second;
+}
+
+int AssetManager::AddGraphicsPipeline(StringId pipelineId, SDL_GPUGraphicsPipeline *pipeline)
+{
+	_GraphicsPipelines[pipelineId] = pipeline;
+    return 0;
+}
+
+SDL_GPUGraphicsPipeline* AssetManager::GetGraphicsPipeline(size_t pipelineId)
+{
+    auto it = _GraphicsPipelines.find(pipelineId);
+    if (it == _GraphicsPipelines.end())
+        return nullptr;
+    return it->second;
+}

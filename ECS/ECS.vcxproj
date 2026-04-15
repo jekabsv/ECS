@@ -168,11 +168,13 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ECS.h" />
     <ClInclude Include="Engine.h" />
+    <ClInclude Include="GpuAssets.h" />
     <ClInclude Include="GPUState.h" />
     <ClInclude Include="InputComponent.h" />
     <ClInclude Include="InputSystem.h" />
     <ClInclude Include="Level1.h" />
     <ClInclude Include="logger.h" />
+    <ClInclude Include="Materials.h" />
     <ClInclude Include="MeshComponent.h" />
     <ClInclude Include="NBody.h" />
     <ClInclude Include="Renderer.h" />

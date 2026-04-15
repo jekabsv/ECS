@@ -55,6 +55,9 @@
     <Filter Include="Source Files\Internals\UiSystem">
       <UniqueIdentifier>{ed11fbc8-4bb7-475c-beca-acd3768f6640}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Internals\gpu">
+      <UniqueIdentifier>{0d3076a4-60b2-432b-90df-9ea90af9535a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="InputSystem.cpp">
@@ -210,7 +213,13 @@
       <Filter>Header Files\Internals</Filter>
     </ClInclude>
     <ClInclude Include="Renderer.h">
-      <Filter>Header Files\Internals</Filter>
+      <Filter>Header Files\Internals\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="Materials.h">
+      <Filter>Header Files\Internals\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="GpuAssets.h">
+      <Filter>Header Files\Internals\gpu</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

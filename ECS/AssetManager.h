@@ -3,6 +3,8 @@
 #include <string>
 #include "Struct.h"
 #include <SDL3_ttf/SDL_ttf.h>
+#include "GpuAssets.h"
+#include "Materials.h"
 
 struct SDL_Renderer;
 struct SDL_Texture;
@@ -43,19 +45,27 @@ public:
 	int LoadMaterial(StringId materialName, const std::string filepath) { return 0; };
 	Material* GetMaterial(StringId materialName);
 
+
+	int loadText(StringId textId, TextEntry text);
+	TextEntry* GetTextEntry(StringId textId);
+
+	int AddGraphicsPipeline(StringId pipelineId, SDL_GPUGraphicsPipeline *pipeline);
+	SDL_GPUGraphicsPipeline* GetGraphicsPipeline(size_t pipelineId);
 	
 private:
 
-	std::unordered_map<StringId, SDL_Surface*> _surfaces;
-	std::unordered_map<StringId, TextureEntry> _textures;
+	std::unordered_map<StringId, ShaderAsset> _shaders;//shaders loaded when material is loaded
 
-	std::unordered_map<StringId, TTF_Font*> _fonts;
-
-	std::unordered_map<StringId, ShaderAsset> _shaders;
+	std::unordered_map<StringId, SDL_Surface*> _surfaces;//surfaces loaded by user
+	std::unordered_map<StringId, TextureEntry> _textures;//textures populated by renderer when draw call uses the texture
 
 	std::unordered_map<StringId, MeshEntry> _meshes;
-
 	std::unordered_map<StringId, Material> _materials;
+
+	std::unordered_map<StringId, TTF_Font*> _fonts;//fonts loaded by user
+	std::unordered_map<StringId, TextEntry> _textCache;//text populated by renderer when draw call uses a font
+
+	std::unordered_map<size_t, SDL_GPUGraphicsPipeline*> _GraphicsPipelines; //populated by renderer
 
 
 
