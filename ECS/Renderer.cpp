@@ -183,16 +183,22 @@ int Renderer::DrawMesh(MeshInstance mesh, MaterialInstance material, Vec2 Positi
 
     SDL_PushGPUVertexUniformData(currentCmd, 1, &objData, sizeof(ObjectData));
 
-    if (!material.uniformVertBufferData.empty()) {
-        SDL_PushGPUVertexUniformData(currentCmd, 2,
-            material.uniformVertBufferData.data(),
-            (uint32_t)material.uniformVertBufferData.size());
+    if (material.vertBufferSize > 0) {
+        SDL_PushGPUVertexUniformData(
+            currentCmd,
+            2,
+            material.uniformVertBufferData,
+            material.vertBufferSize
+        );
     }
 
-    if (!material.uniformFragBufferData.empty()) {
-        SDL_PushGPUFragmentUniformData(currentCmd, 0,
-            material.uniformFragBufferData.data(),
-            (uint32_t)material.uniformFragBufferData.size());
+    if (material.fragBufferSize > 0) {
+        SDL_PushGPUFragmentUniformData(
+            currentCmd,
+            0,
+            material.uniformFragBufferData,
+            material.fragBufferSize
+        );
     }
 
 
@@ -212,7 +218,8 @@ int Renderer::DrawMesh(MeshInstance mesh, MaterialInstance material, Vec2 Positi
 
 int Renderer::SpriteDraw(MaterialInstance material, SDL_FRect sRect, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
 {
-    if (material.textures.empty()) return -1;
+    if (material.textureCount == 0)
+        return -1;
 
 	auto *texBase = _assets->GetTexture(material.textures[0]);
 
@@ -227,8 +234,7 @@ int Renderer::SpriteDraw(MaterialInstance material, SDL_FRect sRect, Vec2 Positi
     uvData.offsetX = sRect.x / (float)texW;
     uvData.offsetY = sRect.y / (float)texH;
 
-    material.uniformVertBufferData.resize(sizeof(UVData));
-    memcpy(material.uniformVertBufferData.data(), &uvData, sizeof(UVData));
+	material.AddVertData<UVData>(uvData);
 
     Vec2 finalScale = { Scale.x * sRect.w, Scale.y * sRect.h };
 
@@ -430,10 +436,11 @@ SDL_GPUGraphicsPipeline* Renderer::GetOrCreatePipeline(MaterialBase* base)
 
 void Renderer::BindMaterialTextures(MaterialInstance material)
 {
-    if (material.textures.empty())
+    if (material.textureCount == 0)
         return;
 
-    for (uint32_t i = 0; i < (uint32_t)material.textures.size();i++) {
+    for (uint32_t i = 0; i < material.textureCount;i++) 
+    {
         TextureBase* texBase = _assets->GetTexture(material.textures[i]);
 
         if (texBase && texBase->texture && texBase->sampler)

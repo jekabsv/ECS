@@ -18,5 +18,5 @@ private:
     ECS::Entity playerEntity = 0;
     Uint64 start = SDL_GetTicks();
 
-	UI::NodeHandle back;
+    UI::NodeHandle back;
 };

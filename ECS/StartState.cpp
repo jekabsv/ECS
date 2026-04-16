@@ -1,8 +1,8 @@
 #include "StartState.h"
 #include "Level1.h"
 #include <windows.h>
-#include "SPH.h"
-#include "Boids.h"
+//#include "SPH.h"
+//#include "Boids.h"
 #include "Uicontext.h";
 #include <iostream>
 
@@ -63,6 +63,9 @@ void StartState::Init()
 
 
 
+
+
+
 	//Textures
     _data->assets.LoadBMPSurface("test", "../ECS/test.bmp");
 	_data->assets.AddTexture("test", _data->renderer.CreateTexture(_data->assets.GetSurface("test")));
@@ -72,37 +75,42 @@ void StartState::Init()
 
 
 
+
+
+
+    //Materials
     MaterialBase spriteMaterial("vertSprite", "fragSprite");
     MaterialBase::MakeSpriteTransparent(spriteMaterial);
     MaterialBase::SetSDL_VertexAttr(spriteMaterial);
 
+    _data->assets.AddMaterial(StringId("sprite_mat"), spriteMaterial);
 
     MaterialBase mat("vert", "frag");
     MaterialBase::MakeSpriteTransparent(mat);
     MaterialBase::SetSDL_VertexAttr(mat);
 
-    _data->assets.AddMaterial(StringId("tri_mat"), mat);
+    _data->assets.AddMaterial(StringId("mat"), mat);
     
 
 
-
-
+    //Meshes
     MeshVertices verts = {
-    { { 0.0f, -100.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.5f, 0.0f} }, // Top
-    { { 100.0f, 100.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f} }, // Right
-    { {-100.0f, 100.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 1.0f} }  // Left
+    { { 0.0f, -100.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.5f, 0.0f} },
+    { { 100.0f, 100.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f} },
+    { {-100.0f, 100.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 1.0f} }
     };
     MeshIndices indices = { 0, 1, 2 };
 
     _data->assets.AddMesh(StringId("tri"), verts, indices);
 
-
+    //Animations
+    _data->animation.AddClip("player_idle_right", { "player", 64, 64, 192, 192, 1, 0.1f });
+    _data->animation.AddClip("player_idle_left", { "player", 64, 64, 192, 192, 3, 0.1f });
+    _data->animation.AddClip("player_run_right", { "player", 64, 64, 0,   448, 0, 0.08f });
+    _data->animation.AddClip("player_run_left", { "player", 64, 64, 0,   448, 2, 0.08f });
 
 
     //Inputs
-    _data->assets.AddMaterial(StringId("sprite_mat"), spriteMaterial);
-
-
     _data->inputs.AddActionMap("level1").AddAction("move")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_W, 0)
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_A, 1)
@@ -114,13 +122,29 @@ void StartState::Init()
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_RIGHT, 3)
         .AddProcessor(std::make_unique<ProcessWASD>("wasd"));
 
+    _data->inputs.GetActionMap("level1")->AddAction("next")
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_SPACE);
+
+    _data->inputs.GetActionMap("level1")->AddAction("show_colliders")
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_LSHIFT);
+
+    _data->inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current());
+
+    _data->inputs.GetActionMap("level1")->AddAction("scale")
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_Q, 0)
+        .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_E, 1)
+        .AddProcessor(std::make_unique<ProcessQE>("qe"));
 
     _data->inputs.GetActionMap("level1")->AddAction("click")
         .AddBinding(InputSystem::Button, InputSystem::Mouse, SDL_BUTTON_LEFT);
+    _data->inputs.GetActionMap("level1")->AddAction("mousePos")
+        .AddBinding(InputSystem::Axis, InputSystem::Mouse, 0, 0)
+        .AddBinding(InputSystem::Axis, InputSystem::Mouse, 1, 1);
 
     _data->inputs.AssignMapToPlayer("level1");
 
-    _data->inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current());
+
+    _data->state.AddState(StateRef(new Level1(_data)), 0);
 }
 
 void StartState::Update(float dt)
@@ -135,15 +159,15 @@ void StartState::Update(float dt)
 void StartState::Render(float dt)
 {
     MaterialInstance spriteMatInst{ StringId("sprite_mat") };
-    spriteMatInst.textures.push_back(StringId("player"));
+	spriteMatInst.AddTexture(StringId("player"));
 
     float TexX = (int)(x/10.f) * 64.f;
         
-    _data->renderer.SpriteDraw(spriteMatInst, { TexX, 0.f, 64.f, 64.f }, { x, y });
+    _data->renderer.SpriteDraw(spriteMatInst, { TexX, 0.f, 64.f, 64.f }, { x, y }, {2.f, 2.f});
 
 
     MeshInstance meshInst{ StringId("tri") };
-    MaterialInstance matInst{ StringId("tri_mat") };
+    MaterialInstance matInst{ StringId("mat") };
 
     _data->renderer.DrawMesh(meshInst, matInst, { 400.f, 300.f }, { 1.0f, 1.0f }, rotationAngle, { 1.f, 1.f, 1.f, 0.8f });
 }

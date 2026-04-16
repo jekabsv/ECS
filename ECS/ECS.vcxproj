@@ -137,7 +137,6 @@
   <ItemGroup>
     <ClCompile Include="AnimationSystem.cpp" />
     <ClCompile Include="AssetManager.cpp" />
-    <ClCompile Include="Boids.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ECS.cpp" />
     <ClCompile Include="Level1.cpp" />
@@ -145,11 +144,9 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="InputSystem.cpp" />
-    <ClCompile Include="NBody.cpp" />
     <ClCompile Include="PhysicsSystem.cpp" />
     <ClCompile Include="PhysicsSystem.h" />
     <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="SPH.cpp" />
     <ClCompile Include="StartState.cpp" />
     <ClCompile Include="State.cpp" />
     <ClCompile Include="StateMachine.cpp" />
@@ -162,7 +159,6 @@
     <ClInclude Include="AnimationSystem.h" />
     <ClInclude Include="AssetManager.h" />
     <ClInclude Include="Blackboard.h" />
-    <ClInclude Include="Boids.h" />
     <ClInclude Include="BoxCollider.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ECS.h" />
@@ -173,12 +169,10 @@
     <ClInclude Include="Level1.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="MeshComponent.h" />
-    <ClInclude Include="NBody.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RigidBody.h" />
     <ClInclude Include="SharedDataRef.h" />
     <ClInclude Include="SimpleSprite.h" />
-    <ClInclude Include="SPH.h" />
     <ClInclude Include="StartState.h" />
     <ClInclude Include="State.h" />
     <ClInclude Include="StateMachine.h" />

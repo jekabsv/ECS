@@ -2,13 +2,11 @@
 #include "MeshComponent.h"
 #include "SimpleSprite.h"
 #include "InputComponent.h"
-#include "NBody.h"
 #include "Transform.h"
-#include <iostream>
 #include "Utility.h"
-#include "Boids.h"
-#include "SPH.h"
+
 #include <Windows.h>
+#include <iostream>
 
 struct Clicked { bool clicked = false; };
 
@@ -17,22 +15,22 @@ void Level1::Init()
     _data->physics.EnableCollisionDetection(true);
     _data->physics.EnableMovement();
 
-	e = ecs.Create();
-	playerEntity = ecs.Create();
+    e = ecs.Create();
+    playerEntity = ecs.Create();
 
-    ecs.Add<BoxCollider>(e, BoxCollider(1.0f, 1.0f, true));
-    ecs.Add<MeshComponent>(e, MeshComponent("Triangle", "", true));
-    ecs.Add<TransformComponent>(e, TransformComponent({ 500.0f, 500.0f }, { 100.0f, 100.0f }));
+    ecs.Add<BoxCollider>(e, BoxCollider(100.0f, 100.0f, true, 100.f, 100.f));
+    ecs.Add<MeshComponent>(e, MeshComponent("tri", "mat", true));
+    ecs.Add<TransformComponent>(e, TransformComponent({ 500.0f, 500.0f }, { 1.0f, 1.0f }));
     ecs.Add<Clicked>(e, Clicked());
 
 
 
-    ecs.Add<SimpleSprite>(playerEntity, SimpleSprite({ -50, -50, 100, 100 }, { 0, 0, 64, 64 }, "player", true));
+    ecs.Add<SimpleSprite>(playerEntity, SimpleSprite({ 0, 0, 64, 64 }, "sprite_mat", true, "player"));
     ecs.Add<TransformComponent>(playerEntity, TransformComponent({ 0.0f, 0.0f }, { 1.0f, 1.0f }));
     ecs.Add<InputComponent>(playerEntity, InputComponent());
     ecs.Add<AnimationPlayer>(playerEntity, AnimationPlayer{});
-    ecs.Add<BoxCollider>(playerEntity, BoxCollider(25.0f, 50.0f, true));
-	ecs.Add<Clicked>(playerEntity, Clicked());
+    ecs.Add<BoxCollider>(playerEntity, BoxCollider(24.0f, 32.0f, true, 24.f, 32.f));
+    ecs.Add<Clicked>(playerEntity, Clicked());
 
     _data->animation.Play(ecs.Get<AnimationPlayer>(playerEntity), "player_idle_right");
 
@@ -54,10 +52,10 @@ void Level1::Init()
                 auto& transform = transforms[i];
 
                 transform.position.x += 1000 * dMove[0] * dt;
-                transform.position.y += 1000 * dMove[1] * dt;
+                transform.position.y -= 1000 * dMove[1] * dt;
                 transform.scale.x += dScale[0] * dt * 5;
                 transform.scale.y += dScale[0] * dt * 5;
-                
+
 
                 if (!dMove[0])
                 {
@@ -76,8 +74,8 @@ void Level1::Init()
 
                 _data->animation.Update(anim, dt);
 
-                sprite.TextureRect = anim.currentRect;
-                sprite.TextureName = anim.currentSpritesheet;
+                sprite.TextureSRect = anim.currentRect;
+                sprite.material.textures[0] = anim.currentSpritesheet;
             }
         },
         ECS::SystemGroup::Update);
@@ -120,7 +118,7 @@ void Level1::Init()
             auto click = ctx.Slice<Clicked>();
             for (std::size_t i = 0; i < transforms.size(); i++)
             {
-                if(click[i].clicked)
+                if (click[i].clicked)
                 {
                     transforms[i].position.x = data->inputs.GetActionAxis("mousePos")[0];
                     transforms[i].position.y = data->inputs.GetActionAxis("mousePos")[1];
@@ -144,7 +142,13 @@ void Level1::Init()
 
                 if (!sprite.render)
                     continue;
-                SDL_FRect RectToDraw = sprite.rect;
+
+
+
+				_data->renderer.SpriteDraw(sprite.material, sprite.TextureSRect, transform.position, transform.scale,
+                    transform.rotation);
+
+                /*SDL_FRect RectToDraw = sprite.rect;
                 RectToDraw.h *= transform.scale.y;
                 RectToDraw.w *= transform.scale.x;
                 RectToDraw.x *= transform.scale.x;
@@ -152,10 +156,10 @@ void Level1::Init()
                 RectToDraw.x += transform.position.x;
                 RectToDraw.y += transform.position.y;
 
-                //if (!sprite.TextureRect.h || !sprite.TextureRect.w)
-                    //_data->renderer.Render(_data->assets.GetTexture(sprite.TextureName), nullptr, &RectToDraw);
-                //else
-                    //_data->renderer.Render(_data->assets.GetTexture(sprite.TextureName), &sprite.TextureRect, &RectToDraw);
+                if (!sprite.TextureRect.h || !sprite.TextureRect.w)
+                    _data->renderer.Render(_data->assets.GetTexture(sprite.TextureName), nullptr, &RectToDraw);
+                else
+                    _data->renderer.Render(_data->assets.GetTexture(sprite.TextureName), &sprite.TextureRect, &RectToDraw);*/
             }
         },
         ECS::SystemGroup::Render);
@@ -166,7 +170,7 @@ void Level1::Init()
             auto meshes = ctx.Slice<MeshComponent>();
             auto transforms = ctx.Slice<TransformComponent>();
 
-            for (int i = 0;i < meshes.size();i++)
+            for (int i = 0; i < meshes.size(); i++)
             {
                 auto& meshC = meshes[i];
                 auto& transform = transforms[i];
@@ -174,20 +178,11 @@ void Level1::Init()
                 if (!meshC.render)
                     continue;
 
-                const MeshBase* mesh = _data->assets.GetMesh(meshC.MeshName);
+				_data->renderer.DrawMesh(meshC.MeshName, meshC.Material, transform.position, transform.scale);
+
+                const MeshBase* mesh = _data->assets.GetMesh(meshC.MeshName.meshName);
                 if (!mesh)
                     continue;
-
-                //const SDL_Texture* texture = _data->assets.GetTexture(meshC.TextureName);
-
-                std::vector<SDL_Vertex> transformed = mesh->meshVertices;
-                for (auto& v : transformed)
-                {
-                    v.position.x = v.position.x * transform.scale.x + transform.position.x;
-                    v.position.y = v.position.y * transform.scale.y + transform.position.y;
-                }
-
-                //SDL_RenderGeometry( _data->SDLrenderer, const_cast<SDL_Texture*>(texture), transformed.data(), (int)transformed.size(),nullptr, 0 );
             }
         },
         ECS::SystemGroup::Render);
@@ -198,7 +193,7 @@ void Level1::Init()
             auto colliders = ctx.Slice<BoxCollider>();
             auto transforms = ctx.Slice<TransformComponent>();
 
-            for (int i = 0;i < colliders.size();i++)
+            for (int i = 0; i < colliders.size(); i++)
             {
                 auto& transform = transforms[i];
                 auto& col = colliders[i];
@@ -207,14 +202,9 @@ void Level1::Init()
                 float aw = col.hw * 2.0f * transform.scale.x;
                 float ah = col.hh * 2.0f * transform.scale.y;
 
-
-                SDL_FRect rect = {ax, ay, aw, ah};
-                SDL_SetRenderDrawColor(_data->SDLrenderer, 255, 0, 0, 255);
-                SDL_RenderRect(_data->SDLrenderer, &rect);
-                SDL_SetRenderDrawColor(_data->SDLrenderer, 0, 0, 0, 255);
-
+                _data->renderer.DrawMesh(MeshInstance("unit_quad"), MaterialInstance("mat"), { ax, ay }, { aw, ah }, 0.0f, { 1.f, 0.f, 0.f, 0.3f });
             }
-        }, 
+        },
         ECS::SystemGroup::Render);
 
 
@@ -232,13 +222,13 @@ void Level1::Init()
     ui.SetGap(root, 12.0f);
     ui.SetPadding(root, UI::Edges::All(20.0f));
 
-	back = ui.AddButton("Back to menu", root);
+    back = ui.AddButton("Back to menu", root);
 }
 
 void Level1::Update(float dt)
-{ 
-    if(ui.IsClicked(back))
-		_data->state.RemoveState();
+{
+    if (ui.IsClicked(back))
+        _data->state.RemoveState();
 
     if (_data->inputs.GetActionState("click") == InputSystem::Held)
     {
@@ -248,22 +238,22 @@ void Level1::Update(float dt)
         std::vector<ECS::Entity> foundEntities;
         _data->spatialIndex.QueryPoint(mx, my, foundEntities);
 
-        for(auto e : foundEntities)
+        for (auto e : foundEntities)
         {
-			auto col = ecs.TryGet<BoxCollider>(e);
-			auto pos = ecs.TryGet<TransformComponent>(e);
-			auto click = ecs.TryGet<Clicked>(e);
-            if(col && pos && click)
+            auto col = ecs.TryGet<BoxCollider>(e);
+            auto pos = ecs.TryGet<TransformComponent>(e);
+            auto click = ecs.TryGet<Clicked>(e);
+            if (col && pos && click)
                 if (Utility::Contains(mx, my, pos, col)) {
-					click->clicked = true;
+                    click->clicked = true;
                     std::cout << "  clicked on entity: " << e << '\n';
                 }
         }
     }
 
 
-    if(_data->inputs.GetActionState("next") == InputSystem::Pressed)
-		_data->state.RemoveState();
+    if (_data->inputs.GetActionState("next") == InputSystem::Pressed)
+        _data->state.RemoveState();
 
     if (_data->inputs.GetActionState("show_colliders") == InputSystem::Pressed)
         ecs.ToggleSystem("draw_colliders");

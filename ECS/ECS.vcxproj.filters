@@ -84,12 +84,6 @@
     <ClCompile Include="logger.cpp">
       <Filter>Source Files\Internals\logger</Filter>
     </ClCompile>
-    <ClCompile Include="Level1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NBody.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ECS.cpp">
       <Filter>Source Files\Internals</Filter>
     </ClCompile>
@@ -104,12 +98,6 @@
     </ClCompile>
     <ClCompile Include="State.cpp">
       <Filter>Source Files\Internals\StateMachine</Filter>
-    </ClCompile>
-    <ClCompile Include="SPH.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Boids.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Uitypes.h">
       <Filter>Header Files\Internals\UISystem</Filter>
@@ -128,6 +116,9 @@
     </ClCompile>
     <ClCompile Include="Renderer.cpp">
       <Filter>Source Files\Internals\GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Level1.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -161,12 +152,6 @@
     <ClInclude Include="logger.h">
       <Filter>Header Files\Internals\logger</Filter>
     </ClInclude>
-    <ClInclude Include="Level1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NBody.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="InputComponent.h">
       <Filter>Header Files\Internals\ECS</Filter>
     </ClInclude>
@@ -194,12 +179,6 @@
     <ClInclude Include="Utility.h">
       <Filter>Header Files\Internals\Util</Filter>
     </ClInclude>
-    <ClInclude Include="SPH.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Boids.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Uitheme.h">
       <Filter>Header Files\Internals\UISystem</Filter>
     </ClInclude>
@@ -214,6 +193,9 @@
     </ClInclude>
     <ClInclude Include="Renderer.h">
       <Filter>Header Files\Internals\GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Level1.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

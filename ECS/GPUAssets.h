@@ -186,15 +186,62 @@ struct MaterialBase
 
 struct MeshInstance 
 {
+	MeshInstance() = default;
+	MeshInstance(StringId meshName) : meshName(meshName) {}
+
 	StringId meshName;
 };
 
 struct MaterialInstance
 { 
-	StringId materialName;
+	MaterialInstance() = default;
+	MaterialInstance(StringId materialName) : materialName(materialName) {}
 
-	std::vector<uint8_t> uniformVertBufferData;
-	std::vector<uint8_t> uniformFragBufferData;
+	StringId materialName = "";
 
-	std::vector<StringId> textures;
+	uint8_t uniformVertBufferData[128] = { 0 };
+	uint32_t vertBufferSize = 0;
+
+	uint8_t uniformFragBufferData[128] = { 0 };
+	uint32_t fragBufferSize = 0;
+
+	StringId textures[8] = { "" };
+	uint32_t textureCount = 0;
+
+	void ClearUniforms() {
+		vertBufferSize = 0;
+		fragBufferSize = 0;
+	}
+
+	void AddTexture(StringId texture) {
+		if (textureCount < 8) {
+			textures[textureCount++] = texture;
+		}
+	}
+
+	template<typename T>
+	bool AddFragData(const T& data) {
+		uint32_t size = sizeof(T);
+		if (fragBufferSize + size > 128) {
+			// Buffer Overflow
+			return false;
+		}
+
+		memcpy(&uniformFragBufferData[fragBufferSize], &data, size);
+		fragBufferSize += size;
+		return true;
+	}
+
+	template<typename T>
+	bool AddVertData(const T& data) {
+		uint32_t size = sizeof(T);
+		if (vertBufferSize + size > 128) {
+			// Buffer Overflow
+			return false;
+		}
+
+		memcpy(&uniformVertBufferData[vertBufferSize], &data, size);
+		vertBufferSize += size;
+		return true;
+	}
 };
