@@ -1,6 +1,15 @@
 #include "Renderer.h"
 #include <iostream>
 
+
+//Vertex shader has _viewProjMatrix at slot 0
+//Vertex shader has ObjectData at slot 1
+//Vertex shader has custom at slot 2
+
+//Fragment shader has custom at slot 0
+
+
+
 int Renderer::Init(SDL_GPUDevice* gpuDevice, SDL_Window* sdlWindow, AssetManager* assets, uint32_t screenWidth, uint32_t screenHeight)
 {
 	_device = gpuDevice;
@@ -101,7 +110,8 @@ int Renderer::StartRenderPass()
 
     currentPass = SDL_BeginGPURenderPass(currentCmd, &colorTarget, 1, &depthTarget);
 
-    SDL_PushGPUVertexUniformData(currentCmd, 0, &_viewProjMatrix, sizeof(Matrix4));
+    _engineData.time = SDL_GetTicks() / 1000.0f;
+    SDL_PushGPUVertexUniformData(currentCmd, 0, &_engineData, sizeof(EngineData));
 
     return 0;
 }
@@ -130,7 +140,7 @@ int Renderer::Present()
     return 0;
 }
 
-int Renderer::DrawMesh(MeshInstance mesh, MaterialInstance material, Vec2 Position, Vec2 Scale, float Rotation)
+int Renderer::DrawMesh(MeshInstance mesh, MaterialInstance material, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
 {
     MeshBase* meshBase = _assets->GetMesh(mesh.meshName);
     MaterialBase* matBase = _assets->GetMaterial(material.materialName);
@@ -166,8 +176,10 @@ int Renderer::DrawMesh(MeshInstance mesh, MaterialInstance material, Vec2 Positi
     objData.modelMatrix.m[13] = Position.y;
     objData.modelMatrix.m[15] = 1.0f;
 
-    objData.colorTint[0] = 1.0f; objData.colorTint[1] = 1.0f;
-    objData.colorTint[2] = 1.0f; objData.colorTint[3] = 1.0f;
+    objData.colorTint[0] = colorTint.r; 
+    objData.colorTint[1] = colorTint.g;
+    objData.colorTint[2] = colorTint.b; 
+    objData.colorTint[3] = colorTint.a;
 
     SDL_PushGPUVertexUniformData(currentCmd, 1, &objData, sizeof(ObjectData));
 
@@ -198,16 +210,34 @@ int Renderer::DrawMesh(MeshInstance mesh, MaterialInstance material, Vec2 Positi
     return 0;
 }
 
-int Renderer::SpriteDraw(MaterialInstance material, Vec2 Position, Vec2 Scale, float Rotation)
+int Renderer::SpriteDraw(MaterialInstance material, SDL_FRect sRect, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
 {
-    MeshInstance quadMesh{ _unitQuadMesh.name };
-	return DrawMesh(quadMesh, material, Position, Scale, Rotation);
-    return 0;
-}
+    if (material.textures.empty()) return -1;
 
+	auto *texBase = _assets->GetTexture(material.textures[0]);
+
+    uint32_t texW = texBase->width, texH = texBase->height;
+
+    struct UVData {
+        float offsetX, offsetY, scaleX, scaleY;
+    } uvData;
+
+    uvData.scaleX = sRect.w / (float)texW;
+    uvData.scaleY = sRect.h / (float)texH;
+    uvData.offsetX = sRect.x / (float)texW;
+    uvData.offsetY = sRect.y / (float)texH;
+
+    material.uniformVertBufferData.resize(sizeof(UVData));
+    memcpy(material.uniformVertBufferData.data(), &uvData, sizeof(UVData));
+
+    Vec2 finalScale = { Scale.x * sRect.w, Scale.y * sRect.h };
+
+    MeshInstance quadMesh{ _unitQuadMesh.name };
+    return DrawMesh(quadMesh, material, Position, finalScale, Rotation, colorTint);
+}
 int Renderer::SetProjection(const Matrix4& projection)
 {
-	_viewProjMatrix = projection;
+    _engineData.projection = projection;
     return 0;
 }
 
@@ -423,16 +453,16 @@ void Renderer::BindMaterialTextures(MaterialInstance material)
 void Renderer::CreateUnitQuad()
 {
     MeshVertices vertices = {
-        { -0.5f, -0.5f, 0.0f, 0.0f, 1.0f },
-        {  0.5f, -0.5f, 0.0f, 1.0f, 1.0f },
-        {  0.5f,  0.5f, 0.0f, 1.0f, 0.0f },
-        { -0.5f,  0.5f, 0.0f, 0.0f, 0.0f }
+        { {-0.5f, -0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 1.0f} },
+        {  {0.5f, -0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f} },
+        {  {0.5f,  0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 0.0f} },
+        { {-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f} }
     };
     MeshIndices indices = { 0, 1, 2,   2, 3, 0 };
-
     _unitQuadMesh.name = StringId("unit_quad");
     _unitQuadMesh.meshVertices = vertices;
-	_unitQuadMesh.meshIndices = indices;
+    _unitQuadMesh.meshIndices = indices;
+    _assets->AddMesh("unit_quad", vertices, indices);
 }
 
 void Renderer::UpdateDefaultProjection()
@@ -443,10 +473,11 @@ void Renderer::UpdateDefaultProjection()
     float bottom = (float)_screenHeight;
     float near = -1.0f;
     float far = 1.0f;
-	_viewProjMatrix = Matrix4::Orthographic(left, right, top, bottom, near, far);
+    _engineData.projection = Matrix4::Orthographic(left, right, top, bottom, near, far);
 }
 
-void Renderer::UploadMesh(MeshBase* mesh) {
+void Renderer::UploadMesh(MeshBase* mesh) 
+{
     if (!mesh || mesh->isLoaded)
         return;
 

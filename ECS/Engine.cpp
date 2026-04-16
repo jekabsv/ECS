@@ -149,15 +149,14 @@ void Engine::HandleInput(float dt)
 
 void Engine::Render(float dt)
 {
-
-	//SDL_SetRenderDrawColor(_data->SDLrenderer, 0, 0, 0, 255);
-    //SDL_RenderClear(_data->SDLrenderer);
+    _data->renderer.StartRenderPass();
 
     _data->state.GetActiveState()->ui.RenderPass();
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Render, dt);
     _data->state.GetActiveState()->Render(dt);
 
-    //SDL_RenderPresent(_data->SDLrenderer);
+    _data->renderer.EndRenderPass();
+    _data->renderer.Present();
 }
 
 void Engine::Physics(float dt)
@@ -201,5 +200,6 @@ void Engine::run()
         }
     }
 
+    _data->renderer.Shutdown();
 	LOG_INFO(GlobalLogger(), "Engine", "Exiting main loop");
 }

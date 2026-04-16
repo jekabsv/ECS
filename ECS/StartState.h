@@ -8,7 +8,7 @@ public:
     using State::State;
     void Init() override;
 	void Update(float dt) override;
-
+	void Render(float dt) override;
 
     UI::NodeHandle btnBoids = UI::NULL_HANDLE;
     UI::NodeHandle btnSillyGame = UI::NULL_HANDLE;
@@ -16,8 +16,8 @@ public:
     UI::NodeHandle btnQuit_ = UI::NULL_HANDLE;
 
     float rotationAngle = 0.0f;
-    int x = 0;
-    int y = 0;
+    float x = 400.f;
+    float y = 300.f;
 };
 
 

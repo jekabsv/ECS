@@ -107,13 +107,18 @@ struct TextureBase
 
 struct MaterialBase
 {
-	StringId vertexShader;
-	StringId fragmentShader;
+	MaterialBase() = default;
+	MaterialBase(StringId vertShader, StringId fragShader) : vertexShader(vertShader), fragmentShader(fragShader) {
+	}
 
-	SDL_GPUGraphicsPipeline* pipeline;
+	StringId vertexShader = "";
+	StringId fragmentShader = "";
+
+	SDL_GPUGraphicsPipeline* pipeline = nullptr;
 
 	SDL_GPUTextureFormat colorTargetFormat = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM;
-	bool hasDepthTarget = false;
+
+	bool hasDepthTarget = true;
 	SDL_GPUTextureFormat depthStencilFormat = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
 
 
@@ -127,6 +132,53 @@ struct MaterialBase
 
 	bool depthTestEnabled = false;
 	bool depthWriteEnabled = false;
+
+	static void SetSDL_VertexAttr(MaterialBase& mat)
+	{
+		mat.attributes = {
+		{ 0, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,  offsetof(SDL_Vertex, position)  },
+		{ 1, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4,  offsetof(SDL_Vertex, color)     },
+		{ 2, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,  offsetof(SDL_Vertex, tex_coord) },
+		};
+	}
+	static void ApplySpriteDefaults(MaterialBase& mat)
+	{
+		mat.cullMode = SDL_GPU_CULLMODE_NONE;
+		mat.primitiveType = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+		mat.fillMode = SDL_GPU_FILLMODE_FILL;
+		mat.colorTargetFormat = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM;
+		SDL_GPUTextureFormat depthStencilFormat = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
+
+	}
+	static void MakeSpriteTransparent(MaterialBase& mat)
+	{
+		ApplySpriteDefaults(mat);
+		mat.blendMode = BlendMode::Alpha;
+		mat.depthTestEnabled = false;
+		mat.depthWriteEnabled = false;
+	}
+	static void MakeOpaque(MaterialBase& mat)
+	{
+		ApplySpriteDefaults(mat);
+		mat.blendMode = BlendMode::None;
+		mat.depthTestEnabled = false;
+		mat.depthWriteEnabled = false;
+	}
+	static void MakeAdditive(MaterialBase& mat)
+	{
+		ApplySpriteDefaults(mat);
+		mat.blendMode = BlendMode::Additive;
+		mat.depthTestEnabled = false;
+		mat.depthWriteEnabled = false;
+	}
+	static void MakeOverlay(MaterialBase& mat)
+	{
+		ApplySpriteDefaults(mat);
+		mat.blendMode = BlendMode::Alpha;
+		mat.depthTestEnabled = false;
+		mat.depthWriteEnabled = false;
+		mat.hasDepthTarget = false;
+	}
 };
 
 

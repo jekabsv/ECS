@@ -18,11 +18,13 @@ public:
 
 
 	int DrawMesh(MeshInstance mesh, MaterialInstance material,
-		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f);
+		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f, 
+		SDL_FColor colorTint = {1.0f, 1.0f, 1.0f, 1.0f});
 
 
-	int SpriteDraw(MaterialInstance material,
-		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f);
+	int SpriteDraw(MaterialInstance material, SDL_FRect sRect,
+		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f,
+		SDL_FColor colorTint = { 1.0f, 1.0f, 1.0f, 1.0f });
 
 	int SetProjection(const Matrix4& projection);
 
@@ -45,7 +47,7 @@ private:
 
 	SDL_GPUTexture* _depthStencilTexture = nullptr;
 
-	Matrix4 _viewProjMatrix;
+	EngineData _engineData;
 
 	MeshBase _unitQuadMesh;
 

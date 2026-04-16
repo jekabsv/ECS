@@ -46,6 +46,63 @@ public:
 
 void StartState::Init()
 {
+
+    //Shaders
+    _data->assets.LoadShader(StringId("vertSprite"), "../ECS/vertSprite.spv", _data->device, ShaderStage::VERTEX,
+        /*samplers*/0, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/3);
+
+    _data->assets.LoadShader(StringId("fragSprite"), "../ECS/fragSprite.spv", _data->device, ShaderStage::FRAGMENT,
+        /*samplers*/1, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/0);
+
+
+    _data->assets.LoadShader(StringId("vert"), "../ECS/vert.spv", _data->device, ShaderStage::VERTEX,
+        /*samplers*/0, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/2);
+
+    _data->assets.LoadShader(StringId("frag"), "../ECS/frag.spv", _data->device, ShaderStage::FRAGMENT,
+        /*samplers*/0, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/0);
+
+
+
+	//Textures
+    _data->assets.LoadBMPSurface("test", "../ECS/test.bmp");
+	_data->assets.AddTexture("test", _data->renderer.CreateTexture(_data->assets.GetSurface("test")));
+
+    _data->assets.LoadBMPSurface("player", "../ECS/player.bmp");
+    _data->assets.AddTexture("player", _data->renderer.CreateTexture(_data->assets.GetSurface("player")));
+
+
+
+    MaterialBase spriteMaterial("vertSprite", "fragSprite");
+    MaterialBase::MakeSpriteTransparent(spriteMaterial);
+    MaterialBase::SetSDL_VertexAttr(spriteMaterial);
+
+
+    MaterialBase mat("vert", "frag");
+    MaterialBase::MakeSpriteTransparent(mat);
+    MaterialBase::SetSDL_VertexAttr(mat);
+
+    _data->assets.AddMaterial(StringId("tri_mat"), mat);
+    
+
+
+
+
+    MeshVertices verts = {
+    { { 0.0f, -100.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.5f, 0.0f} }, // Top
+    { { 100.0f, 100.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f} }, // Right
+    { {-100.0f, 100.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 1.0f} }  // Left
+    };
+    MeshIndices indices = { 0, 1, 2 };
+
+    _data->assets.AddMesh(StringId("tri"), verts, indices);
+
+
+
+
+    //Inputs
+    _data->assets.AddMaterial(StringId("sprite_mat"), spriteMaterial);
+
+
     _data->inputs.AddActionMap("level1").AddAction("move")
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_W, 0)
         .AddBinding(InputSystem::Button, InputSystem::Keyboard, SDL_SCANCODE_A, 1)
@@ -64,88 +121,30 @@ void StartState::Init()
     _data->inputs.AssignMapToPlayer("level1");
 
     _data->inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current());
-
-
-
-
-
-
-    _data->assets.LoadShader(StringId("vert"), "../ECS/vert.spv", _data->device, ShaderStage::VERTEX,
-        /*samplers*/0, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/3); // was 2, now 3
-
-    _data->assets.LoadShader(StringId("frag"), "../ECS/frag.spv", _data->device, ShaderStage::FRAGMENT,
-        /*samplers*/0, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/1); // was 0, now 1
-
-
-
-
-    MaterialBase mat = {};
-    mat.vertexShader = StringId("vert");
-    mat.fragmentShader = StringId("frag");
-    mat.blendMode = BlendMode::None;
-    mat.colorTargetFormat = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM;
-    mat.hasDepthTarget = true;
-    mat.depthStencilFormat = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
-    mat.depthTestEnabled = false;
-    mat.depthWriteEnabled = false;
-    mat.primitiveType = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
-    mat.cullMode = SDL_GPU_CULLMODE_NONE;
-    mat.fillMode = SDL_GPU_FILLMODE_FILL;
-    mat.pipeline = nullptr;
-
-
-    mat.attributes = {
-        { 0, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,  offsetof(SDL_Vertex, position)  },
-        { 1, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4,  offsetof(SDL_Vertex, color)     },
-        { 2, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,  offsetof(SDL_Vertex, tex_coord) },
-    };
-
-
-    _data->assets.AddMaterial(StringId("tri_mat"), mat);
-
-
-
-
-
-    MeshVertices verts = {
-    { { 0.0f, -100.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.5f, 0.0f} }, // Top
-    { { 100.0f, 100.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f} }, // Right
-    { {-100.0f, 100.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 1.0f} }  // Left
-    };
-    MeshIndices indices = { 0, 1, 2 };
-
-    _data->assets.AddMesh(StringId("tri"), verts, indices);
-
 }
 
 void StartState::Update(float dt)
 {
     auto axis = _data->inputs.GetActionAxis("move");
-    x += axis[0] * 1000.0f * dt;
-    y -= axis[1] * 1000.0f * dt;
+    x += axis[0] * 50.f * dt;
+    y -= axis[1] * 50.f * dt;
 
     rotationAngle += dt * 2.0f;
+}
 
-    if (_data->renderer.StartRenderPass() != 0)
-        return;
+void StartState::Render(float dt)
+{
+    MaterialInstance spriteMatInst{ StringId("sprite_mat") };
+    spriteMatInst.textures.push_back(StringId("player"));
+
+    float TexX = (int)(x/10.f) * 64.f;
+        
+    _data->renderer.SpriteDraw(spriteMatInst, { TexX, 0.f, 64.f, 64.f }, { x, y });
+
 
     MeshInstance meshInst{ StringId("tri") };
     MaterialInstance matInst{ StringId("tri_mat") };
 
-    struct CustomVert { float offsetX, offsetY, pad[2]; };
-    CustomVert cv{ x, y, {0,0} };
-    matInst.uniformVertBufferData.resize(sizeof(CustomVert));
-    memcpy(matInst.uniformVertBufferData.data(), &cv, sizeof(CustomVert));
-
-    struct CustomFrag { float r, g, b, a; };
-    CustomFrag cf{ 1.0f, 0.0f, 0.0f, 1.0f };
-    matInst.uniformFragBufferData.resize(sizeof(CustomFrag));
-    memcpy(matInst.uniformFragBufferData.data(), &cf, sizeof(CustomFrag));
-
-    _data->renderer.DrawMesh(meshInst, matInst, { 400.0f, 300.0f }, { 1.0f, 1.0f }, rotationAngle);
-
-
-    _data->renderer.EndRenderPass();
-    _data->renderer.Present();
+    _data->renderer.DrawMesh(meshInst, matInst, { 400.f, 300.f }, { 1.0f, 1.0f }, rotationAngle, { 1.f, 1.f, 1.f, 0.8f });
 }
 

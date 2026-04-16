@@ -58,6 +58,9 @@
     <Filter Include="Header Files\Internals\GPU">
       <UniqueIdentifier>{4c69ba24-a46d-4a70-a3a4-fecc66c03ea3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Internals\GPU">
+      <UniqueIdentifier>{8daacfba-80e7-4026-96b6-6f312236c865}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="InputSystem.cpp">
@@ -124,7 +127,7 @@
       <Filter>Source Files\Internals</Filter>
     </ClCompile>
     <ClCompile Include="Renderer.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Internals\GPU</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -221,6 +224,12 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="basic.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="basicSprite.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="basicSprite.vert">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
