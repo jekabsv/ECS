@@ -18,7 +18,7 @@ void Level1::Init()
     e = ecs.Create();
     playerEntity = ecs.Create();
 
-    ecs.Add<BoxCollider>(e, BoxCollider(100.0f, 100.0f, true, 100.f, 100.f));
+    ecs.Add<BoxCollider>(e, BoxCollider(100.0f, 100.0f, true));
     ecs.Add<MeshComponent>(e, MeshComponent("tri", "mat", true));
     ecs.Add<TransformComponent>(e, TransformComponent({ 500.0f, 500.0f }, { 1.0f, 1.0f }));
     ecs.Add<Clicked>(e, Clicked());
@@ -29,7 +29,7 @@ void Level1::Init()
     ecs.Add<TransformComponent>(playerEntity, TransformComponent({ 0.0f, 0.0f }, { 1.0f, 1.0f }));
     ecs.Add<InputComponent>(playerEntity, InputComponent());
     ecs.Add<AnimationPlayer>(playerEntity, AnimationPlayer{});
-    ecs.Add<BoxCollider>(playerEntity, BoxCollider(24.0f, 32.0f, true, 24.f, 32.f));
+    ecs.Add<BoxCollider>(playerEntity, BoxCollider(24.0f, 32.0f, true));
     ecs.Add<Clicked>(playerEntity, Clicked());
 
     _data->animation.Play(ecs.Get<AnimationPlayer>(playerEntity), "player_idle_right");
@@ -52,7 +52,7 @@ void Level1::Init()
                 auto& transform = transforms[i];
 
                 transform.position.x += 1000 * dMove[0] * dt;
-                transform.position.y -= 1000 * dMove[1] * dt;
+                transform.position.y += 1000 * dMove[1] * dt;
                 transform.scale.x += dScale[0] * dt * 5;
                 transform.scale.y += dScale[0] * dt * 5;
 
@@ -195,6 +195,8 @@ void Level1::Init()
 
             for (int i = 0; i < colliders.size(); i++)
             {
+
+
                 auto& transform = transforms[i];
                 auto& col = colliders[i];
                 float ax = transform.position.x + col.offsetX * transform.scale.x - col.hw * transform.scale.x;
@@ -202,7 +204,7 @@ void Level1::Init()
                 float aw = col.hw * 2.0f * transform.scale.x;
                 float ah = col.hh * 2.0f * transform.scale.y;
 
-                _data->renderer.DrawMesh(MeshInstance("unit_quad"), MaterialInstance("mat"), { ax, ay }, { aw, ah }, 0.0f, { 1.f, 0.f, 0.f, 0.3f });
+                _data->renderer.DrawMesh(MeshInstance("unit_quad"), MaterialInstance("mat"), { ax + aw/2.f, ay + ah/2.f }, { aw, ah }, 0.0f, { 1.f, 0.f, 0.f, 0.3f });
             }
         },
         ECS::SystemGroup::Render);
@@ -227,6 +229,9 @@ void Level1::Init()
 
 void Level1::Update(float dt)
 {
+
+    
+
     if (ui.IsClicked(back))
         _data->state.RemoveState();
 

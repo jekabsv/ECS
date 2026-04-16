@@ -27,11 +27,20 @@ struct Matrix4
 	{
 		Matrix4 result{};
 		result.m[0] = 2.0f / (right - left);
-		result.m[5] = 2.0f / (bottom - top);
-		result.m[10] = -2.0f / (far - near);
+
+		// VULKAN/SDL_GPU FIX: 
+		// We want 'top' to map to -1 and 'bottom' to map to 1.
+		// Standard OpenGL is 2.0 / (top - bottom), we use the inverse:
+		result.m[5] = 2.0f / (top - bottom);
+
+		result.m[10] = -1.0f / (far - near); // Vulkan depth is 0 to 1, not -1 to 1
+
 		result.m[12] = -(right + left) / (right - left);
-		result.m[13] = -(bottom + top) / (bottom - top);
-		result.m[14] = -(far + near) / (far - near);
+
+		// VULKAN/SDL_GPU FIX:
+		result.m[13] = -(top + bottom) / (top - bottom);
+
+		result.m[14] = -near / (far - near);
 		result.m[15] = 1.0f;
 		return result;
 	}
