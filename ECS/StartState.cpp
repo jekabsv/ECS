@@ -66,13 +66,15 @@ void StartState::Init()
     _data->inputs.AssignDeviceToPlayer(InputSystem::KeyboardHub::Current());
 
 
-    auto  _swapchainFormat = SDL_GetGPUSwapchainTextureFormat(_data->device, _data->window);
+
+
+
 
     _data->assets.LoadShader(StringId("vert"), "../ECS/vert.spv", _data->device, ShaderStage::VERTEX,
-        /*samplers*/0, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/2);
+        /*samplers*/0, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/3); // was 2, now 3
 
     _data->assets.LoadShader(StringId("frag"), "../ECS/frag.spv", _data->device, ShaderStage::FRAGMENT,
-        /*samplers*/0, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/0);
+        /*samplers*/0, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/1); // was 0, now 1
 
 
 
@@ -81,7 +83,7 @@ void StartState::Init()
     mat.vertexShader = StringId("vert");
     mat.fragmentShader = StringId("frag");
     mat.blendMode = BlendMode::None;
-    mat.colorTargetFormat = _swapchainFormat;
+    mat.colorTargetFormat = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM;
     mat.hasDepthTarget = true;
     mat.depthStencilFormat = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
     mat.depthTestEnabled = false;
@@ -101,10 +103,14 @@ void StartState::Init()
 
     _data->assets.AddMaterial(StringId("tri_mat"), mat);
 
+
+
+
+
     MeshVertices verts = {
-     { { 0.0f,  0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.5f, 0.0f} }, // Top
-     { { 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f} }, // Right
-     { {-0.5f, -0.5f}, {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 1.0f} }  // Left
+    { { 0.0f, -100.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.5f, 0.0f} }, // Top
+    { { 100.0f, 100.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f} }, // Right
+    { {-100.0f, 100.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 1.0f} }  // Left
     };
     MeshIndices indices = { 0, 1, 2 };
 
@@ -114,6 +120,11 @@ void StartState::Init()
 
 void StartState::Update(float dt)
 {
+    auto axis = _data->inputs.GetActionAxis("move");
+    x += axis[0] * 1000.0f * dt;
+    y -= axis[1] * 1000.0f * dt;
+
+    rotationAngle += dt * 2.0f;
 
     if (_data->renderer.StartRenderPass() != 0)
         return;
@@ -121,7 +132,18 @@ void StartState::Update(float dt)
     MeshInstance meshInst{ StringId("tri") };
     MaterialInstance matInst{ StringId("tri_mat") };
 
-    _data->renderer.DrawMesh(meshInst, matInst, { 0.0f, 0.0f }, { 1.0f, 1.0f }, 0.0f);
+    struct CustomVert { float offsetX, offsetY, pad[2]; };
+    CustomVert cv{ x, y, {0,0} };
+    matInst.uniformVertBufferData.resize(sizeof(CustomVert));
+    memcpy(matInst.uniformVertBufferData.data(), &cv, sizeof(CustomVert));
+
+    struct CustomFrag { float r, g, b, a; };
+    CustomFrag cf{ 1.0f, 0.0f, 0.0f, 1.0f };
+    matInst.uniformFragBufferData.resize(sizeof(CustomFrag));
+    memcpy(matInst.uniformFragBufferData.data(), &cf, sizeof(CustomFrag));
+
+    _data->renderer.DrawMesh(meshInst, matInst, { 400.0f, 300.0f }, { 1.0f, 1.0f }, rotationAngle);
+
 
     _data->renderer.EndRenderPass();
     _data->renderer.Present();

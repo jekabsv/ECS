@@ -195,13 +195,6 @@ int Renderer::DrawMesh(MeshInstance mesh, MaterialInstance material, Vec2 Positi
     uint32_t numIndices = (uint32_t)(meshBase->size / sizeof(uint32_t));
     SDL_DrawGPUIndexedPrimitives(currentPass, numIndices, 1, 0, 0, 0);
 
-
-    if (!meshBase->meshVertices.empty()) {
-        auto& v = meshBase->meshVertices[0];
-        SDL_Log("Drawing %d indices. First Vertex: x=%f, y=%f", numIndices, v.position.x, v.position.y);
-    }
-
-
     return 0;
 }
 
@@ -382,8 +375,6 @@ SDL_GPUGraphicsPipeline* Renderer::GetOrCreatePipeline(MaterialBase* base)
 
     pipelineInfo.vertex_input_state.num_vertex_attributes = (uint32_t)base->attributes.size();
     pipelineInfo.vertex_input_state.vertex_attributes = base->attributes.data();
-
-
 
 
     SDL_GPUVertexBufferDescription vertexBufferDesc = {};
