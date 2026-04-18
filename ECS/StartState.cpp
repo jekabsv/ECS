@@ -2,7 +2,7 @@
 #include "Level1.h"
 #include <windows.h>
 //#include "SPH.h"
-//#include "Boids.h"
+#include "Boids.h"
 #include "Uicontext.h";
 #include <iostream>
 
@@ -144,7 +144,8 @@ void StartState::Init()
     _data->inputs.AssignMapToPlayer("level1");
 
 
-    _data->state.AddState(StateRef(new Level1(_data)), 0);
+    //_data->state.AddState(StateRef(new Level1(_data)), 0);
+    _data->state.AddState(StateRef(new Boids(_data)), 0);
 }
 
 void StartState::Update(float dt)

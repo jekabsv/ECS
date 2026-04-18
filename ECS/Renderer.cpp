@@ -82,6 +82,9 @@ int Renderer::SetWindowSize(uint32_t width, uint32_t height)
 
 int Renderer::StartRenderPass()
 {
+    currentMesh = "";
+    currentPipeline = "";
+
     currentCmd = SDL_AcquireGPUCommandBuffer(_device);
     if (!currentCmd)
         return -1;
@@ -140,26 +143,43 @@ int Renderer::Present()
     return 0;
 }
 
-int Renderer::DrawMesh(MeshInstance mesh, MaterialInstance material, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
+int Renderer::DrawMesh(MeshInstance& mesh, MaterialInstance& material, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
 {
-    MeshBase* meshBase = _assets->GetMesh(mesh.meshName);
-    MaterialBase* matBase = _assets->GetMaterial(material.materialName);
+    MeshBase* meshBase = mesh.meshBase;
+    MaterialBase* matBase = material.materialBase;
 
-
-    if (!meshBase || !matBase)
-        return -1;
+    if(!meshBase)
+    {
+        meshBase = _assets->GetMesh(mesh.meshName);
+        if(!meshBase)
+			return -1;
+        mesh.meshBase = meshBase;
+    }
+    if(!matBase)
+    {
+        matBase = _assets->GetMaterial(material.materialName);
+        if (!matBase)
+            return -1;
+		material.materialBase = matBase;
+    }
 
     if (!meshBase->isLoaded) {
         UploadMesh(meshBase);
     }
 
-    SDL_GPUGraphicsPipeline* pipeline = GetOrCreatePipeline(matBase);
 
-    if (!pipeline)
-        return -1;
+    if (currentPipeline != material.materialName)
+    {
+        SDL_GPUGraphicsPipeline* pipeline = GetOrCreatePipeline(matBase);
 
+        if (!pipeline)
+            return -1;
 
-    SDL_BindGPUGraphicsPipeline(currentPass, pipeline);
+        currentPipeline = material.materialName;
+        SDL_BindGPUGraphicsPipeline(currentPass, pipeline);
+    }
+
+    
 
     ObjectData objData;
 
@@ -204,24 +224,34 @@ int Renderer::DrawMesh(MeshInstance mesh, MaterialInstance material, Vec2 Positi
 
     BindMaterialTextures(material);
 
-    SDL_GPUBufferBinding vertexBinding = { meshBase->vertexBuffer, 0 };
-    SDL_BindGPUVertexBuffers(currentPass, 0, &vertexBinding, 1);
 
-    SDL_GPUBufferBinding indexBinding = { meshBase->indexBuffer, 0 };
-    SDL_BindGPUIndexBuffer(currentPass, &indexBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+    if (currentMesh != mesh.meshName) {
+        SDL_GPUBufferBinding vertexBinding = { meshBase->vertexBuffer, 0 };
+        SDL_BindGPUVertexBuffers(currentPass, 0, &vertexBinding, 1);
+        
+        SDL_GPUBufferBinding indexBinding = { meshBase->indexBuffer, 0 };
+        SDL_BindGPUIndexBuffer(currentPass, &indexBinding, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+
+        currentMesh = mesh.meshName;
+    }
 
     uint32_t numIndices = (uint32_t)(meshBase->size / sizeof(uint32_t));
     SDL_DrawGPUIndexedPrimitives(currentPass, numIndices, 1, 0, 0, 0);
 
+
+
     return 0;
 }
 
-int Renderer::SpriteDraw(MaterialInstance material, SDL_FRect sRect, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
+int Renderer::SpriteDraw(MaterialInstance& material, SDL_FRect sRect, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
 {
     if (material.textureCount == 0)
         return -1;
 
-	auto *texBase = _assets->GetTexture(material.textures[0]);
+	if (material.texturebases[0] == nullptr)
+		material.texturebases[0] = _assets->GetTexture(material.textures[0]);
+
+	auto* texBase = material.texturebases[0];
 
     uint32_t texW = texBase->width, texH = texBase->height;
 
@@ -241,6 +271,7 @@ int Renderer::SpriteDraw(MaterialInstance material, SDL_FRect sRect, Vec2 Positi
     MeshInstance quadMesh{ _unitQuadMesh.name };
     return DrawMesh(quadMesh, material, Position, finalScale, Rotation, colorTint);
 }
+
 int Renderer::SetProjection(const Matrix4& projection)
 {
     _engineData.projection = projection;

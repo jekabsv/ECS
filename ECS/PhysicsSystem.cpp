@@ -134,6 +134,7 @@ void PhysicsSystem::MovementSystem(ECS::ArchetypeContext ctx, float dt, SharedDa
 void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
 {
 
+
     auto t0 = std::chrono::high_resolution_clock::now();
 
     //data->spatialIndex.Clear();
@@ -170,7 +171,10 @@ void PhysicsSystem::BuildSystem(ECS::ArchetypeContext ctx, float dt, SharedDataR
 
     auto t1 = std::chrono::high_resolution_clock::now();
     float ms = std::chrono::duration<float, std::milli>(t1 - t0).count();
-    //if (ms > 1.0f) printf("BuildSystem: %.2f ms\n", ms);
+    if (ms > 1.0f) printf("BuildSystem: %.2f ms\n", ms);
+
+
+
 }
 
 void PhysicsSystem::CollisionSystem(ECS::ArchetypeContext ctx, float dt, SharedDataRef data)

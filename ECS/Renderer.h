@@ -17,12 +17,12 @@ public:
 	int Present();
 
 
-	int DrawMesh(MeshInstance mesh, MaterialInstance material,
+	int DrawMesh(MeshInstance& mesh, MaterialInstance& material,
 		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f, 
 		SDL_FColor colorTint = {1.0f, 1.0f, 1.0f, 1.0f});
 
 
-	int SpriteDraw(MaterialInstance material, SDL_FRect sRect,
+	int SpriteDraw(MaterialInstance& material, SDL_FRect sRect,
 		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f,
 		SDL_FColor colorTint = { 1.0f, 1.0f, 1.0f, 1.0f });
 
@@ -31,6 +31,19 @@ public:
 	TextureBase CreateTexture(SDL_Surface* surface);
 
 private:
+	/*struct InstanceObjData {};
+	struct InstanceData {
+		StringId mesh;
+		StringId material;
+
+		std::vector<InstanceObjData> objData;
+
+		StringId textures[8];
+	};
+
+	std::vector<InstanceData> istances = {};*/
+
+
 
 	uint32_t _screenWidth, _screenHeight;
 
@@ -52,6 +65,9 @@ private:
 	MeshBase _unitQuadMesh;
 
 	SDL_GPUGraphicsPipeline* GetOrCreatePipeline(MaterialBase* base);
+
+	StringId currentPipeline = "";
+	StringId currentMesh = "";
 
 	void BindMaterialTextures(MaterialInstance material);
 

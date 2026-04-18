@@ -199,6 +199,7 @@ struct MeshInstance
 	MeshInstance(StringId meshName) : meshName(meshName) {}
 
 	StringId meshName;
+	MeshBase* meshBase = nullptr;
 };
 
 struct MaterialInstance
@@ -207,6 +208,7 @@ struct MaterialInstance
 	MaterialInstance(StringId materialName) : materialName(materialName) {}
 
 	StringId materialName = "";
+	MaterialBase* materialBase = nullptr;
 
 	uint8_t uniformVertBufferData[128] = { 0 };
 	uint32_t vertBufferSize = 0;
@@ -215,6 +217,7 @@ struct MaterialInstance
 	uint32_t fragBufferSize = 0;
 
 	StringId textures[8] = { "" };
+	TextureBase *texturebases[8] = { nullptr };
 	uint32_t textureCount = 0;
 
 	void ClearUniforms() {

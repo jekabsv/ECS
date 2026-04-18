@@ -1,4 +1,6 @@
 #include "Engine.h"
+#include <chrono>
+#include <iostream>
 
 
 #ifdef __EMSCRIPTEN__
@@ -42,8 +44,6 @@ bool Engine::Initialize()
 
 
 
-
-
     //GPU
     SDL_GPUDevice* _device = SDL_CreateGPUDevice(
         SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_MSL,
@@ -52,6 +52,7 @@ bool Engine::Initialize()
     );
 
     SDL_ClaimWindowForGPUDevice(_data->device, _data->window);
+    SDL_SetGPUSwapchainParameters(_data->device, _data->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_IMMEDIATE);
 
     if (_device == NULL) {
         SDL_Log("GPU Device creation failed: %s", SDL_GetError());
@@ -95,15 +96,42 @@ bool Engine::Initialize()
 
 void Engine::Update(float dt)
 {
+    auto start = std::chrono::high_resolution_clock::now();
+
     _data->state.GetActiveState()->ui.LayoutPass();
 
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = end - start;
+    //std::cout << "Ui Took: " << duration.count() << "ms" << std::endl;
+
+    start = std::chrono::high_resolution_clock::now();
+
     _data->spatialIndex.Clear();
-    _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Initialise, dt);
-    _data->spatialIndex.Build();
+    _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Initialise, dt); //40ms on 10k entities
+	_data->spatialIndex.Build(); //30ms on 10k entities
+
+    end = std::chrono::high_resolution_clock::now();
+    duration = end - start;
+    //std::cout << "SpatialBuild Took: " << duration.count() << "ms" << std::endl;
+
+    start = std::chrono::high_resolution_clock::now();
 
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::PreUpdate, dt);
-    _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Update, dt);
-    _data->state.GetActiveState()->Update(dt);
+    _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Update, dt); //70ms on 10k entities 
+
+    end = std::chrono::high_resolution_clock::now();
+    duration = end - start;
+    //std::cout << "ECS updates Took: " << duration.count() << "ms" << std::endl;
+
+    start = std::chrono::high_resolution_clock::now();
+
+    _data->state.GetActiveState()->Update(dt); 
+
+    end = std::chrono::high_resolution_clock::now();
+    duration = end - start;
+    //std::cout << "Update Took: " << duration.count() << "ms" << std::endl;
+
+
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::PostUpdate, dt);
 }
 
@@ -149,14 +177,35 @@ void Engine::HandleInput(float dt)
 
 void Engine::Render(float dt)
 {
+    auto start = std::chrono::high_resolution_clock::now();
     _data->renderer.StartRenderPass();
 
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = end - start;
+    //std::cout << "Start Render Took: " << duration.count() << "ms" << std::endl;
+
+
     _data->state.GetActiveState()->ui.RenderPass();
+
+    start = std::chrono::high_resolution_clock::now();
+
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Render, dt);
+
+    end = std::chrono::high_resolution_clock::now();
+    duration = end - start;
+    //std::cout << "ECS Render Took: " << duration.count() << "ms" << std::endl;
+
     _data->state.GetActiveState()->Render(dt);
+
+    start = std::chrono::high_resolution_clock::now();
+
 
     _data->renderer.EndRenderPass();
     _data->renderer.Present();
+
+    end = std::chrono::high_resolution_clock::now();
+    duration = end - start;
+    //std::cout << "End and present Took: " << duration.count() << "ms" << std::endl;
 }
 
 void Engine::Physics(float dt)
@@ -177,6 +226,8 @@ void Engine::run()
 
     while (!_data->quit)
     {
+        auto framestart = std::chrono::high_resolution_clock::now();
+
         uint64_t currentTicks = SDL_GetTicks();
         float dt = (currentTicks - lastTicks) / 1000.0f;
         lastTicks = currentTicks;
@@ -186,10 +237,40 @@ void Engine::run()
 
         _data->state.ProcessStateChanges();
         
+        auto start = std::chrono::high_resolution_clock::now();
+
+
         HandleInput(dt);
+
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> duration = end - start;
+        //std::cout << "Input Took: " << duration.count() << "ms" << std::endl;
+
+        start = std::chrono::high_resolution_clock::now();
+
         Update(dt);
+
+        end = std::chrono::high_resolution_clock::now();
+        duration = end - start;
+        std::cout << "Update Took: " << duration.count() << "ms" << std::endl;
+
+        start = std::chrono::high_resolution_clock::now();
+
         Physics(dt);
+
+        end = std::chrono::high_resolution_clock::now();
+        duration = end - start;
+        //std::cout << "Physics Took: " << duration.count() << "ms" << std::endl;
+
+        start = std::chrono::high_resolution_clock::now();
+
         Render(dt);
+
+        end = std::chrono::high_resolution_clock::now();
+        duration = end - start;
+        std::cout << "Render Took: " << duration.count() << "ms" << std::endl;
+
+
 
 
 
@@ -198,6 +279,12 @@ void Engine::run()
         {
             SDL_Delay((uint32_t)(TARGET_FRAME_TIME - frameTicks));
         }
+
+        end = std::chrono::high_resolution_clock::now();
+        duration = end - framestart;
+		std::cout << "FPS: " << 1000.0f / duration.count() << " | Total Frame Took: " << duration.count() << "ms" << '\n' << std::endl;
+		//std::cout << "Total Frame Took: " << duration.count() << "ms" << '\n' << std::endl;
+
     }
 
     _data->renderer.Shutdown();

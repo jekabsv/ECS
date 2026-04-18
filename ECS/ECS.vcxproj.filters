@@ -120,6 +120,9 @@
     <ClCompile Include="Level1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Boids.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECS.h">
@@ -196,6 +199,9 @@
     </ClInclude>
     <ClInclude Include="Level1.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Boids.h">
+      <Filter>Header Files\Internals</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

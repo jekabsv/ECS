@@ -143,23 +143,10 @@ void Level1::Init()
                 if (!sprite.render)
                     continue;
 
-
+                sprite.material.ClearUniforms();
 
 				_data->renderer.SpriteDraw(sprite.material, sprite.TextureSRect, transform.position, transform.scale,
                     transform.rotation);
-
-                /*SDL_FRect RectToDraw = sprite.rect;
-                RectToDraw.h *= transform.scale.y;
-                RectToDraw.w *= transform.scale.x;
-                RectToDraw.x *= transform.scale.x;
-                RectToDraw.y *= transform.scale.y;
-                RectToDraw.x += transform.position.x;
-                RectToDraw.y += transform.position.y;
-
-                if (!sprite.TextureRect.h || !sprite.TextureRect.w)
-                    _data->renderer.Render(_data->assets.GetTexture(sprite.TextureName), nullptr, &RectToDraw);
-                else
-                    _data->renderer.Render(_data->assets.GetTexture(sprite.TextureName), &sprite.TextureRect, &RectToDraw);*/
             }
         },
         ECS::SystemGroup::Render);
@@ -204,7 +191,9 @@ void Level1::Init()
                 float aw = col.hw * 2.0f * transform.scale.x;
                 float ah = col.hh * 2.0f * transform.scale.y;
 
-                _data->renderer.DrawMesh(MeshInstance("unit_quad"), MaterialInstance("mat"), { ax + aw/2.f, ay + ah/2.f }, { aw, ah }, 0.0f, { 1.f, 0.f, 0.f, 0.3f });
+				MeshInstance meshInst("unit_quad");
+				MaterialInstance matInst("mat");
+                _data->renderer.DrawMesh(meshInst, matInst, { ax + aw/2.f, ay + ah/2.f }, { aw, ah }, 0.0f, { 1.f, 0.f, 0.f, 0.3f });
             }
         },
         ECS::SystemGroup::Render);
@@ -229,9 +218,6 @@ void Level1::Init()
 
 void Level1::Update(float dt)
 {
-
-    
-
     if (ui.IsClicked(back))
         _data->state.RemoveState();
 

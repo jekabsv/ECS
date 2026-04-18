@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClCompile Include="AnimationSystem.cpp" />
     <ClCompile Include="AssetManager.cpp" />
+    <ClCompile Include="Boids.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ECS.cpp" />
     <ClCompile Include="Level1.cpp" />
@@ -159,6 +160,7 @@
     <ClInclude Include="AnimationSystem.h" />
     <ClInclude Include="AssetManager.h" />
     <ClInclude Include="Blackboard.h" />
+    <ClInclude Include="Boids.h" />
     <ClInclude Include="BoxCollider.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ECS.h" />
