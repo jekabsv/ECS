@@ -21,6 +21,10 @@ public:
 		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f, 
 		SDL_FColor colorTint = {1.0f, 1.0f, 1.0f, 1.0f});
 
+	int DrawMesh(StringId mesh, MaterialInstance& material,
+		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f,
+		SDL_FColor colorTint = { 1.0f, 1.0f, 1.0f, 1.0f });
+
 
 	int SpriteDraw(MaterialInstance& material, SDL_FRect sRect,
 		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f,
@@ -31,19 +35,6 @@ public:
 	TextureBase CreateTexture(SDL_Surface* surface);
 
 private:
-	/*struct InstanceObjData {};
-	struct InstanceData {
-		StringId mesh;
-		StringId material;
-
-		std::vector<InstanceObjData> objData;
-
-		StringId textures[8];
-	};
-
-	std::vector<InstanceData> istances = {};*/
-
-
 
 	uint32_t _screenWidth, _screenHeight;
 

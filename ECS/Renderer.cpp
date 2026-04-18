@@ -238,10 +238,15 @@ int Renderer::DrawMesh(MeshInstance& mesh, MaterialInstance& material, Vec2 Posi
     uint32_t numIndices = (uint32_t)(meshBase->size / sizeof(uint32_t));
     SDL_DrawGPUIndexedPrimitives(currentPass, numIndices, 1, 0, 0, 0);
 
-
-
     return 0;
 }
+
+int Renderer::DrawMesh(StringId mesh, MaterialInstance& material, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
+{
+    MeshInstance _mesh(mesh);
+    return DrawMesh(_mesh, material, Position, Scale, Rotation, colorTint);
+}
+
 
 int Renderer::SpriteDraw(MaterialInstance& material, SDL_FRect sRect, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
 {

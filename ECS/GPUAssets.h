@@ -4,6 +4,11 @@
 #include <string>
 
 
+#define MAX_TEXTURES 8
+#define MAX_VERT_UNIFORM_SIZE 128
+#define MAX_FRAG_UNIFORM_SIZE 128
+
+
 enum ShaderStage
 {
 	VERTEX,
@@ -19,6 +24,7 @@ enum class BlendMode
 	Additive, 
 	Multiply 
 };
+
 
 struct Matrix4
 {
@@ -45,6 +51,7 @@ struct Matrix4
 		return result;
 	}
 };
+
 
 struct EngineData {
 	Matrix4 projection;
@@ -97,7 +104,6 @@ struct Shader
 	const char* entryPoint= "main";
 };
 
-
 struct TextureBase
 {
 	SDL_GPUTexture* texture = nullptr;
@@ -112,7 +118,6 @@ struct TextureBase
 		if (sampler) SDL_ReleaseGPUSampler(device, sampler);
 	}
 };
-
 
 struct MaterialBase
 {
@@ -191,8 +196,6 @@ struct MaterialBase
 };
 
 
-
-
 struct MeshInstance 
 {
 	MeshInstance() = default;
@@ -210,10 +213,10 @@ struct MaterialInstance
 	StringId materialName = "";
 	MaterialBase* materialBase = nullptr;
 
-	uint8_t uniformVertBufferData[128] = { 0 };
+	uint8_t uniformVertBufferData[MAX_VERT_UNIFORM_SIZE] = { 0 };
 	uint32_t vertBufferSize = 0;
 
-	uint8_t uniformFragBufferData[128] = { 0 };
+	uint8_t uniformFragBufferData[MAX_FRAG_UNIFORM_SIZE] = { 0 };
 	uint32_t fragBufferSize = 0;
 
 	StringId textures[8] = { "" };
@@ -256,4 +259,44 @@ struct MaterialInstance
 		vertBufferSize += size;
 		return true;
 	}
+};
+
+
+
+
+
+
+struct DrawCall 
+{
+	StringId meshName;
+	StringId materialName;
+
+	StringId textures[MAX_TEXTURES];
+	uint32_t textureCount;
+
+	ObjectData objData;
+
+	uint8_t uniformVert[MAX_VERT_UNIFORM_SIZE];
+	uint32_t vertSize;
+
+	uint8_t uniformFrag[MAX_FRAG_UNIFORM_SIZE];
+	uint32_t fragSize;
+};
+
+struct InstanceData 
+{
+	ObjectData objData;
+	uint8_t uniformVert[MAX_VERT_UNIFORM_SIZE];
+	uint8_t uniformFrag[MAX_FRAG_UNIFORM_SIZE];
+};
+
+struct RenderBatch 
+{
+	StringId meshName;
+	StringId materialName;
+
+	StringId textures[MAX_TEXTURES];
+	uint32_t textureCount;
+
+	std::vector<InstanceData> instances;
 };
