@@ -162,7 +162,7 @@ int Renderer::Present()
 }
 
 
-int Renderer::SubmitMesh(MeshInstance& mesh, MaterialInstance& material, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
+int Renderer::SubmitMesh(MeshInstance& mesh, MaterialInstance& material, Vec3 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
 {
     if (!material.materialBase) {
         material.materialBase = _assets->GetMaterial(material.materialName);
@@ -186,7 +186,7 @@ int Renderer::SubmitMesh(MeshInstance& mesh, MaterialInstance& material, Vec2 Po
     return 0;
 }
 
-int Renderer::SubmitMesh(MeshInstance& mesh, MaterialInstance&& material, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
+int Renderer::SubmitMesh(MeshInstance& mesh, MaterialInstance&& material, Vec3 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
 {
     if (!material.materialBase) {
         material.materialBase = _assets->GetMaterial(material.materialName);
@@ -745,7 +745,7 @@ SDL_GPUGraphicsPipeline* Renderer::GetOrCreatePipeline(MaterialBase* base)
     vertexBufferDesc.slot = 0;
     vertexBufferDesc.input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
     vertexBufferDesc.instance_step_rate = 0;
-    vertexBufferDesc.pitch = sizeof(SDL_Vertex);
+    vertexBufferDesc.pitch = sizeof(Vertex);
 
     pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
     pipelineInfo.vertex_input_state.vertex_buffer_descriptions = &vertexBufferDesc;
@@ -788,11 +788,12 @@ void Renderer::BindMaterialTextures(MaterialInstance material)
 void Renderer::CreateUnitQuad()
 {
     MeshVertices vertices = {
-        { {-0.5f, -0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f} },
-        {  {0.5f, -0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 0.0f} },
-        {  {0.5f,  0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f} },
-        { {-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 1.0f} }
+        { -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
+        { 0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f },
+        { 0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },
+        { -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f }
     };
+
     MeshIndices indices = { 0, 1, 2,   2, 3, 0 };
     _unitQuadMesh.name = StringId("unit_quad");
     _unitQuadMesh.meshVertices = vertices;
@@ -816,7 +817,7 @@ void Renderer::UploadMesh(MeshBase* mesh)
     if (!mesh || mesh->isLoaded)
         return;
 
-    size_t vertSize = mesh->meshVertices.size() * sizeof(SDL_Vertex);
+    size_t vertSize = mesh->meshVertices.size() * sizeof(Vertex);
     size_t indexSize = mesh->meshIndices.size() * sizeof(uint32_t);
     size_t totalSize = vertSize + indexSize;
 
@@ -861,7 +862,7 @@ void Renderer::UploadMesh(MeshBase* mesh)
 
 }
 
-ObjectData Renderer::BuildObjectData(Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
+ObjectData Renderer::BuildObjectData(Vec3 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
 {
     ObjectData objData;
     float cosR = cosf(Rotation), sinR = sinf(Rotation);
@@ -878,5 +879,6 @@ ObjectData Renderer::BuildObjectData(Vec2 Position, Vec2 Scale, float Rotation, 
     objData.colorTint[1] = colorTint.g;
     objData.colorTint[2] = colorTint.b;
     objData.colorTint[3] = colorTint.a;
+    objData.modelMatrix.m[14] = Position.z;
     return objData;
 }

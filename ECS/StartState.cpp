@@ -81,13 +81,13 @@ void StartState::Init()
     //Materials
     MaterialBase spriteMaterial("vertSprite", "fragSprite");
     MaterialBase::MakeSpriteTransparent(spriteMaterial);
-    MaterialBase::SetSDL_VertexAttr(spriteMaterial);
+    MaterialBase::SetVertexAttr(spriteMaterial);
 
     _data->assets.AddMaterial(StringId("sprite_mat"), spriteMaterial);
 
     MaterialBase mat("vert", "frag");
     MaterialBase::MakeSpriteTransparent(mat);
-    MaterialBase::SetSDL_VertexAttr(mat);
+    MaterialBase::SetVertexAttr(mat);
 
     _data->assets.AddMaterial(StringId("mat"), mat);
     
@@ -95,9 +95,9 @@ void StartState::Init()
 
     //Meshes
     MeshVertices verts = {
-    { { 0.0f, -100.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.5f, 0.0f} },
-    { { 100.0f, 100.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f} },
-    { {-100.0f, 100.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 1.0f} }
+    {  0.0f, -100.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.5f, 0.0f} ,
+    {  100.0f, 100.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f} ,
+    { -100.0f, 100.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f} 
     };
     MeshIndices indices = { 0, 1, 2 };
 

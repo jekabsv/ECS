@@ -145,7 +145,7 @@ void Level1::Init()
 
                 sprite.material.ClearUniforms();
 
-				_data->renderer.SpriteDraw(sprite.material, sprite.TextureSRect, transform.position, transform.scale,
+                _data->renderer.SpriteDraw(sprite.material, sprite.TextureSRect, { transform.position.x, transform.position.y }, transform.scale,
                     transform.rotation);
             }
         },
@@ -165,7 +165,7 @@ void Level1::Init()
                 if (!meshC.render)
                     continue;
 
-				_data->renderer.DrawMesh(meshC.MeshName, meshC.Material, transform.position, transform.scale);
+                _data->renderer.DrawMesh(meshC.MeshName, meshC.Material, { transform.position.x, transform.position.y }, transform.scale);
 
                 const MeshBase* mesh = _data->assets.GetMesh(meshC.MeshName.meshName);
                 if (!mesh)

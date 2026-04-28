@@ -17,11 +17,11 @@ public:
 	int Present();
 
 	int SubmitMesh(MeshInstance& mesh, MaterialInstance& material,
-		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f,
+		Vec3 Position = { 0.0f, 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f,
 		SDL_FColor colorTint = { 1.0f, 1.0f, 1.0f, 1.0f });
 
 	int SubmitMesh(MeshInstance& mesh, MaterialInstance&& material,
-		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f,
+		Vec3 Position = { 0.0f, 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f,
 		SDL_FColor colorTint = { 1.0f, 1.0f, 1.0f, 1.0f });
 
 	int DrawMesh(MeshInstance& mesh, MaterialInstance& material,
@@ -100,7 +100,7 @@ private:
 	template<typename T>
 	void PushConstants(const T& data, uint32_t offsetVert = 0, uint32_t offsetFrag = 0);
 
-	ObjectData BuildObjectData(Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint);
+	ObjectData BuildObjectData(Vec3 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint);
 };
 
 template<typename T>

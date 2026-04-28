@@ -7,10 +7,10 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_render.h>
 
-struct SDL_Vertex;
 struct SDL_Texture;
 struct SDL_FRect;
 struct SDL_Renderer;
+struct Vertex;
 
 struct Vec2
 {
@@ -22,9 +22,9 @@ struct Vec3
     float x, y, z;
 };
 
-using Triangle = std::array<SDL_Vertex, 3>;
+using Triangle = std::array<Vertex, 3>;
 
-using MeshVertices = std::vector<SDL_Vertex>;
+using MeshVertices = std::vector<Vertex>;
 using MeshIndices = std::vector<uint32_t>;
 
 struct StringId

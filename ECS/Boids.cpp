@@ -32,9 +32,9 @@ void Boids::Init()
     const float H = (float)_data->GAME_HEIGHT;
 
     MeshVertices boidMesh = {
-        { {  8.0f,  0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
-        { { -5.0f, -4.0f }, { 0.5f, 0.6f, 1.0f, 1.0f } },
-        { { -5.0f,  4.0f }, { 0.5f, 0.6f, 1.0f, 1.0f } },
+        {   8.0f,  0.0f,  1.0f, 1.0f, 1.0f, 1.0f  },
+        {  -5.0f, -4.0f,  0.5f, 0.6f, 1.0f, 1.0f  },
+        {  -5.0f,  4.0f,  0.5f, 0.6f, 1.0f, 1.0f  },
     };
 	MeshIndices boidIndices = { 0, 1, 2 };
 

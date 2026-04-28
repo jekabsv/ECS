@@ -27,6 +27,14 @@ enum class BlendMode
 };
 
 
+struct Vertex
+{
+	float x, y;
+	float r, g, b, a;
+	float u, v;
+};
+
+
 struct Matrix4
 {
 	float m[16];
@@ -149,12 +157,12 @@ struct MaterialBase
 	bool depthTestEnabled = false;
 	bool depthWriteEnabled = false;
 
-	static void SetSDL_VertexAttr(MaterialBase& mat)
+	static void SetVertexAttr(MaterialBase& mat)
 	{
 		mat.attributes = {
-		{ 0, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,  offsetof(SDL_Vertex, position)  },
-		{ 1, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4,  offsetof(SDL_Vertex, color)     },
-		{ 2, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,  offsetof(SDL_Vertex, tex_coord) },
+		{ 0, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,  offsetof(Vertex, x)  },
+		{ 1, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4,  offsetof(Vertex, r)     },
+		{ 2, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,  offsetof(Vertex, u) },
 		};
 	}
 	static void ApplySpriteDefaults(MaterialBase& mat)
@@ -170,15 +178,15 @@ struct MaterialBase
 	{
 		ApplySpriteDefaults(mat);
 		mat.blendMode = BlendMode::Alpha;
-		mat.depthTestEnabled = false;
+		mat.depthTestEnabled = true;
 		mat.depthWriteEnabled = false;
 	}
 	static void MakeOpaque(MaterialBase& mat)
 	{
 		ApplySpriteDefaults(mat);
 		mat.blendMode = BlendMode::None;
-		mat.depthTestEnabled = false;
-		mat.depthWriteEnabled = false;
+		mat.depthTestEnabled = true;
+		mat.depthWriteEnabled = true;
 	}
 	static void MakeAdditive(MaterialBase& mat)
 	{
