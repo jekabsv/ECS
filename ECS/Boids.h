@@ -12,10 +12,10 @@ public:
 private:
     struct BoidComponent
     {
-        float angle = 0.0f;
+        int Perception = 0;
     };
 
-    static constexpr int COUNT = 1000;
+    static constexpr int COUNT = 20000;
     static constexpr float PERCEPTION = 80.0f;
     static constexpr float SEPARATION_DIST = 20.0f;
 

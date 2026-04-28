@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include <iostream>
-
+#include <numeric>
+#include <algorithm>
 
 //Vertex shader has _viewProjMatrix at slot 0
 //Vertex shader has ObjectData at slot 1
@@ -48,6 +49,13 @@ int Renderer::Shutdown()
     SDL_ReleaseGPUTransferBuffer(_device, tBuf);
     SDL_ReleaseGPUBuffer(_device, _unitQuadMesh.vertexBuffer);
     SDL_ReleaseGPUBuffer(_device, _unitQuadMesh.indexBuffer);
+
+    if (_instanceBuffer) 
+        SDL_ReleaseGPUBuffer(_device, _instanceBuffer);
+    if (_instanceTransferBuffer)
+        SDL_ReleaseGPUTransferBuffer(_device, _instanceTransferBuffer);
+
+
     SDL_ReleaseWindowFromGPUDevice(_device, _window);
 
     return 0;
@@ -116,6 +124,9 @@ int Renderer::StartRenderPass()
     _engineData.time = SDL_GetTicks() / 1000.0f;
     SDL_PushGPUVertexUniformData(currentCmd, 0, &_engineData, sizeof(EngineData));
 
+
+    drawCalls.reserve(10000);
+
     return 0;
 }
 
@@ -124,10 +135,17 @@ int Renderer::EndRenderPass()
     if (!currentPass)
         return -1;
 
+    BuildBatches();
+    Flush();
+
+    drawCalls.clear();
+    batches.clear();
+
     SDL_EndGPURenderPass(currentPass);
     currentPass = nullptr;
 
     return 0;
+
 }
 
 int Renderer::Present()
@@ -139,6 +157,59 @@ int Renderer::Present()
 
     currentCmd = nullptr;
     currentSwapchainTexture = nullptr;
+
+    return 0;
+}
+
+
+int Renderer::SubmitMesh(MeshInstance& mesh, MaterialInstance& material, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
+{
+    if (!material.materialBase) {
+        material.materialBase = _assets->GetMaterial(material.materialName);
+        if (!material.materialBase) {
+            //SDL_Log("SubmitMesh ERROR: Material '%s' not found in AssetManager.", material.materialName.id);
+            return -1;
+        }
+    }
+
+    if (!mesh.meshBase) {
+        mesh.meshBase = _assets->GetMesh(mesh.meshName);
+        if (!mesh.meshBase) {
+            //SDL_Log("SubmitMesh ERROR: Mesh '%s' not found in AssetManager.", mesh.meshName.id);
+            return -1;
+        }
+    }
+
+    drawCalls.emplace_back(BuildObjectData(Position, Scale, Rotation, colorTint), &material, mesh);
+
+    //SDL_Log("SubmitMesh: Queued MeshID: %llu with MaterialID: %llu. Total queue: %zu", (unsigned long long)mesh.meshName.id,(unsigned long long)material.materialName.id,drawCalls.size());
+    return 0;
+}
+
+int Renderer::SubmitMesh(MeshInstance& mesh, MaterialInstance&& material, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
+{
+    if (!material.materialBase) {
+        material.materialBase = _assets->GetMaterial(material.materialName);
+        if (!material.materialBase) {
+            //SDL_Log("SubmitMesh (Move) ERROR: Material '%llu' not found in AssetManager.", material.materialName.id);
+            return -1;
+        }
+    }
+
+    if (!mesh.meshBase) {
+        mesh.meshBase = _assets->GetMesh(mesh.meshName);
+        if (!mesh.meshBase) {
+            //SDL_Log("SubmitMesh (Move) ERROR: Mesh '%llu' not found in AssetManager.", mesh.meshName.id);
+            return -1;
+        }
+    }
+
+    ObjectData objData = BuildObjectData(Position, Scale, Rotation, colorTint);
+
+    DrawCall call(objData, std::move(material), mesh);
+    drawCalls.push_back(call);
+
+    //drawCalls.emplace_back(call(objData, std::move(material), mesh));
 
     return 0;
 }
@@ -207,7 +278,7 @@ int Renderer::DrawMesh(MeshInstance& mesh, MaterialInstance& material, Vec2 Posi
         SDL_PushGPUVertexUniformData(
             currentCmd,
             2,
-            material.uniformVertBufferData,
+            material.uniformVertBufferData.data(),
             material.vertBufferSize
         );
     }
@@ -216,7 +287,7 @@ int Renderer::DrawMesh(MeshInstance& mesh, MaterialInstance& material, Vec2 Posi
         SDL_PushGPUFragmentUniformData(
             currentCmd,
             0,
-            material.uniformFragBufferData,
+            material.uniformFragBufferData.data(),
             material.fragBufferSize
         );
     }
@@ -246,7 +317,6 @@ int Renderer::DrawMesh(StringId mesh, MaterialInstance& material, Vec2 Position,
     MeshInstance _mesh(mesh);
     return DrawMesh(_mesh, material, Position, Scale, Rotation, colorTint);
 }
-
 
 int Renderer::SpriteDraw(MaterialInstance& material, SDL_FRect sRect, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
 {
@@ -349,6 +419,228 @@ TextureBase Renderer::CreateTexture(SDL_Surface* surface)
     SDL_DestroySurface(converted);
     return result;
 
+}
+
+int Renderer::ReserveInstanceBuffer(size_t requiredBytes)
+{
+    if (_instanceBufferCapacity >= requiredBytes)
+        return 0;
+
+    SDL_WaitForGPUIdle(_device);
+
+    if (_instanceBuffer) {
+        SDL_ReleaseGPUBuffer(_device, _instanceBuffer); 
+        _instanceBuffer = nullptr;
+    }
+    if (_instanceTransferBuffer) {
+        SDL_ReleaseGPUTransferBuffer(_device, _instanceTransferBuffer);
+        _instanceTransferBuffer = nullptr;
+    }
+
+    size_t newSize = _instanceBufferCapacity == 0 ? 64 * 1024 : _instanceBufferCapacity;
+    while (newSize < requiredBytes) newSize *= 2;
+
+    SDL_GPUBufferCreateInfo bufInfo = {};
+    bufInfo.usage = SDL_GPU_BUFFERUSAGE_GRAPHICS_STORAGE_READ;
+    bufInfo.size = (uint32_t)newSize;
+    _instanceBuffer = SDL_CreateGPUBuffer(_device, &bufInfo);
+    if (!_instanceBuffer) {
+        SDL_Log("Failed to create instance storage buffer: %s", SDL_GetError());
+        return -1;
+    }
+
+    SDL_GPUTransferBufferCreateInfo tbi = {};
+    tbi.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+    tbi.size = (uint32_t)newSize;
+    _instanceTransferBuffer = SDL_CreateGPUTransferBuffer(_device, &tbi);
+    if (!_instanceTransferBuffer) {
+        SDL_Log("Failed to create instance transfer buffer: %s", SDL_GetError());
+        return -1;
+    }
+
+    _instanceBufferCapacity = newSize;
+    return 0;
+}
+
+void Renderer::BuildBatches()
+{
+    batches.clear();
+    if (drawCalls.empty()) {
+        SDL_Log("Instancing: BuildBatches skipped (drawCalls is empty)");
+        return;
+    }
+
+    size_t totalObjects = drawCalls.size();
+
+    // Verification and asset loading loop
+    for (uint32_t i = 0; i < (uint32_t)drawCalls.size(); i++)
+    {
+        DrawCall& dc = drawCalls[i];
+        MaterialInstance* mat = dc.GetMaterial();
+
+        if (!mat->materialBase)
+            mat->materialBase = _assets->GetMaterial(mat->materialName);
+
+        if (!dc.mesh.meshBase)
+            dc.mesh.meshBase = _assets->GetMesh(dc.mesh.meshName);
+
+        if (dc.mesh.meshBase && !dc.mesh.meshBase->isLoaded)
+            UploadMesh(dc.mesh.meshBase);
+    }
+
+    // Sort draw calls by the BatchKey (Pipeline -> Mesh -> Texture)
+    std::sort(drawCalls.begin(), drawCalls.end(),
+        [&](const DrawCall& a, const DrawCall& b) {
+            return BatchKey(a) < BatchKey(b);
+        });
+
+    auto texturesMatch = [&](const MaterialInstance* a, const MaterialInstance* b) -> bool {
+        if (a->textureCount != b->textureCount) return false;
+        for (uint32_t t = 0; t < a->textureCount; t++)
+            if (a->textures[t].id != b->textures[t].id) return false;
+        return true;
+        };
+
+    uint32_t instanceOffset = 0;
+    for (uint32_t i = 0; i < (uint32_t)drawCalls.size(); i++)
+    {
+        DrawCall& dc = drawCalls[i];
+        MaterialInstance* mat = dc.GetMaterial();
+
+        bool needNew = batches.empty()
+            || (drawCalls[batches.back().drawCallIndices[0]].GetMaterial()->materialBase != mat->materialBase)
+            || (drawCalls[batches.back().drawCallIndices[0]].mesh.meshBase != dc.mesh.meshBase)
+            || !texturesMatch(drawCalls[batches.back().drawCallIndices[0]].GetMaterial(), mat);
+
+        if (needNew)
+        {
+            RenderBatch newBatch;
+            newBatch.instanceOffset = instanceOffset;
+            batches.push_back(std::move(newBatch));
+        }
+
+        batches.back().drawCallIndices.push_back(i);
+        instanceOffset++;
+    }
+
+    //SDL_Log("Instancing: Batched %llu objects into %llu batches (Avg: %.2f objs/batch)", (unsigned long long)totalObjects,(unsigned long long)batches.size(),(float)totalObjects / batches.size());
+}
+
+void Renderer::Flush()
+{
+    if (batches.empty()) return;
+
+    const size_t structSize = sizeof(InstanceGPUData);
+    const size_t totalBytes = drawCalls.size() * structSize;
+
+    if (ReserveInstanceBuffer(totalBytes) != 0) {
+        SDL_Log("Instancing ERROR: Could not reserve instance buffer for %llu bytes", (unsigned long long)totalBytes);
+        return;
+    }
+
+    uint8_t* dst = (uint8_t*)SDL_MapGPUTransferBuffer(_device, _instanceTransferBuffer, true);
+    if (!dst) {
+        SDL_Log("Instancing ERROR: Failed to map Transfer Buffer");
+        return;
+    }
+
+    // Copying data
+    for (const RenderBatch& b : batches)
+    {
+        for (uint32_t dcIdx : b.drawCallIndices)
+        {
+            DrawCall& dc = drawCalls[dcIdx];
+            MaterialInstance* mat = dc.GetMaterial();
+
+            memcpy(dst, &dc.data.modelMatrix, sizeof(Matrix4)); dst += sizeof(Matrix4);
+            memcpy(dst, dc.data.colorTint, sizeof(float) * 4); dst += sizeof(float) * 4;
+            memcpy(dst, mat->uniformVertBufferData.data(), MAX_VERT_UNIFORM_SIZE); dst += MAX_VERT_UNIFORM_SIZE;
+            memcpy(dst, mat->uniformFragBufferData.data(), MAX_FRAG_UNIFORM_SIZE); dst += MAX_FRAG_UNIFORM_SIZE;
+        }
+    }
+
+    SDL_UnmapGPUTransferBuffer(_device, _instanceTransferBuffer);
+
+    // Upload to GPU
+    SDL_GPUCommandBuffer* copyCmd = SDL_AcquireGPUCommandBuffer(_device);
+    SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(copyCmd);
+    SDL_GPUTransferBufferLocation src = { _instanceTransferBuffer, 0 };
+    SDL_GPUBufferRegion dst2 = { _instanceBuffer, 0, (uint32_t)totalBytes };
+    SDL_UploadToGPUBuffer(copyPass, &src, &dst2, false);
+    SDL_EndGPUCopyPass(copyPass);
+    SDL_SubmitGPUCommandBuffer(copyCmd);
+
+    // Safety sync: In a production renderer you'd use semaphores, but for debugging this is fine
+    SDL_WaitForGPUIdle(_device);
+
+    //SDL_Log("Instancing: Buffers uploaded. Starting Render Pass execution...");
+
+    MaterialBase* lastMaterial = nullptr;
+    MeshBase* lastMesh = nullptr;
+
+    for (size_t bIdx = 0; bIdx < batches.size(); bIdx++)
+    {
+        const RenderBatch& b = batches[bIdx];
+        DrawCall& first = drawCalls[b.drawCallIndices[0]];
+        MaterialInstance* mat = first.GetMaterial();
+        MeshBase* mesh = first.mesh.meshBase;
+
+        if (!mat->materialBase || !mesh) continue;
+
+        // Pipeline Binding
+        if (mat->materialBase != lastMaterial)
+        {
+            SDL_GPUGraphicsPipeline* pipeline = GetOrCreatePipeline(mat->materialBase);
+            if (!pipeline) {
+                SDL_Log("Instancing ERROR: Pipeline creation failed for batch %llu", (unsigned long long)bIdx);
+                continue;
+            }
+            SDL_BindGPUGraphicsPipeline(currentPass, pipeline);
+            lastMaterial = mat->materialBase;
+        }
+
+        // Mesh Binding
+        if (mesh != lastMesh)
+        {
+            SDL_GPUBufferBinding vb = { mesh->vertexBuffer, 0 };
+            SDL_BindGPUVertexBuffers(currentPass, 0, &vb, 1);
+            SDL_GPUBufferBinding ib = { mesh->indexBuffer, 0 };
+            SDL_BindGPUIndexBuffer(currentPass, &ib, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+            lastMesh = mesh;
+        }
+
+        // Instance Data Binding (Slot 0 in your vertex shader)
+        SDL_BindGPUVertexStorageBuffers(currentPass, 0, &_instanceBuffer, 1);
+
+        // Texture Binding
+        for (uint32_t t = 0; t < mat->textureCount; ++t)
+        {
+            TextureBase* tex = mat->texturebases[t];
+            if (tex && tex->texture && tex->sampler)
+            {
+                SDL_GPUTextureSamplerBinding tb = { tex->texture, tex->sampler };
+                SDL_BindGPUFragmentSamplers(currentPass, t, &tb, 1);
+            }
+        }
+
+        uint32_t numIndices = (uint32_t)(mesh->size / sizeof(uint32_t));
+        uint32_t instanceCount = (uint32_t)b.drawCallIndices.size();
+
+        // The actual draw
+        SDL_DrawGPUIndexedPrimitives(currentPass, numIndices, instanceCount, 0, 0, b.instanceOffset);
+    }
+
+    //SDL_Log("Instancing: Flush complete.");
+}
+
+uint64_t Renderer::BatchKey(const DrawCall& dc) const
+{
+    const MaterialInstance* mat = dc.GetMaterial();
+    uint64_t pipelineId = (uint64_t)mat->materialName.id;
+    uint64_t meshId = (uint64_t)dc.mesh.meshName.id;
+    uint64_t tex0Id = mat->textureCount > 0 ? (uint64_t)mat->textures[0].id : 0;
+
+    return (pipelineId << 43) ^ (meshId << 22) ^ tex0Id;
 }
 
 int Renderer::ReserveTransferBuffer(size_t size)
@@ -567,4 +859,24 @@ void Renderer::UploadMesh(MeshBase* mesh)
     mesh->size = indexSize;
     mesh->isLoaded = true;
 
+}
+
+ObjectData Renderer::BuildObjectData(Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
+{
+    ObjectData objData;
+    float cosR = cosf(Rotation), sinR = sinf(Rotation);
+    objData.modelMatrix = { 0 };
+    objData.modelMatrix.m[0] = cosR * Scale.x;
+    objData.modelMatrix.m[1] = sinR * Scale.x;
+    objData.modelMatrix.m[4] = -sinR * Scale.y;
+    objData.modelMatrix.m[5] = cosR * Scale.y;
+    objData.modelMatrix.m[10] = 1.0f;
+    objData.modelMatrix.m[12] = Position.x;
+    objData.modelMatrix.m[13] = Position.y;
+    objData.modelMatrix.m[15] = 1.0f;
+    objData.colorTint[0] = colorTint.r;
+    objData.colorTint[1] = colorTint.g;
+    objData.colorTint[2] = colorTint.b;
+    objData.colorTint[3] = colorTint.a;
+    return objData;
 }

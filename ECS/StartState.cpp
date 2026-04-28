@@ -49,16 +49,16 @@ void StartState::Init()
 
     //Shaders
     _data->assets.LoadShader(StringId("vertSprite"), "../ECS/vertSprite.spv", _data->device, ShaderStage::VERTEX,
-        /*samplers*/0, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/3);
+        /*samplers*/0, /*storageTex*/0, /*storageBuf*/0 , /*uniformBufs*/3);
 
     _data->assets.LoadShader(StringId("fragSprite"), "../ECS/fragSprite.spv", _data->device, ShaderStage::FRAGMENT,
         /*samplers*/1, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/0);
 
 
-    _data->assets.LoadShader(StringId("vert"), "../ECS/vert.spv", _data->device, ShaderStage::VERTEX,
-        /*samplers*/0, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/2);
+    _data->assets.LoadShader(StringId("vert"), "../ECS/vertInstancing.spv", _data->device, ShaderStage::VERTEX,
+        /*samplers*/0, /*storageTex*/0, /*storageBuf*/1, /*uniformBufs*/1);
 
-    _data->assets.LoadShader(StringId("frag"), "../ECS/frag.spv", _data->device, ShaderStage::FRAGMENT,
+    _data->assets.LoadShader(StringId("frag"), "../ECS/fragInstancing.spv", _data->device, ShaderStage::FRAGMENT,
         /*samplers*/0, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/0);
 
 

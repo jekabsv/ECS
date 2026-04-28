@@ -185,10 +185,12 @@
     <ClInclude Include="Utility.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="basic.frag" />
-    <None Include="basic.vert" />
+    <None Include="basicInstancing.frag" />
+    <None Include="basicInstancing.vert" />
     <None Include="basicSprite.frag" />
     <None Include="basicSprite.vert" />
+    <None Include="basic.frag" />
+    <None Include="basic.vert" />
     <None Include="SpatialIndex.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

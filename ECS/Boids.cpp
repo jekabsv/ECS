@@ -8,6 +8,8 @@
 #include <chrono>
 #include <iostream>
 
+static double TryGetTime;
+
 static float randf(float lo, float hi)
 {
     return lo + (float)(rand() % 10000) / 10000.0f * (hi - lo);
@@ -36,6 +38,7 @@ void Boids::Init()
     };
 	MeshIndices boidIndices = { 0, 1, 2 };
 
+
     _data->assets.AddMesh("boid", boidMesh, boidIndices);
 
 
@@ -59,13 +62,14 @@ void Boids::Init()
 
         tr.rotation = angle;
 
-        BoxCollider bc(PERCEPTION, PERCEPTION, true);
+        BoxCollider bc(1, 1, true);
 
         ecs.Add<TransformComponent>(e, tr);
         ecs.Add<RigidBody>(e, rb);
         ecs.Add<BoxCollider>(e, bc);
         ecs.Add<MeshComponent>(e, MeshComponent("boid", "mat", true));
     }
+
 
 
     ecs.RegisterSystem<TransformComponent, RigidBody>(
@@ -84,7 +88,10 @@ void Boids::Init()
             auto entities = ctx.Slice<ECS::Entity>();
 
             std::vector<ECS::Entity> found;
-            found.reserve(64);
+            found.reserve(200);
+
+            
+
 
             for (std::size_t i = 0; i < entities.size(); i++)
             {
@@ -107,13 +114,20 @@ void Boids::Init()
 
                 for (ECS::Entity other : found)
                 {
-                    if (neighbors > 16)
-                        break;
                     if (other == entities[i])
                         continue;
 
+                    auto start = std::chrono::high_resolution_clock::now();
+                    
                     TransformComponent* otherTr = data->physics.GetWorld()->TryGet<TransformComponent>(other);
                     RigidBody* otherRb = data->physics.GetWorld()->TryGet<RigidBody>(other);
+
+                    auto end = std::chrono::high_resolution_clock::now();
+                    std::chrono::duration<double, std::milli> duration = end - start;
+
+                    TryGetTime += duration.count();
+
+
                     if (!otherTr || !otherRb)
                         continue;
 
@@ -126,6 +140,9 @@ void Boids::Init()
 
                     float distSq = dx * dx + dy * dy;
                     if (distSq > PERCEPTION * PERCEPTION) continue;
+
+                    if (neighbors > 16)
+                        break;
 
                     cohX += dx;
                     cohY += dy;
@@ -223,6 +240,8 @@ void Boids::Init()
         ECS::SystemGroup::Update);
 
 
+    
+
     ecs.RegisterSystem<TransformComponent, MeshComponent>(
         "RenderMesh",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
@@ -235,35 +254,18 @@ void Boids::Init()
 
             for (std::size_t i = 0; i < trs.size(); i++)
             {
-                if (!meshes[i].render) continue;
+                if (!meshes[i].render) 
+                    continue;
 
+                data->renderer.SubmitMesh(meshes[i].MeshName, meshes[i].Material, trs[i].position, trs[i].scale, trs[i].rotation, { 1.f, 1.f, 1.f, 1.f });
 
-				data->renderer.DrawMesh(meshes[i].MeshName, meshes[i].Material, trs[i].position, trs[i].scale, trs[i].rotation, { 1.f, 1.f, 1.f, 1.f });
-                /*const MeshEntry* mesh = data->assets.GetMesh(meshes[i].MeshName);
-                if (!mesh) continue;
-
-                float cosA = std::cos(trs[i].rotation);
-                float sinA = std::sin(trs[i].rotation);
-
-                std::vector<SDL_Vertex> verts = mesh->MeshVertices;
-                for (auto& v : verts)
-                {
-                    float rx = v.position.x * cosA - v.position.y * sinA;
-                    float ry = v.position.x * sinA + v.position.y * cosA;
-                    v.position.x = rx + trs[i].position.x;
-                    v.position.y = ry + trs[i].position.y;
-                }
-
-                SDL_RenderGeometry(data->SDLrenderer, nullptr,
-                    verts.data(), (int)verts.size(), nullptr, 0);*/
+				//data->renderer.DrawMesh(meshes[i].MeshName, meshes[i].Material, trs[i].position, trs[i].scale, trs[i].rotation, { 1.f, 1.f, 1.f, 1.f });
             }
 
             auto end = std::chrono::high_resolution_clock::now();
 
 
             std::chrono::duration<double, std::milli> duration = end - start;
-
-            //std::cout << "Render Pass Time: " << duration.count() << "ms" << std::endl;
         },
         ECS::SystemGroup::Render);
 
@@ -288,6 +290,12 @@ void Boids::Init()
 
 void Boids::Update(float dt)
 {
+
+
+    std::cout << "time wasted: " << TryGetTime << '\n';
+
+    TryGetTime = 0;
+
     if (ui.IsClicked(back))
         _data->state.RemoveState();
 

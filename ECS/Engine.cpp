@@ -112,7 +112,7 @@ void Engine::Update(float dt)
 
     end = std::chrono::high_resolution_clock::now();
     duration = end - start;
-    //std::cout << "SpatialBuild Took: " << duration.count() << "ms" << std::endl;
+    std::cout << "SpatialBuild Took: " << duration.count() << "ms" << std::endl;
 
     start = std::chrono::high_resolution_clock::now();
 
@@ -121,7 +121,7 @@ void Engine::Update(float dt)
 
     end = std::chrono::high_resolution_clock::now();
     duration = end - start;
-    //std::cout << "ECS updates Took: " << duration.count() << "ms" << std::endl;
+    std::cout << "ECS updates Took: " << duration.count() << "ms" << std::endl;
 
     start = std::chrono::high_resolution_clock::now();
 

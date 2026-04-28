@@ -2,6 +2,7 @@
 #include "Struct.h"
 #include <SDL3/SDL_gpu.h>
 #include <string>
+#include <optional>
 
 
 #define MAX_TEXTURES 8
@@ -59,7 +60,8 @@ struct EngineData {
 	float padding[3];
 };
 
-struct ObjectData {
+struct ObjectData 
+{
 	Matrix4 modelMatrix;
 	float colorTint[4];
 };
@@ -213,14 +215,15 @@ struct MaterialInstance
 	StringId materialName = "";
 	MaterialBase* materialBase = nullptr;
 
-	uint8_t uniformVertBufferData[MAX_VERT_UNIFORM_SIZE] = { 0 };
+	std::array<uint8_t, MAX_VERT_UNIFORM_SIZE> uniformVertBufferData{};
 	uint32_t vertBufferSize = 0;
 
-	uint8_t uniformFragBufferData[MAX_FRAG_UNIFORM_SIZE] = { 0 };
+	std::array<uint8_t, MAX_FRAG_UNIFORM_SIZE> uniformFragBufferData{};
 	uint32_t fragBufferSize = 0;
 
-	StringId textures[8] = { "" };
-	TextureBase *texturebases[8] = { nullptr };
+	std::array<StringId, MAX_TEXTURES> textures{};
+	std::array<TextureBase*, MAX_TEXTURES> texturebases{};
+
 	uint32_t textureCount = 0;
 
 	void ClearUniforms() {
@@ -229,7 +232,7 @@ struct MaterialInstance
 	}
 
 	void AddTexture(StringId texture) {
-		if (textureCount < 8) {
+		if (textureCount < MAX_TEXTURES) {
 			textures[textureCount++] = texture;
 		}
 	}
@@ -237,7 +240,7 @@ struct MaterialInstance
 	template<typename T>
 	bool AddFragData(const T& data) {
 		uint32_t size = sizeof(T);
-		if (fragBufferSize + size > 128) {
+		if (fragBufferSize + size > MAX_FRAG_UNIFORM_SIZE) {
 			// Buffer Overflow
 			return false;
 		}
@@ -250,7 +253,7 @@ struct MaterialInstance
 	template<typename T>
 	bool AddVertData(const T& data) {
 		uint32_t size = sizeof(T);
-		if (vertBufferSize + size > 128) {
+		if (vertBufferSize + size > MAX_VERT_UNIFORM_SIZE) {
 			// Buffer Overflow
 			return false;
 		}
@@ -262,41 +265,49 @@ struct MaterialInstance
 };
 
 
-
-
-
-
-struct DrawCall 
+struct DrawCall
 {
-	StringId meshName;
-	StringId materialName;
+	DrawCall(ObjectData _data, MaterialInstance* _material, MeshInstance _mesh)
+		: data(_data), materialPtr(_material), mesh(std::move(_mesh)) {
+	}
 
-	StringId textures[MAX_TEXTURES];
-	uint32_t textureCount;
+	DrawCall(ObjectData _data, MaterialInstance&& _material, MeshInstance _mesh)
+		: data(_data), materialOwned(std::move(_material)), materialPtr(nullptr), mesh(std::move(_mesh)) {
+	}
 
-	ObjectData objData;
+	const MaterialInstance* GetMaterial() const 
+	{
+		return materialPtr ? materialPtr : &materialOwned.value();
+	}
 
-	uint8_t uniformVert[MAX_VERT_UNIFORM_SIZE];
-	uint32_t vertSize;
+	MaterialInstance* GetMaterial()
+	{
+		return materialPtr ? materialPtr : &materialOwned.value();
+	}
 
-	uint8_t uniformFrag[MAX_FRAG_UNIFORM_SIZE];
-	uint32_t fragSize;
+	ObjectData data;
+	MeshInstance mesh;
+
+private:
+	MaterialInstance* materialPtr = nullptr;
+	std::optional<MaterialInstance> materialOwned;
 };
 
-struct InstanceData 
+struct InstanceGPUData
 {
-	ObjectData objData;
-	uint8_t uniformVert[MAX_VERT_UNIFORM_SIZE];
-	uint8_t uniformFrag[MAX_FRAG_UNIFORM_SIZE];
+	Matrix4 modelMatrix; // 64
+	float   colorTint[4]; // 16
+	uint8_t uniformVert[128]; // 128
+	uint8_t uniformFrag[128]; // 128
+	//336 bytes per instance
 };
 
 struct RenderBatch 
-{
-	StringId meshName;
-	StringId materialName;
-
-	StringId textures[MAX_TEXTURES];
-	uint32_t textureCount;
-
-	std::vector<InstanceData> instances;
+{	
+	uint32_t instanceOffset; // offset into the global instance buffer
+	std::vector<uint32_t> drawCallIndices;
+	//drawCallIndices store index into DrawCall array of instances
+	//as all instances have the same texture count and textures itself, 
+	//for textures simply access first instance
+	//Similarly the same can be said about meshName,materialName, meshBase and materialBase;
 };
