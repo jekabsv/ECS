@@ -51,24 +51,23 @@ bool Engine::Initialize()
         NULL
     );
 
-    SDL_ClaimWindowForGPUDevice(_data->device, _data->window);
-    SDL_SetGPUSwapchainParameters(_data->device, _data->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_IMMEDIATE);
-
     if (_device == NULL) {
         SDL_Log("GPU Device creation failed: %s", SDL_GetError());
     }
 
     _data->device = _device;
-
-
     _data->window = SDL_CreateWindow("window", _data->GAME_WIDTH, _data->GAME_HEIGHT, 0);
+
     if (!_data->window)
     {
         LOG_ERROR(GlobalLogger(), "Engine", std::string("SDL_CreateWindow failed: ") + SDL_GetError());
         return false;
     }
 
+
     SDL_ClaimWindowForGPUDevice(_data->device, _data->window);
+    SDL_SetGPUSwapchainParameters(_data->device, _data->window,
+        SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_VSYNC);
 
 	_data->renderer.Init(_data->device, _data->window, &_data->assets, _data->GAME_WIDTH, _data->GAME_HEIGHT);
 

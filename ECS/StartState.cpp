@@ -5,6 +5,7 @@
 #include "Boids.h"
 #include "Uicontext.h";
 #include <iostream>
+#include "depthState.h"
 
 class ProcessWASD : public InputSystem::Processor
 {
@@ -86,7 +87,7 @@ void StartState::Init()
     _data->assets.AddMaterial(StringId("sprite_mat"), spriteMaterial);
 
     MaterialBase mat("vert", "frag");
-    MaterialBase::MakeSpriteTransparent(mat);
+    MaterialBase::MakeOpaque(mat);
     MaterialBase::SetVertexAttr(mat);
 
     _data->assets.AddMaterial(StringId("mat"), mat);
@@ -143,9 +144,9 @@ void StartState::Init()
 
     _data->inputs.AssignMapToPlayer("level1");
 
-
+    _data->state.AddState(StateRef(new depthState(_data)), 0);
     //_data->state.AddState(StateRef(new Level1(_data)), 0);
-    _data->state.AddState(StateRef(new Boids(_data)), 0);
+    //_data->state.AddState(StateRef(new Boids(_data)), 0);
 }
 
 void StartState::Update(float dt)

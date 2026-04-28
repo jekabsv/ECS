@@ -171,7 +171,7 @@ struct MaterialBase
 		mat.primitiveType = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
 		mat.fillMode = SDL_GPU_FILLMODE_FILL;
 		mat.colorTargetFormat = SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM;
-		SDL_GPUTextureFormat depthStencilFormat = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
+		mat.depthStencilFormat = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
 
 	}
 	static void MakeSpriteTransparent(MaterialBase& mat)

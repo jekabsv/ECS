@@ -551,6 +551,7 @@ void Renderer::Flush()
         {
             DrawCall& dc = drawCalls[dcIdx];
             MaterialInstance* mat = dc.GetMaterial();
+            SDL_Log("Flush instance %u: m[14]=%.1f", dcIdx, dc.data.modelMatrix.m[14]);
 
             memcpy(dst, &dc.data.modelMatrix, sizeof(Matrix4)); dst += sizeof(Matrix4);
             memcpy(dst, dc.data.colorTint, sizeof(float) * 4); dst += sizeof(float) * 4;
@@ -679,6 +680,11 @@ SDL_GPUGraphicsPipeline* Renderer::GetOrCreatePipeline(MaterialBase* base)
 {
     if (base->pipeline != nullptr)
         return base->pipeline;
+
+    SDL_Log("Creating pipeline: depthTest=%d depthWrite=%d hasDepth=%d",
+        base->depthTestEnabled,
+        base->depthWriteEnabled,
+        base->hasDepthTarget);
 
     const Shader* vertShader = _assets->GetShader(base->vertexShader);
     const Shader* fragShader = _assets->GetShader(base->fragmentShader);
@@ -880,5 +886,9 @@ ObjectData Renderer::BuildObjectData(Vec3 Position, Vec2 Scale, float Rotation, 
     objData.colorTint[2] = colorTint.b;
     objData.colorTint[3] = colorTint.a;
     objData.modelMatrix.m[14] = Position.z;
+
+    SDL_Log("BuildObjectData: pos=(%.1f, %.1f, %.1f) m[14]=%.1f",
+        Position.x, Position.y, Position.z, objData.modelMatrix.m[14]);
+
     return objData;
 }

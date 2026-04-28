@@ -28,7 +28,8 @@ layout(location = 1) out vec2 fragTexCoord;
 void main()
 {
     InstanceGPUData inst = instances[gl_InstanceIndex];
-    gl_Position  = engine.projection * inst.modelMatrix * vec4(inPosition, 0.0, 1.0);
+    float z = inst.modelMatrix[3][2];
+    gl_Position  = engine.projection * inst.modelMatrix * vec4(inPosition, z, 1.0);
     fragColor    = inColor * inst.colorTint;
     fragTexCoord = inTexCoord;
 }
