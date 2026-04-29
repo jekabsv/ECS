@@ -49,10 +49,10 @@ void StartState::Init()
 {
 
     //Shaders
-    _data->assets.LoadShader(StringId("vertSprite"), "../ECS/vertSprite.spv", _data->device, ShaderStage::VERTEX,
-        /*samplers*/0, /*storageTex*/0, /*storageBuf*/0 , /*uniformBufs*/3);
+    _data->assets.LoadShader(StringId("vertSprite"), "../ECS/vertSpriteInstancing.spv", _data->device, ShaderStage::VERTEX,
+        /*samplers*/0, /*storageTex*/0, /*storageBuf*/1 , /*uniformBufs*/1);
 
-    _data->assets.LoadShader(StringId("fragSprite"), "../ECS/fragSprite.spv", _data->device, ShaderStage::FRAGMENT,
+    _data->assets.LoadShader(StringId("fragSprite"), "../ECS/fragSpriteInstancing.spv", _data->device, ShaderStage::FRAGMENT,
         /*samplers*/1, /*storageTex*/0, /*storageBuf*/0, /*uniformBufs*/0);
 
 
@@ -81,7 +81,7 @@ void StartState::Init()
 
     //Materials
     MaterialBase spriteMaterial("vertSprite", "fragSprite");
-    MaterialBase::MakeSpriteTransparent(spriteMaterial);
+    MaterialBase::MakeOpaque(spriteMaterial);
     MaterialBase::SetVertexAttr(spriteMaterial);
 
     _data->assets.AddMaterial(StringId("sprite_mat"), spriteMaterial);
@@ -91,6 +91,9 @@ void StartState::Init()
     MaterialBase::SetVertexAttr(mat);
 
     _data->assets.AddMaterial(StringId("mat"), mat);
+
+    MaterialBase::MakeAdditive(mat);
+    _data->assets.AddMaterial(StringId("mat_transp"), mat);
     
 
 
@@ -144,8 +147,8 @@ void StartState::Init()
 
     _data->inputs.AssignMapToPlayer("level1");
 
-    _data->state.AddState(StateRef(new depthState(_data)), 0);
-    //_data->state.AddState(StateRef(new Level1(_data)), 0);
+    //_data->state.AddState(StateRef(new depthState(_data)), 0);
+    _data->state.AddState(StateRef(new Level1(_data)), 0);
     //_data->state.AddState(StateRef(new Boids(_data)), 0);
 }
 

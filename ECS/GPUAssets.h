@@ -174,7 +174,7 @@ struct MaterialBase
 		mat.depthStencilFormat = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
 
 	}
-	static void MakeSpriteTransparent(MaterialBase& mat)
+	static void MakeTransparent(MaterialBase& mat)
 	{
 		ApplySpriteDefaults(mat);
 		mat.blendMode = BlendMode::Alpha;
@@ -192,7 +192,7 @@ struct MaterialBase
 	{
 		ApplySpriteDefaults(mat);
 		mat.blendMode = BlendMode::Additive;
-		mat.depthTestEnabled = false;
+		mat.depthTestEnabled = true;
 		mat.depthWriteEnabled = false;
 	}
 	static void MakeOverlay(MaterialBase& mat)

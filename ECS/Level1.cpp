@@ -20,13 +20,13 @@ void Level1::Init()
 
     ecs.Add<BoxCollider>(e, BoxCollider(100.0f, 100.0f, true));
     ecs.Add<MeshComponent>(e, MeshComponent("tri", "mat", true));
-    ecs.Add<TransformComponent>(e, TransformComponent({ 500.0f, 500.0f }, { 1.0f, 1.0f }));
+    ecs.Add<TransformComponent>(e, TransformComponent({ 500.0f, 500.0f , 0.f}, { 1.0f, 1.0f }));
     ecs.Add<Clicked>(e, Clicked());
 
 
 
     ecs.Add<SimpleSprite>(playerEntity, SimpleSprite({ 0, 0, 64, 64 }, "sprite_mat", true, "player"));
-    ecs.Add<TransformComponent>(playerEntity, TransformComponent({ 0.0f, 0.0f }, { 1.0f, 1.0f }));
+    ecs.Add<TransformComponent>(playerEntity, TransformComponent({ 0.0f, 0.0f , 0.f}, { 1.0f, 1.0f }));
     ecs.Add<InputComponent>(playerEntity, InputComponent());
     ecs.Add<AnimationPlayer>(playerEntity, AnimationPlayer{});
     ecs.Add<BoxCollider>(playerEntity, BoxCollider(24.0f, 32.0f, true));
@@ -145,8 +145,7 @@ void Level1::Init()
 
                 sprite.material.ClearUniforms();
 
-                _data->renderer.SpriteDraw(sprite.material, sprite.TextureSRect, { transform.position.x, transform.position.y }, transform.scale,
-                    transform.rotation);
+                _data->renderer.SubmitSprite(sprite.material, sprite.TextureSRect, transform.position, transform.scale, transform.rotation);
             }
         },
         ECS::SystemGroup::Render);
@@ -165,11 +164,11 @@ void Level1::Init()
                 if (!meshC.render)
                     continue;
 
-                _data->renderer.DrawMesh(meshC.MeshName, meshC.Material, { transform.position.x, transform.position.y }, transform.scale);
-
                 const MeshBase* mesh = _data->assets.GetMesh(meshC.MeshName.meshName);
                 if (!mesh)
                     continue;
+
+                _data->renderer.SubmitMesh(meshC.MeshName, meshC.Material, transform.position, transform.scale, transform.rotation);
             }
         },
         ECS::SystemGroup::Render);
@@ -182,8 +181,6 @@ void Level1::Init()
 
             for (int i = 0; i < colliders.size(); i++)
             {
-
-
                 auto& transform = transforms[i];
                 auto& col = colliders[i];
                 float ax = transform.position.x + col.offsetX * transform.scale.x - col.hw * transform.scale.x;
@@ -191,9 +188,8 @@ void Level1::Init()
                 float aw = col.hw * 2.0f * transform.scale.x;
                 float ah = col.hh * 2.0f * transform.scale.y;
 
-				MeshInstance meshInst("unit_quad");
-				MaterialInstance matInst("mat");
-                _data->renderer.DrawMesh(meshInst, matInst, { ax + aw/2.f, ay + ah/2.f }, { aw, ah }, 0.0f, { 1.f, 0.f, 0.f, 0.3f });
+                _data->renderer.SubmitMesh(MeshInstance("unit_quad"), MaterialInstance("mat_transp"),
+                    { ax + aw / 2.f, ay + ah / 2.f , 0.4f}, { aw, ah }, 0.0f, { 1.f, 0.f, 0.f, 0.3f });
             }
         },
         ECS::SystemGroup::Render);

@@ -117,6 +117,8 @@ void Boids::Init()
                     if (other == entities[i])
                         continue;
 
+                    if (neighbors > 16)
+                        break;
                     auto start = std::chrono::high_resolution_clock::now();
                     
                     TransformComponent* otherTr = data->physics.GetWorld()->TryGet<TransformComponent>(other);
@@ -141,8 +143,7 @@ void Boids::Init()
                     float distSq = dx * dx + dy * dy;
                     if (distSq > PERCEPTION * PERCEPTION) continue;
 
-                    if (neighbors > 16)
-                        break;
+                    
 
                     cohX += dx;
                     cohY += dy;

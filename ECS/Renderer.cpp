@@ -162,7 +162,7 @@ int Renderer::Present()
 }
 
 
-int Renderer::SubmitMesh(MeshInstance& mesh, MaterialInstance& material, Vec3 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
+int Renderer::SubmitMesh(MeshInstance mesh, MaterialInstance& material, Vec3 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
 {
     if (!material.materialBase) {
         material.materialBase = _assets->GetMaterial(material.materialName);
@@ -186,7 +186,7 @@ int Renderer::SubmitMesh(MeshInstance& mesh, MaterialInstance& material, Vec3 Po
     return 0;
 }
 
-int Renderer::SubmitMesh(MeshInstance& mesh, MaterialInstance&& material, Vec3 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
+int Renderer::SubmitMesh(MeshInstance mesh, MaterialInstance&& material, Vec3 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
 {
     if (!material.materialBase) {
         material.materialBase = _assets->GetMaterial(material.materialName);
@@ -213,6 +213,31 @@ int Renderer::SubmitMesh(MeshInstance& mesh, MaterialInstance&& material, Vec3 P
 
     return 0;
 }
+
+int Renderer::SubmitSprite(MaterialInstance& material, SDL_FRect sRect, Vec3 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
+{
+    if (material.textureCount == 0)
+        return -1;
+    if (material.texturebases[0] == nullptr)
+        material.texturebases[0] = _assets->GetTexture(material.textures[0]);
+    auto* texBase = material.texturebases[0];
+    if (!texBase)
+        return -1;
+
+    struct UVData {
+        float offsetX, offsetY, scaleX, scaleY;
+    } uvData;
+    uvData.scaleX = sRect.w / (float)texBase->width;
+    uvData.scaleY = sRect.h / (float)texBase->height;
+    uvData.offsetX = sRect.x / (float)texBase->width;
+    uvData.offsetY = sRect.y / (float)texBase->height;
+    material.AddVertData<UVData>(uvData);
+
+    Vec2 finalScale = { Scale.x * sRect.w, Scale.y * sRect.h };
+    MeshInstance quadMesh{ _unitQuadMesh.name };
+    return SubmitMesh(quadMesh, material, Position, finalScale, Rotation, colorTint);
+}
+
 
 int Renderer::DrawMesh(MeshInstance& mesh, MaterialInstance& material, Vec2 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
 {
@@ -551,7 +576,7 @@ void Renderer::Flush()
         {
             DrawCall& dc = drawCalls[dcIdx];
             MaterialInstance* mat = dc.GetMaterial();
-            SDL_Log("Flush instance %u: m[14]=%.1f", dcIdx, dc.data.modelMatrix.m[14]);
+            //SDL_Log("Flush instance %u: m[14]=%.1f", dcIdx, dc.data.modelMatrix.m[14]);
 
             memcpy(dst, &dc.data.modelMatrix, sizeof(Matrix4)); dst += sizeof(Matrix4);
             memcpy(dst, dc.data.colorTint, sizeof(float) * 4); dst += sizeof(float) * 4;
@@ -716,6 +741,10 @@ SDL_GPUGraphicsPipeline* Renderer::GetOrCreatePipeline(MaterialBase* base)
             colorTarget.blend_state.src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA;
             colorTarget.blend_state.dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE;
             colorTarget.blend_state.color_blend_op = SDL_GPU_BLENDOP_ADD;
+
+            colorTarget.blend_state.src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE;
+            colorTarget.blend_state.dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE;
+            colorTarget.blend_state.alpha_blend_op = SDL_GPU_BLENDOP_ADD;
         }
         //other blend modes
     }
@@ -887,8 +916,8 @@ ObjectData Renderer::BuildObjectData(Vec3 Position, Vec2 Scale, float Rotation, 
     objData.colorTint[3] = colorTint.a;
     objData.modelMatrix.m[14] = Position.z;
 
-    SDL_Log("BuildObjectData: pos=(%.1f, %.1f, %.1f) m[14]=%.1f",
-        Position.x, Position.y, Position.z, objData.modelMatrix.m[14]);
+    //SDL_Log("BuildObjectData: pos=(%.1f, %.1f, %.1f) m[14]=%.1f",
+        //Position.x, Position.y, Position.z, objData.modelMatrix.m[14]);
 
     return objData;
 }

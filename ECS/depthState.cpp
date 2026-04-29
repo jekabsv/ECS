@@ -9,12 +9,12 @@ void depthState::Init()
     auto player = ecs.Create();
     auto object = ecs.Create();
 
-    ecs.Add<TransformComponent>(player, TransformComponent({ 50, 50, 0.47f }));
-    ecs.Add<MeshComponent>(player, MeshComponent("tri", "mat", true));
+    ecs.Add<TransformComponent>(player, TransformComponent({ 50, 50, 0.49f }));
+    ecs.Add<MeshComponent>(player, MeshComponent("tri", "mat_transp", true));
     ecs.Add<Controllable>(player, Controllable());
 
     ecs.Add<TransformComponent>(object, TransformComponent({ 50, 50, 0.48f }));
-    ecs.Add<MeshComponent>(object, MeshComponent("tri", "mat", true));
+    ecs.Add<MeshComponent>(object, MeshComponent("tri", "mat_transp", true));
 
 
     ecs.RegisterSystem<TransformComponent, Controllable>("move",
@@ -46,7 +46,7 @@ void depthState::Init()
                     continue;
 
 
-                _data->renderer.SubmitMesh(meshC.MeshName, meshC.Material, transform.position, transform.scale, transform.rotation);
+                _data->renderer.SubmitMesh(meshC.MeshName, meshC.Material, transform.position, transform.scale, transform.rotation, {1.f, 1.f, 1.f, 1.f});
                 //_data->renderer.DrawMesh(meshC.MeshName, meshC.Material, { transform.position.x, transform.position.y }, transform.scale);
 
                 const MeshBase* mesh = _data->assets.GetMesh(meshC.MeshName.meshName);

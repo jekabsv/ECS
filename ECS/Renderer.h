@@ -16,12 +16,16 @@ public:
 	int EndRenderPass();
 	int Present();
 
-	int SubmitMesh(MeshInstance& mesh, MaterialInstance& material,
+	int SubmitMesh(MeshInstance mesh, MaterialInstance& material,
 		Vec3 Position = { 0.0f, 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f,
 		SDL_FColor colorTint = { 1.0f, 1.0f, 1.0f, 1.0f });
 
-	int SubmitMesh(MeshInstance& mesh, MaterialInstance&& material,
+	int SubmitMesh(MeshInstance mesh, MaterialInstance&& material,
 		Vec3 Position = { 0.0f, 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f,
+		SDL_FColor colorTint = { 1.0f, 1.0f, 1.0f, 1.0f });
+
+	int SubmitSprite(MaterialInstance& material, SDL_FRect sRect, 
+		Vec3 Position = { 0.f, 0.f, 0.f }, Vec2 Scale = { 1.f, 1.f }, float Rotation = 0.f,
 		SDL_FColor colorTint = { 1.0f, 1.0f, 1.0f, 1.0f });
 
 	int DrawMesh(MeshInstance& mesh, MaterialInstance& material,

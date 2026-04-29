@@ -232,5 +232,11 @@
     <None Include="basic.frag">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="basicSpriteInstancing.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="basicSpriteInstancing.vert">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

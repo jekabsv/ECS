@@ -15,7 +15,7 @@ private:
         int Perception = 0;
     };
 
-    static constexpr int COUNT = 5000;
+    static constexpr int COUNT = 15000;
     static constexpr float PERCEPTION = 80.0f;
     static constexpr float SEPARATION_DIST = 20.0f;
 
