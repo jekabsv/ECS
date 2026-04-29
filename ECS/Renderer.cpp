@@ -9,7 +9,14 @@
 
 //Fragment shader has custom at slot 0
 
+static constexpr char GLYPH_FIRST = 32;
+static constexpr char GLYPH_LAST = 126;
+static constexpr int  GLYPH_COUNT = GLYPH_LAST - GLYPH_FIRST + 1;
 
+static constexpr int ATLAS_COLS = 16;
+static constexpr int ATLAS_ROWS = (GLYPH_COUNT + ATLAS_COLS - 1) / ATLAS_COLS;
+
+static constexpr int PAD = 8;
 
 int Renderer::Init(SDL_GPUDevice* gpuDevice, SDL_Window* sdlWindow, AssetManager* assets, uint32_t screenWidth, uint32_t screenHeight)
 {
@@ -180,7 +187,10 @@ int Renderer::SubmitMesh(MeshInstance mesh, MaterialInstance& material, Vec3 Pos
         }
     }
 
-    drawCalls.emplace_back(BuildObjectData(Position, Scale, Rotation, colorTint), &material, mesh);
+    ObjectData objData = BuildObjectData(Position, Scale, Rotation, colorTint);
+
+    DrawCall call(objData, std::move(material), mesh);
+    drawCalls.push_back(call);
 
     //SDL_Log("SubmitMesh: Queued MeshID: %llu with MaterialID: %llu. Total queue: %zu", (unsigned long long)mesh.meshName.id,(unsigned long long)material.materialName.id,drawCalls.size());
     return 0;
@@ -236,6 +246,95 @@ int Renderer::SubmitSprite(MaterialInstance& material, SDL_FRect sRect, Vec3 Pos
     Vec2 finalScale = { Scale.x * sRect.w, Scale.y * sRect.h };
     MeshInstance quadMesh{ _unitQuadMesh.name };
     return SubmitMesh(quadMesh, material, Position, finalScale, Rotation, colorTint);
+}
+
+int Renderer::SubmitSprite(MaterialInstance&& material, SDL_FRect sRect, Vec3 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint)
+{
+    if (material.textureCount == 0)
+        return -1;
+    if (material.texturebases[0] == nullptr)
+        material.texturebases[0] = _assets->GetTexture(material.textures[0]);
+    auto* texBase = material.texturebases[0];
+    if (!texBase)
+        return -1;
+
+    struct UVData { float offsetX, offsetY, scaleX, scaleY; } uvData;
+    uvData.scaleX = sRect.w / (float)texBase->width;
+    uvData.scaleY = sRect.h / (float)texBase->height;
+    uvData.offsetX = sRect.x / (float)texBase->width;
+    uvData.offsetY = sRect.y / (float)texBase->height;
+    material.AddVertData<UVData>(uvData);
+
+    Vec2 finalScale = { Scale.x * sRect.w, Scale.y * sRect.h };
+    MeshInstance quadMesh{ _unitQuadMesh.name };
+    return SubmitMesh(quadMesh, std::move(material), Position, finalScale, Rotation, colorTint);
+}
+
+
+int Renderer::SubmitText(std::string_view text, StringId fontName, MaterialInstance material, Vec3 position, Vec2 scale, float rotation, SDL_FColor color)
+{
+    GPUFont* gpuFont = _assets->GetGPUFont(fontName);
+    if (!gpuFont)
+    {
+        SDL_Log("SubmitText ERROR: GPUFont '%llu' not found.", (unsigned long long)fontName.id);
+        return -1;
+    }
+
+    if (material.textureCount == 0)
+        material.AddTexture(gpuFont->atlasName);
+
+    if (material.texturebases[0] == nullptr)
+        material.texturebases[0] = &gpuFont->atlas;
+
+    float penX = 0.0f;
+    float cosR = cosf(rotation);
+    float sinR = sinf(rotation);
+
+    float baselineY = (float)gpuFont->ascent;
+
+    for (char c : text)
+    {
+        auto it = gpuFont->glyphs.find(c);
+        if (it == gpuFont->glyphs.end())
+        {
+            auto spIt = gpuFont->glyphs.find(' ');
+            if (spIt != gpuFont->glyphs.end())
+                penX += (float)spIt->second.advance;
+            continue;
+        }
+
+        const GlyphInfo& g = it->second;
+
+        int glyphIdx = c - GLYPH_FIRST;
+        int col = glyphIdx % ATLAS_COLS;
+        int row = glyphIdx / ATLAS_COLS;
+
+        SDL_FRect cellRect = {
+            (float)(col * gpuFont->cellW) + PAD,
+            (float)(row * gpuFont->cellH) + PAD,
+            (float)(gpuFont->cellW - PAD * 2),
+            (float)(gpuFont->cellH - PAD * 2)
+        };
+
+        // Center of cell, with bottom of cell sitting on baseline
+        float localX = penX + gpuFont->cellW * 0.5f;
+        float localY = baselineY - gpuFont->cellH * 0.5f;
+
+        float worldX = position.x + (localX * cosR - localY * sinR) * scale.x;
+        float worldY = position.y + (localX * sinR + localY * cosR) * scale.y;
+
+        Vec3 glyphPos = { worldX, worldY, position.z };
+        Vec2 glyphScale = { scale.x, scale.y };
+
+        MaterialInstance glyphMat = material;
+        glyphMat.ClearUniforms();
+
+        SubmitSprite(std::move(glyphMat), cellRect, glyphPos, glyphScale, rotation, color);
+
+        penX += (float)g.advance;
+    }
+
+    return 0;
 }
 
 
@@ -444,6 +543,112 @@ TextureBase Renderer::CreateTexture(SDL_Surface* surface)
     SDL_DestroySurface(converted);
     return result;
 
+}
+
+GPUFont Renderer::CreateFontt(StringId fontName)
+{
+    SDL_Log("CreateFontt: looking up id=%u, _assets=%p", fontName.id, (void*)_assets);
+    TTF_Font* font = _assets->GetFont(fontName);
+    if (!font)
+    {
+        SDL_Log("CreateFont ERROR: font '%llu' not found.", (unsigned long long)fontName.id);
+        return {};
+    }
+
+    int cellW = 0, cellH = 0;
+    for (char c = GLYPH_FIRST; c <= GLYPH_LAST; ++c)
+    {
+        int minX, maxX, minY, maxY, advance;
+        if (TTF_GetGlyphMetrics(font, (Uint32)c, &minX, &maxX, &minY, &maxY, &advance))
+        {
+            int w = maxX - minX;
+            int h = maxY - minY;
+            if (w > cellW) cellW = w;
+            if (h > cellH) cellH = h;
+        }
+    }
+
+    cellW += PAD * 2;
+    cellH += PAD * 2;
+
+    if (cellW <= PAD * 2 || cellH <= PAD * 2)
+    {
+        SDL_Log("CreateFont ERROR: could not measure glyphs for font '%llu'.",
+            (unsigned long long)fontName.id);
+        return {};
+    }
+
+    const int atlasW = cellW * ATLAS_COLS;
+    const int atlasH = cellH * ATLAS_ROWS;
+    SDL_Surface* atlasSurface = SDL_CreateSurface(atlasW, atlasH, SDL_PIXELFORMAT_RGBA32);
+    if (!atlasSurface)
+    {
+        SDL_Log("CreateFont ERROR: SDL_CreateSurface failed: %s", SDL_GetError());
+        return {};
+    }
+
+    SDL_ClearSurface(atlasSurface, 0.0f, 0.0f, 0.0f, 0.0f);
+
+    GPUFont gpuFont;
+    gpuFont.cellW = cellW;
+    gpuFont.cellH = cellH;
+    gpuFont.lineHeight = TTF_GetFontHeight(font);
+    gpuFont.ascent = TTF_GetFontAscent(font);
+    gpuFont.atlasName = fontName;
+
+    SDL_Color white = { 255, 255, 255, 255 };
+    for (int i = 0; i < GLYPH_COUNT; ++i)
+    {
+        char c = GLYPH_FIRST + (char)i;
+        int col = i % ATLAS_COLS;
+        int row = i / ATLAS_COLS;
+        int cellX = col * cellW;
+        int cellY = row * cellH;
+
+        int minX = 0, maxX = 0, minY = 0, maxY = 0, advance = 0;
+        TTF_GetGlyphMetrics(font, (Uint32)c, &minX, &maxX, &minY, &maxY, &advance);
+
+        GlyphInfo info;
+        info.advance = advance;
+        info.bearingX = minX;
+        info.bearingY = maxY;
+        // Default srcRect from metrics (used for space / invisible glyphs)
+        info.srcRect = { (float)(cellX + PAD), (float)(cellY + PAD),
+                          (float)(maxX - minX),  (float)(maxY - minY) };
+        gpuFont.glyphs[c] = info;  // store early so space etc. are covered
+
+        if (c == ' ' || (maxX - minX) <= 0 || (maxY - minY) <= 0)
+            continue;
+
+        SDL_Surface* glyphSurf = TTF_RenderGlyph_Blended(font, (Uint32)c, white);
+        if (!glyphSurf)
+            continue;
+
+        info.srcRect = {
+            (float)(cellX + PAD),
+            (float)(cellY + PAD),
+            (float)glyphSurf->w,
+            (float)glyphSurf->h
+        };
+        info.bearingY = maxY;
+
+        gpuFont.glyphs[c] = info;
+
+        SDL_Rect dst = { cellX + PAD, cellY + PAD, glyphSurf->w, glyphSurf->h };
+        SDL_BlitSurface(glyphSurf, nullptr, atlasSurface, &dst);
+        SDL_DestroySurface(glyphSurf);
+    }
+    gpuFont.atlas = CreateTexture(atlasSurface);
+    SDL_DestroySurface(atlasSurface);
+
+    if (!gpuFont.atlas.texture)
+    {
+        SDL_Log("CreateFont ERROR: GPU texture upload failed for font '%llu'.",
+            (unsigned long long)fontName.id);
+        return {};
+    }
+
+    return gpuFont;
 }
 
 int Renderer::ReserveInstanceBuffer(size_t requiredBytes)

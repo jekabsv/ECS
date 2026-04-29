@@ -3,7 +3,7 @@
 #include <SDL3/SDL_gpu.h>
 #include <string>
 #include <optional>
-
+#include <unordered_map>
 
 #define MAX_TEXTURES 8
 #define MAX_VERT_UNIFORM_SIZE 128
@@ -73,6 +73,7 @@ struct ObjectData
 	Matrix4 modelMatrix;
 	float colorTint[4];
 };
+
 
 
 struct MeshBase
@@ -198,12 +199,36 @@ struct MaterialBase
 	static void MakeOverlay(MaterialBase& mat)
 	{
 		ApplySpriteDefaults(mat);
-		mat.blendMode = BlendMode::Alpha;
+		mat.blendMode = BlendMode::Additive;
 		mat.depthTestEnabled = false;
-		mat.depthWriteEnabled = false;
-		mat.hasDepthTarget = false;
+		mat.depthWriteEnabled = true;
+		//mat.hasDepthTarget = false;
 	}
 };
+
+
+struct GlyphInfo
+{
+	SDL_FRect srcRect;  // pixel coords inside the atlas (x, y, w, h)
+	int       advance;  // horizontal advance in pixels
+	int       bearingX; // left bearing
+	int       bearingY; // top bearing (pixels above baseline)
+};
+
+struct GPUFont
+{
+	TextureBase atlas;                           // GPU texture atlas
+	std::unordered_map<char, GlyphInfo> glyphs;  // per-character metrics
+	int cellW = 0;  // atlas grid cell width  (max glyph bbox)
+	int cellH = 0;  // atlas grid cell height (max glyph bbox)
+	int lineHeight = 0;  // full line height from TTF
+	int ascent = 0;  // pixels above baseline
+
+	// StringId of the atlas registered in AssetManager so MaterialInstances
+	// can reference it by name.
+	StringId atlasName;
+};
+
 
 
 struct MeshInstance 
@@ -219,6 +244,11 @@ struct MaterialInstance
 { 
 	MaterialInstance() = default;
 	MaterialInstance(StringId materialName) : materialName(materialName) {}
+
+	MaterialInstance(StringId materialName, StringId firstText) : materialName(materialName) {
+		AddTexture(firstText);
+	}
+
 
 	StringId materialName = "";
 	MaterialBase* materialBase = nullptr;

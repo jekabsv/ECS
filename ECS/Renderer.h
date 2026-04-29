@@ -28,9 +28,26 @@ public:
 		Vec3 Position = { 0.f, 0.f, 0.f }, Vec2 Scale = { 1.f, 1.f }, float Rotation = 0.f,
 		SDL_FColor colorTint = { 1.0f, 1.0f, 1.0f, 1.0f });
 
+	int SubmitSprite(MaterialInstance&& material, SDL_FRect sRect, 
+		Vec3 Position = { 0.f, 0.f, 0.f }, Vec2 Scale = { 1.f, 1.f }, float Rotation = 0.f,
+		SDL_FColor colorTint = { 1.0f, 1.0f, 1.0f, 1.0f });
+
+	int SubmitText(std::string_view text, StringId fontName, MaterialInstance material,
+		Vec3 Position = { 0.f, 0.f, 0.f }, Vec2 Scale = { 1.f, 1.f }, float Rotation = 0.f,
+		SDL_FColor colorTint = { 1.0f, 1.0f, 1.0f, 1.0f });
+
+	int SetProjection(const Matrix4& projection);
+
+	TextureBase CreateTexture(SDL_Surface* surface);
+
+	GPUFont CreateFontt(StringId fontName);
+
+
+private:
+
 	int DrawMesh(MeshInstance& mesh, MaterialInstance& material,
-		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f, 
-		SDL_FColor colorTint = {1.0f, 1.0f, 1.0f, 1.0f});
+		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f,
+		SDL_FColor colorTint = { 1.0f, 1.0f, 1.0f, 1.0f });
 
 	int DrawMesh(StringId mesh, MaterialInstance& material,
 		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f,
@@ -40,12 +57,6 @@ public:
 	int SpriteDraw(MaterialInstance& material, SDL_FRect sRect,
 		Vec2 Position = { 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f,
 		SDL_FColor colorTint = { 1.0f, 1.0f, 1.0f, 1.0f });
-
-	int SetProjection(const Matrix4& projection);
-
-	TextureBase CreateTexture(SDL_Surface* surface);
-
-private:
 
 
 	//ModelMatrix(64) + colorTint(16) + uniformVert(128) + uniformFrag(128) = 336 bytes
@@ -105,6 +116,7 @@ private:
 	void PushConstants(const T& data, uint32_t offsetVert = 0, uint32_t offsetFrag = 0);
 
 	ObjectData BuildObjectData(Vec3 Position, Vec2 Scale, float Rotation, SDL_FColor colorTint);
+
 };
 
 template<typename T>

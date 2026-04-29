@@ -75,7 +75,11 @@ void StartState::Init()
     _data->assets.AddTexture("player", _data->renderer.CreateTexture(_data->assets.GetSurface("player")));
 
 
+    _data->assets.LoadFont("tnr", "../ECS/times.ttf");
+    _data->assets.AddGPUFont("tnr", _data->renderer.CreateFontt("tnr"));
 
+
+ 
 
 
 
@@ -86,15 +90,29 @@ void StartState::Init()
 
     _data->assets.AddMaterial(StringId("sprite_mat"), spriteMaterial);
 
+
+
     MaterialBase mat("vert", "frag");
     MaterialBase::MakeOpaque(mat);
     MaterialBase::SetVertexAttr(mat);
 
     _data->assets.AddMaterial(StringId("mat"), mat);
 
+
     MaterialBase::MakeAdditive(mat);
+
     _data->assets.AddMaterial(StringId("mat_transp"), mat);
     
+
+
+    MaterialBase textMat("vertSprite", "fragSprite");
+    MaterialBase::MakeOverlay(textMat);
+    MaterialBase::SetVertexAttr(textMat);
+    _data->assets.AddMaterial(StringId("text_mat"), textMat);
+
+
+
+
 
 
     //Meshes
@@ -148,32 +166,22 @@ void StartState::Init()
     _data->inputs.AssignMapToPlayer("level1");
 
     //_data->state.AddState(StateRef(new depthState(_data)), 0);
-    _data->state.AddState(StateRef(new Level1(_data)), 0);
-    //_data->state.AddState(StateRef(new Boids(_data)), 0);
+    //_data->state.AddState(StateRef(new Level1(_data)), 0);
+    _data->state.AddState(StateRef(new Boids(_data)), 0);
 }
 
-void StartState::Update(float dt)
-{
-    auto axis = _data->inputs.GetActionAxis("move");
-    x += axis[0] * 50.f * dt;
-    y -= axis[1] * 50.f * dt;
+float rotation = 0;
 
-    rotationAngle += dt * 2.0f;
+void StartState::Update(float dt) {
+    rotation += _data->inputs.GetActionAxis("move")[0] * dt * 5;
 }
 
 void StartState::Render(float dt)
 {
-    MaterialInstance spriteMatInst{ StringId("sprite_mat") };
-	spriteMatInst.AddTexture(StringId("player"));
+    _data->renderer.SubmitText("hello world!", "tnr", MaterialInstance("text_mat"), { 100.f, 150.f, 0.f }, { 1.f, 1.f }, rotation);
 
-    float TexX = (int)(x/10.f) * 64.f;
-        
-    _data->renderer.SpriteDraw(spriteMatInst, { TexX, 0.f, 64.f, 64.f }, { x, y }, {2.f, 2.f});
+    auto gpuFont = _data->assets.GetGPUFont("tnr");
 
-
-    MeshInstance meshInst{ StringId("tri") };
-    MaterialInstance matInst{ StringId("mat") };
-
-    _data->renderer.DrawMesh(meshInst, matInst, { 400.f, 300.f }, { 1.0f, 1.0f }, rotationAngle, { 1.f, 1.f, 1.f, 0.8f });
+    SDL_FRect fullRect = { 0, 0, (float)gpuFont->atlas.width, (float)gpuFont->atlas.height };
 }
 

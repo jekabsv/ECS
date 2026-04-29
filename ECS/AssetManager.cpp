@@ -30,13 +30,14 @@ SDL_Surface* AssetManager::GetSurface(StringId TextureName)
 
 int AssetManager::LoadFont(StringId FontName, const std::string& filename)
 {
-    TTF_Font* font = TTF_OpenFont(filename.c_str(), 24);
+    TTF_Font* font = TTF_OpenFont(filename.c_str(), 64);
     if (!font)
     {
 		LOG_WARN(GlobalLogger(), "AssetManager", std::string("Failed to load font: ") + SDL_GetError());
         return -1;
     }
     _fonts[FontName] = font;
+    SDL_Log("LoadFont: stored id=%u, this=%p", FontName.id, (void*)this);
     return 0;
 }
 
@@ -169,4 +170,18 @@ TextureBase* AssetManager::GetTexture(StringId textureName)
     if (it == _textureBases.end())
         return nullptr;
     return &it->second;
+}
+
+GPUFont* AssetManager::GetGPUFont(StringId fontName)
+{
+    auto it = _GPUFonts.find(fontName);
+    if (it == _GPUFonts.end())
+        return nullptr;
+    return &it->second;
+}
+
+int AssetManager::AddGPUFont(StringId fontName, GPUFont font)
+{
+    _GPUFonts[fontName] = font;
+    return 0;
 }

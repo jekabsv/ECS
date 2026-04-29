@@ -69,6 +69,8 @@ bool Engine::Initialize()
     SDL_SetGPUSwapchainParameters(_data->device, _data->window,
         SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_VSYNC);
 
+
+
 	_data->renderer.Init(_data->device, _data->window, &_data->assets, _data->GAME_WIDTH, _data->GAME_HEIGHT);
 
 
@@ -111,7 +113,7 @@ void Engine::Update(float dt)
 
     end = std::chrono::high_resolution_clock::now();
     duration = end - start;
-    std::cout << "SpatialBuild Took: " << duration.count() << "ms" << std::endl;
+    //std::cout << "SpatialBuild Took: " << duration.count() << "ms" << std::endl;
 
     start = std::chrono::high_resolution_clock::now();
 
@@ -120,7 +122,7 @@ void Engine::Update(float dt)
 
     end = std::chrono::high_resolution_clock::now();
     duration = end - start;
-    std::cout << "ECS updates Took: " << duration.count() << "ms" << std::endl;
+    //std::cout << "ECS updates Took: " << duration.count() << "ms" << std::endl;
 
     start = std::chrono::high_resolution_clock::now();
 
@@ -251,7 +253,7 @@ void Engine::run()
 
         end = std::chrono::high_resolution_clock::now();
         duration = end - start;
-        std::cout << "Update Took: " << duration.count() << "ms" << std::endl;
+        //std::cout << "Update Took: " << duration.count() << "ms" << std::endl;
 
         start = std::chrono::high_resolution_clock::now();
 
@@ -267,7 +269,7 @@ void Engine::run()
 
         end = std::chrono::high_resolution_clock::now();
         duration = end - start;
-        std::cout << "Render Took: " << duration.count() << "ms" << std::endl;
+        //std::cout << "Render Took: " << duration.count() << "ms" << std::endl;
 
 
 
@@ -281,7 +283,7 @@ void Engine::run()
 
         end = std::chrono::high_resolution_clock::now();
         duration = end - framestart;
-		std::cout << "FPS: " << 1000.0f / duration.count() << " | Total Frame Took: " << duration.count() << "ms" << '\n' << std::endl;
+		//std::cout << "FPS: " << 1000.0f / duration.count() << " | Total Frame Took: " << duration.count() << "ms" << '\n' << std::endl;
 		//std::cout << "Total Frame Took: " << duration.count() << "ms" << '\n' << std::endl;
 
     }

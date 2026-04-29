@@ -48,6 +48,9 @@ public:
 	TextureBase* GetTexture(StringId textureName);
 
 
+	GPUFont* GetGPUFont(StringId fontName);
+	int AddGPUFont(StringId fontName, GPUFont font);
+
 private:
 
 	std::unordered_map<StringId, TTF_Font*> _fonts;
@@ -57,6 +60,7 @@ private:
 	std::unordered_map<StringId, Shader> _shaders;
 	std::unordered_map<StringId, MaterialBase> _materialBases;
 	std::unordered_map<StringId, TextureBase> _textureBases;
+	std::unordered_map<StringId, GPUFont> _GPUFonts;
 
 	//textures, fonts, sounds, etc.
 };
