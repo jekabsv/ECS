@@ -134,6 +134,9 @@ void Engine::Update(float dt)
 
 
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::PostUpdate, dt);
+    
+    //_data->state.GetActiveState()->ui.LayoutPass();
+
 }
 
 void Engine::HandleInput(float dt)
@@ -173,7 +176,8 @@ void Engine::HandleInput(float dt)
     inp.mousePressed = _data->inputs.GetActionState("click") == InputSystem::Pressed;
     inp.mouseReleased = _data->inputs.GetActionState("click") == InputSystem::Released;
 
-    _data->state.GetActiveState()->ui.Update(inp, dt);
+    _data->state.GetActiveState()->ui.ProcessInput(inp, dt);
+    //_data->state.GetActiveState()->ui.Update(inp, dt);
 }
 
 void Engine::Render(float dt)

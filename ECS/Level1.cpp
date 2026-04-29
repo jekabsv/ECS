@@ -198,7 +198,7 @@ void Level1::Init()
 
     ui.GetTheme().LoadDarkDefaults();
 
-    ui.RegisterFont("main", _data->assets.GetFont("main"));
+    //ui.RegisterFont("main", _data->assets.GetFont("main"));
 
 
     UI::NodeHandle root = ui.AddContainer();

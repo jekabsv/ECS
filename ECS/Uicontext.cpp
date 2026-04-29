@@ -67,9 +67,7 @@ namespace UI
             idMap_[std::string(id)] = handle;
 
         if (parent == NULL_HANDLE)
-        {
             roots_.push_back(handle);
-        }
         else
         {
             auto it = nodes_.find(parent);
@@ -116,20 +114,6 @@ namespace UI
         return h;
     }
 
-    NodeHandle Context::AddImage(const SDL_Texture* texture, SDL_FRect sourceRect, NodeHandle parent, std::string_view id)
-    {
-        SDL_Texture* tex = const_cast<SDL_Texture*>(texture);
-        NodeHandle h = AllocNode(WidgetType::Image, parent, id);
-        auto& w = nodes_[h].widget;
-        w.texture = tex;
-        w.textureRect = sourceRect;
-        return h;
-    }
-
-    // ------------------------------------------------------------------
-    // AddImage variant that takes a StringId so the renderer can look it
-    // up from AssetManager directly (preferred path for GPU rendering).
-    // ------------------------------------------------------------------
     NodeHandle Context::AddImage(StringId textureId, SDL_FRect sourceRect, NodeHandle parent, std::string_view id)
     {
         NodeHandle h = AllocNode(WidgetType::Image, parent, id);
@@ -165,9 +149,7 @@ namespace UI
         NodeHandle parent = it->second.parent;
 
         if (parent == NULL_HANDLE)
-        {
             roots_.erase(std::remove(roots_.begin(), roots_.end(), handle), roots_.end());
-        }
         else
         {
             auto pit = nodes_.find(parent);
@@ -402,13 +384,14 @@ namespace UI
         it->second.style = style;
     }
 
-    void Context::RegisterFont(std::string_view fontName, StringId gpuFontId)
+    void Context::RegisterFont(std::string_view fontName, TTF_Font* font, StringId gpuFontId)
     {
+        fonts_[std::string(fontName)] = font;
         fontIds_[std::string(fontName)] = gpuFontId;
     }
 
     // =============================================================================
-    // Input processing  (unchanged from original)
+    // Input processing
     // =============================================================================
 
     static bool PointInRect(float px, float py, const SDL_FRect& r)
@@ -526,11 +509,11 @@ namespace UI
                         changed = true;
                     }
                     if (input.keyBackspace && cur > 0) { val.erase(cur - 1, 1); cur--; changed = true; }
-                    if (input.keyDelete && cur < val.size()) { val.erase(cur, 1); changed = true; }
-                    if (input.keyLeft && cur > 0)           cur--;
-                    if (input.keyRight && cur < val.size())  cur++;
-                    if (input.keyHome)                        cur = 0;
-                    if (input.keyEnd)                         cur = (uint32_t)val.size();
+                    if (input.keyDelete && cur < val.size()) { val.erase(cur, 1);            changed = true; }
+                    if (input.keyLeft && cur > 0)               cur--;
+                    if (input.keyRight && cur < val.size())      cur++;
+                    if (input.keyHome)                            cur = 0;
+                    if (input.keyEnd)                             cur = (uint32_t)val.size();
                     if (input.keyTab)
                     {
                         node.widget.focused = false;
@@ -551,7 +534,7 @@ namespace UI
     }
 
     // =============================================================================
-    // Layout pass — unchanged flexbox logic
+    // Layout
     // =============================================================================
 
     float Context::ResolveSize(SizeValue sv, float available) const
@@ -582,10 +565,8 @@ namespace UI
             {
                 int tw = 0, th = 0;
                 TTF_GetStringSize(font, node.widget.text.c_str(), 0, &tw, &th);
-
                 const Edges& pad = node.style.padding.value_or(
                     node.type == WidgetType::Button ? theme_.button.padding : Edges::All(0.0f));
-
                 if (w < 0.0f) w = (float)tw + pad.left + pad.right;
                 if (h < 0.0f) h = (float)th + pad.top + pad.bottom;
             }
@@ -596,7 +577,6 @@ namespace UI
             }
             break;
         }
-
         case WidgetType::Slider:
             if (w < 0.0f) w = 200.0f;
             if (h < 0.0f) h = theme_.slider.thumbRadius * 2.0f;
@@ -612,9 +592,7 @@ namespace UI
             if (h < 0.0f) h = (float)th + pad.top + pad.bottom;
             break;
         }
-
         case WidgetType::Image:
-            // For GPU images we rely on explicit size; fall back to 0
             if (w < 0.0f) w = node.widget.textureRect.w > 0 ? node.widget.textureRect.w : 0.0f;
             if (h < 0.0f) h = node.widget.textureRect.h > 0 ? node.widget.textureRect.h : 0.0f;
             break;
@@ -669,7 +647,6 @@ namespace UI
             auto it = nodes_.find(ch);
             if (it == nodes_.end() || !it->second.visible) continue;
             Node& child = it->second;
-
             float basis = ResolveSize(child.flex.flexBasis, isRow ? innerW : innerH);
             if (basis >= 0.0f)
             {
@@ -767,13 +744,13 @@ namespace UI
             {
                 Node& child = GetNode(ch);
                 AlignSelf selfAlign = child.flex.alignSelf;
-                AlignItems resolvedAlign = node.flex.alignItems;
-                if (selfAlign == AlignSelf::FlexStart)   resolvedAlign = AlignItems::FlexStart;
-                else if (selfAlign == AlignSelf::FlexEnd) resolvedAlign = AlignItems::FlexEnd;
-                else if (selfAlign == AlignSelf::Center)  resolvedAlign = AlignItems::Center;
-                else if (selfAlign == AlignSelf::Stretch) resolvedAlign = AlignItems::Stretch;
+                AlignItems resolved = node.flex.alignItems;
+                if (selfAlign == AlignSelf::FlexStart)   resolved = AlignItems::FlexStart;
+                else if (selfAlign == AlignSelf::FlexEnd) resolved = AlignItems::FlexEnd;
+                else if (selfAlign == AlignSelf::Center)  resolved = AlignItems::Center;
+                else if (selfAlign == AlignSelf::Stretch) resolved = AlignItems::Stretch;
 
-                if (resolvedAlign == AlignItems::Stretch)
+                if (resolved == AlignItems::Stretch)
                 {
                     if (isRow) child.computedRect.h = line.crossSize - child.flex.margin.top - child.flex.margin.bottom;
                     else       child.computedRect.w = line.crossSize - child.flex.margin.left - child.flex.margin.right;
@@ -786,10 +763,8 @@ namespace UI
             totalCrossUsed += lines[li].crossSize + (li > 0 ? crossGap : 0.0f);
 
         float crossOffset = 0.0f;
-        if (node.flex.alignContent == AlignContent::Center)
-            crossOffset = (crossAvail - totalCrossUsed) * 0.5f;
-        else if (node.flex.alignContent == AlignContent::FlexEnd)
-            crossOffset = crossAvail - totalCrossUsed;
+        if (node.flex.alignContent == AlignContent::Center)  crossOffset = (crossAvail - totalCrossUsed) * 0.5f;
+        else if (node.flex.alignContent == AlignContent::FlexEnd) crossOffset = crossAvail - totalCrossUsed;
 
         bool reverseMain = (node.flex.direction == FlexDirection::RowReverse ||
             node.flex.direction == FlexDirection::ColumnReverse);
@@ -809,10 +784,10 @@ namespace UI
 
             switch (node.flex.justifyContent)
             {
-            case JustifyContent::FlexStart:    mainOffset = 0.0f;                                  break;
-            case JustifyContent::FlexEnd:      mainOffset = freeMain;                               break;
-            case JustifyContent::Center:       mainOffset = freeMain * 0.5f;                        break;
-            case JustifyContent::SpaceBetween: spaceBetween = (n > 1) ? freeMain / (n - 1) : 0.0f;   break;
+            case JustifyContent::FlexStart:    mainOffset = 0.0f; break;
+            case JustifyContent::FlexEnd:      mainOffset = freeMain; break;
+            case JustifyContent::Center:       mainOffset = freeMain * 0.5f; break;
+            case JustifyContent::SpaceBetween: spaceBetween = (n > 1) ? freeMain / (n - 1) : 0.0f; break;
             case JustifyContent::SpaceAround:
                 spaceAround = (n > 0) ? freeMain / n : 0.0f;
                 mainOffset = spaceAround * 0.5f; break;
@@ -834,19 +809,18 @@ namespace UI
                 float cMarginB = isRow ? child.flex.margin.bottom : child.flex.margin.right;
 
                 AlignSelf selfAlign = child.flex.alignSelf;
-                AlignItems resolvedAlign = node.flex.alignItems;
-                if (selfAlign == AlignSelf::FlexStart)   resolvedAlign = AlignItems::FlexStart;
-                else if (selfAlign == AlignSelf::FlexEnd) resolvedAlign = AlignItems::FlexEnd;
-                else if (selfAlign == AlignSelf::Center)  resolvedAlign = AlignItems::Center;
-                else if (selfAlign == AlignSelf::Stretch) resolvedAlign = AlignItems::Stretch;
+                AlignItems resolved = node.flex.alignItems;
+                if (selfAlign == AlignSelf::FlexStart)   resolved = AlignItems::FlexStart;
+                else if (selfAlign == AlignSelf::FlexEnd) resolved = AlignItems::FlexEnd;
+                else if (selfAlign == AlignSelf::Center)  resolved = AlignItems::Center;
+                else if (selfAlign == AlignSelf::Stretch) resolved = AlignItems::Stretch;
 
                 float crossPos = 0.0f;
-                switch (resolvedAlign)
+                switch (resolved)
                 {
                 case AlignItems::FlexStart: crossPos = cMarginA; break;
                 case AlignItems::FlexEnd:   crossPos = line.crossSize - childCross - cMarginB; break;
-                case AlignItems::Center:    crossPos = (line.crossSize - childCross) * 0.5f;   break;
-                case AlignItems::Stretch:   crossPos = cMarginA; break;
+                case AlignItems::Center:    crossPos = (line.crossSize - childCross) * 0.5f; break;
                 default:                    crossPos = cMarginA; break;
                 }
 
@@ -855,21 +829,11 @@ namespace UI
                 float finalMain = mainOffset + mMarginA;
                 float finalCross = crossOffset + crossPos;
 
-                if (isRow)
-                {
-                    child.computedRect.x = baseX + finalMain;
-                    child.computedRect.y = baseY + finalCross;
-                }
-                else
-                {
-                    child.computedRect.x = baseX + finalCross;
-                    child.computedRect.y = baseY + finalMain;
-                }
+                if (isRow) { child.computedRect.x = baseX + finalMain;  child.computedRect.y = baseY + finalCross; }
+                else { child.computedRect.x = baseX + finalCross; child.computedRect.y = baseY + finalMain; }
 
-                if (reverseMain)
-                    mainOffset -= childMain + mMarginB + gap + spaceBetween + spaceAround;
-                else
-                    mainOffset += childMain + mMarginB + gap + spaceBetween + spaceAround;
+                if (reverseMain) mainOffset -= childMain + mMarginB + gap + spaceBetween + spaceAround;
+                else             mainOffset += childMain + mMarginB + gap + spaceBetween + spaceAround;
             }
 
             crossOffset += line.crossSize + crossGap;
@@ -934,19 +898,19 @@ namespace UI
     }
 
     // =============================================================================
-    // Font resolution  (now resolves to StringId for GPU font lookup)
+    // Font resolution
     // =============================================================================
 
     TTF_Font* Context::ResolveFont(const Node& node) const
     {
-        // TTF_Font* is only needed during layout/measurement via SDL_ttf.
-        // We store a parallel fontIds_ map (name -> StringId) for GPU rendering.
-        // This method remains for measurement; it looks up from the legacy fonts_ map.
+        auto lookup = [&](const std::string& name) -> TTF_Font*
+            {
+                auto it = fonts_.find(name);
+                return it != fonts_.end() ? it->second : nullptr;
+            };
+
         if (node.style.fontName.has_value() && !node.style.fontName->empty())
-        {
-            auto it = fonts_.find(*node.style.fontName);
-            if (it != fonts_.end()) return it->second;
-        }
+            if (auto* f = lookup(*node.style.fontName)) return f;
 
         std::string widgetFont;
         switch (node.type)
@@ -957,29 +921,25 @@ namespace UI
         default: break;
         }
         if (!widgetFont.empty())
-        {
-            auto it = fonts_.find(widgetFont);
-            if (it != fonts_.end()) return it->second;
-        }
+            if (auto* f = lookup(widgetFont)) return f;
 
-        std::string themeFont = theme_.GetString("font-default");
-        if (!themeFont.empty())
-        {
-            auto it = fonts_.find(themeFont);
-            if (it != fonts_.end()) return it->second;
-        }
-
+        if (auto* f = lookup(theme_.GetString("font-default"))) return f;
         if (!fonts_.empty()) return fonts_.begin()->second;
         return nullptr;
     }
 
-    // Resolve the GPU font StringId that SubmitText expects.
     StringId Context::ResolveFontId(const Node& node) const
     {
+        auto lookup = [&](const std::string& name) -> StringId
+            {
+                auto it = fontIds_.find(name);
+                return it != fontIds_.end() ? it->second : StringId{};
+            };
+
         if (node.style.fontName.has_value() && !node.style.fontName->empty())
         {
-            auto it = fontIds_.find(*node.style.fontName);
-            if (it != fontIds_.end()) return it->second;
+            StringId id = lookup(*node.style.fontName);
+            if (id.id != 0) return id;
         }
 
         std::string widgetFont;
@@ -992,152 +952,104 @@ namespace UI
         }
         if (!widgetFont.empty())
         {
-            auto it = fontIds_.find(widgetFont);
-            if (it != fontIds_.end()) return it->second;
+            StringId id = lookup(widgetFont);
+            if (id.id != 0) return id;
         }
 
-        std::string themeFont = theme_.GetString("font-default");
-        if (!themeFont.empty())
-        {
-            auto it = fontIds_.find(themeFont);
-            if (it != fontIds_.end()) return it->second;
-        }
-
+        StringId id = lookup(theme_.GetString("font-default"));
+        if (id.id != 0) return id;
         if (!fontIds_.empty()) return fontIds_.begin()->second;
         return StringId{};
     }
 
     // =============================================================================
-    // Render helpers — all drawing routed through Renderer
+    // Draw primitives — all route through Renderer
     // =============================================================================
 
-    // UI draws at a fixed Z depth; widgets stack front-to-back by a small epsilon.
-    // Base layer = 0.9 (behind game world if you draw world at z < 0.9).
     static constexpr float UI_Z_BASE = 0.9f;
-    static constexpr float UI_Z_STEP = 0.0001f;  // per-node depth increment
+    static constexpr float UI_Z_STEP = 0.0001f;
 
-    // Convert SDL_FRect (pixel space, top-left origin) to Renderer world space.
-    // The renderer's default projection maps pixel coords 1:1, so we just convert
-    // the rect to a center position + scale.
-    static void RectToRendererTransform(const SDL_FRect& r, Vec2& outPos, Vec2& outScale)
+    static void RectToWorld(const SDL_FRect& r, Vec2& pos, Vec2& scale)
     {
-        outPos.x = r.x + r.w * 0.5f;
-        outPos.y = r.y + r.h * 0.5f;
-        outScale.x = r.w;
-        outScale.y = r.h;
+        pos.x = r.x + r.w * 0.5f;
+        pos.y = r.y + r.h * 0.5f;
+        scale.x = r.w;
+        scale.y = r.h;
     }
 
-    // Submit a solid-colour quad.  Uses "ui_mat" which must be a material that
-    // reads a per-instance color tint and outputs it directly (no texture).
+    static SDL_FColor ToFColor(Color c)
+    {
+        return { c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f };
+    }
+
     void Context::DrawRect(SDL_FRect rect, Color color, float z)
     {
         Vec2 pos, scale;
-        RectToRendererTransform(rect, pos, scale);
-
-        SDL_FColor sdlColor = {
-            color.r / 255.0f,
-            color.g / 255.0f,
-            color.b / 255.0f,
-            color.a / 255.0f
-        };
-
-        MaterialInstance mat("ui_mat");
+        RectToWorld(rect, pos, scale);
         renderer_->SubmitMesh(
             MeshInstance(StringId("unit_quad")),
-            std::move(mat),
+            MaterialInstance("ui_mat"),
             Vec3{ pos.x, pos.y, z },
-            scale,
-            0.0f,
-            sdlColor
+            scale, 0.0f,
+            ToFColor(color)
         );
     }
 
-    // Rounded rect: approximated with a standard quad for now.
-    // If you have a "ui_rounded_mat" that accepts a corner-radius uniform you can
-    // pass it there; here we just forward to the flat quad variant.
     void Context::DrawRoundedRect(SDL_FRect rect, Color color, float /*radius*/, float z)
     {
-        // TODO: pass radius as a fragment uniform to a rounded-rect shader.
         DrawRect(rect, color, z);
     }
 
-    // Border drawn as four thin quads (top / bottom / left / right).
     void Context::DrawRectBorder(SDL_FRect rect, Color color, float width, float z)
     {
         if (width <= 0.0f) return;
-
-        SDL_FRect top = { rect.x,                rect.y,                rect.w,         width };
-        SDL_FRect bottom = { rect.x,                rect.y + rect.h - width, rect.w,       width };
-        SDL_FRect left = { rect.x,                rect.y + width,        width,           rect.h - width * 2.0f };
-        SDL_FRect right = { rect.x + rect.w - width, rect.y + width,     width,           rect.h - width * 2.0f };
-
-        DrawRect(top, color, z);
-        DrawRect(bottom, color, z);
-        DrawRect(left, color, z);
-        DrawRect(right, color, z);
+        DrawRect({ rect.x,                   rect.y,                    rect.w,         width }, color, z);
+        DrawRect({ rect.x,                   rect.y + rect.h - width,   rect.w,         width }, color, z);
+        DrawRect({ rect.x,                   rect.y + width,            width,           rect.h - width * 2.0f }, color, z);
+        DrawRect({ rect.x + rect.w - width,  rect.y + width,            width,           rect.h - width * 2.0f }, color, z);
     }
 
-    // Submit a text string via the GPU font atlas path.
-    // Uses MaterialInstance("text_mat") as requested.
-    void Context::DrawText(const std::string& text, SDL_FRect rect,
-        StringId fontId, Color color, TextAlign align,
-        float z)
+    void Context::DrawText(const std::string& text, SDL_FRect rect, StringId fontId, Color color, TextAlign align, float z)
     {
         if (text.empty() || fontId.id == 0) return;
 
-        // Measure to compute alignment offset
-        TTF_Font* font = nullptr;
-        {
-            // Find the matching TTF_Font from the name->TTF map for measurement
-            // (we need the advance widths for centering).
-            // Fallback: skip centering if not available.
-            for (auto& [name, fnt] : fonts_)
-            {
-                auto idIt = fontIds_.find(name);
-                if (idIt != fontIds_.end() && idIt->second.id == fontId.id)
-                {
-                    font = fnt;
-                    break;
-                }
-            }
-        }
+        float startX = rect.x;
 
-        float textW = rect.w;
-        if (font && !text.empty())
+        TTF_Font* font = ResolveFont_ById(fontId);
+        if (font)
         {
             int tw = 0;
             TTF_GetStringSize(font, text.c_str(), 0, &tw, nullptr);
-            textW = (float)tw;
+            switch (align)
+            {
+            case TextAlign::Center: startX = rect.x + (rect.w - tw) * 0.5f; break;
+            case TextAlign::Right:  startX = rect.x + rect.w - tw;           break;
+            default:                startX = rect.x;                          break;
+            }
         }
 
-        float startX = rect.x;
-        switch (align)
-        {
-        case TextAlign::Center: startX = rect.x + (rect.w - textW) * 0.5f; break;
-        case TextAlign::Right:  startX = rect.x + rect.w - textW;           break;
-        default:                startX = rect.x;                              break;
-        }
-
-        // Vertically centre
         float startY = rect.y + rect.h * 0.5f;
 
-        SDL_FColor sdlColor = {
-            color.r / 255.0f,
-            color.g / 255.0f,
-            color.b / 255.0f,
-            color.a / 255.0f
-        };
-
-        MaterialInstance textMat("text_mat");
         renderer_->SubmitText(
-            text,
-            fontId,
-            std::move(textMat),
+            text, fontId,
+            MaterialInstance("text_mat"),
             Vec3{ startX, startY, z },
             Vec2{ 1.0f, 1.0f },
             0.0f,
-            sdlColor
+            ToFColor(color)
         );
+    }
+
+    // Helper: find TTF_Font* by StringId (for text measurement inside DrawText)
+    TTF_Font* Context::ResolveFont_ById(StringId id) const
+    {
+        for (auto& [name, sid] : fontIds_)
+            if (sid.id == id.id)
+            {
+                auto it = fonts_.find(name);
+                if (it != fonts_.end()) return it->second;
+            }
+        return nullptr;
     }
 
     // =============================================================================
@@ -1147,95 +1059,62 @@ namespace UI
     void Context::RenderContainer(const Node& node, float z)
     {
         if (node.style.background.has_value())
-        {
-            float radius = node.style.borderRadius.value_or(0.0f);
-            DrawRoundedRect(node.computedRect, *node.style.background, radius, z);
-        }
+            DrawRoundedRect(node.computedRect, *node.style.background, node.style.borderRadius.value_or(0.0f), z);
     }
 
     void Context::RenderButton(const Node& node, float z)
     {
         const ButtonStyle& bs = theme_.button;
-        InteractionState   state = node.widget.interactionState;
+        InteractionState state = node.widget.interactionState;
 
         Color bg = node.style.background.value_or(bs.background);
-        if (state == InteractionState::Pressed)
-            bg = node.style.backgroundPress.value_or(bs.backgroundPress);
-        else if (state == InteractionState::Hovered)
-            bg = node.style.backgroundHover.value_or(bs.backgroundHover);
+        if (state == InteractionState::Pressed)  bg = node.style.backgroundPress.value_or(bs.backgroundPress);
+        else if (state == InteractionState::Hovered)  bg = node.style.backgroundHover.value_or(bs.backgroundHover);
 
-        if (!node.enabled)
-        {
-            bg.r = (uint8_t)(bg.r * 0.5f);
-            bg.g = (uint8_t)(bg.g * 0.5f);
-            bg.b = (uint8_t)(bg.b * 0.5f);
-            bg.a = (uint8_t)(bg.a * 0.7f);
-        }
+        if (!node.enabled) { bg.r = (uint8_t)(bg.r * 0.5f); bg.g = (uint8_t)(bg.g * 0.5f); bg.b = (uint8_t)(bg.b * 0.5f); bg.a = (uint8_t)(bg.a * 0.7f); }
 
-        float radius = node.style.borderRadius.value_or(bs.borderRadius);
-        DrawRoundedRect(node.computedRect, bg, radius * 2.0f, z);
+        DrawRoundedRect(node.computedRect, bg, node.style.borderRadius.value_or(bs.borderRadius) * 2.0f, z);
 
         Color fg = node.style.foreground.value_or(bs.foreground);
         if (!node.enabled) fg.a = (uint8_t)(fg.a * 0.5f);
 
-        TextAlign ta = node.style.textAlign.value_or(bs.textAlign);
-        StringId fontId = ResolveFontId(node);
-
         const Edges& pad = node.style.padding.value_or(bs.padding);
         SDL_FRect textRect = {
-            node.computedRect.x + pad.left,
-            node.computedRect.y + pad.top,
-            node.computedRect.w - pad.left - pad.right,
-            node.computedRect.h - pad.top - pad.bottom
+            node.computedRect.x + pad.left,   node.computedRect.y + pad.top,
+            node.computedRect.w - pad.left - pad.right, node.computedRect.h - pad.top - pad.bottom
         };
-
-        DrawText(node.widget.text, textRect, fontId, fg, ta, z + UI_Z_STEP);
+        DrawText(node.widget.text, textRect, ResolveFontId(node), fg, node.style.textAlign.value_or(bs.textAlign), z + UI_Z_STEP);
     }
 
     void Context::RenderLabel(const Node& node, float z)
     {
         const LabelStyle& ls = theme_.label;
-        Color    fg = node.style.foreground.value_or(ls.foreground);
-        TextAlign ta = node.style.textAlign.value_or(ls.textAlign);
-        StringId fontId = ResolveFontId(node);
-        DrawText(node.widget.text, node.computedRect, fontId, fg, ta, z);
+        DrawText(node.widget.text, node.computedRect, ResolveFontId(node),
+            node.style.foreground.value_or(ls.foreground),
+            node.style.textAlign.value_or(ls.textAlign), z);
     }
 
     void Context::RenderSlider(const Node& node, float z)
     {
         const SliderStyle& ss = theme_.slider;
         const SDL_FRect& r = node.computedRect;
-        InteractionState state = node.widget.interactionState;
 
         float thumbR = ss.thumbRadius;
-        float trackH = ss.trackHeight;
-        float trackY = r.y + (r.h - trackH) * 0.5f;
-
-        // Track background
-        SDL_FRect trackBg = { r.x + thumbR, trackY, r.w - thumbR * 2.0f, trackH };
+        float trackY = r.y + (r.h - ss.trackHeight) * 0.5f;
+        SDL_FRect trackBg = { r.x + thumbR, trackY, r.w - thumbR * 2.0f, ss.trackHeight };
         DrawRoundedRect(trackBg, ss.trackBackground, ss.borderRadius, z);
 
-        // Track fill
         float range = node.widget.sliderMax - node.widget.sliderMin;
         float t = (range > 0.0f) ? (node.widget.sliderValue - node.widget.sliderMin) / range : 0.0f;
-        float fillW = t * trackBg.w;
-        SDL_FRect trackFill = { trackBg.x, trackY, fillW, trackH };
+        SDL_FRect trackFill = { trackBg.x, trackY, t * trackBg.w, ss.trackHeight };
         DrawRoundedRect(trackFill, ss.trackFill, ss.borderRadius, z + UI_Z_STEP);
 
-        // Thumb (circle approximated as a small quad — use a circle material if available)
-        float thumbX = trackBg.x + fillW;
+        float thumbX = trackBg.x + t * trackBg.w;
         float thumbY = r.y + r.h * 0.5f;
-
-        Color thumbColor = (state == InteractionState::Hovered || state == InteractionState::Pressed)
+        Color thumbColor = (node.widget.interactionState == InteractionState::Hovered ||
+            node.widget.interactionState == InteractionState::Pressed)
             ? ss.thumbHover : ss.thumb;
-
-        SDL_FRect thumbRect = {
-            thumbX - thumbR,
-            thumbY - thumbR,
-            thumbR * 2.0f,
-            thumbR * 2.0f
-        };
-        DrawRoundedRect(thumbRect, thumbColor, thumbR, z + UI_Z_STEP * 2.0f);
+        DrawRoundedRect({ thumbX - thumbR, thumbY - thumbR, thumbR * 2.0f, thumbR * 2.0f }, thumbColor, thumbR, z + UI_Z_STEP * 2.0f);
     }
 
     void Context::RenderInput(const Node& node, float z)
@@ -1243,55 +1122,45 @@ namespace UI
         const InputFieldStyle& ifs = theme_.inputField;
         bool focused = node.widget.focused;
 
-        Color  bg = node.style.background.value_or(focused ? ifs.backgroundFocus : ifs.background);
-        float  radius = node.style.borderRadius.value_or(ifs.borderRadius);
-        DrawRoundedRect(node.computedRect, bg, radius, z);
-
-        float  borderW = node.style.borderWidth.value_or(ifs.borderWidth);
-        Color  borderC = node.style.border.value_or(focused ? ifs.borderFocus : ifs.border);
-        DrawRectBorder(node.computedRect, borderC, borderW, z + UI_Z_STEP);
+        DrawRoundedRect(node.computedRect,
+            node.style.background.value_or(focused ? ifs.backgroundFocus : ifs.background),
+            node.style.borderRadius.value_or(ifs.borderRadius), z);
+        DrawRectBorder(node.computedRect,
+            node.style.border.value_or(focused ? ifs.borderFocus : ifs.border),
+            node.style.borderWidth.value_or(ifs.borderWidth), z + UI_Z_STEP);
 
         const Edges& pad = node.style.padding.value_or(ifs.padding);
         SDL_FRect textRect = {
-            node.computedRect.x + pad.left,
-            node.computedRect.y + pad.top,
-            node.computedRect.w - pad.left - pad.right,
-            node.computedRect.h - pad.top - pad.bottom
+            node.computedRect.x + pad.left,   node.computedRect.y + pad.top,
+            node.computedRect.w - pad.left - pad.right, node.computedRect.h - pad.top - pad.bottom
         };
 
-        StringId fontId = ResolveFontId(node);
         const std::string& val = node.widget.inputValue;
+        StringId fontId = ResolveFontId(node);
 
         if (val.empty() && !focused)
         {
-            Color ph = node.style.placeholder.value_or(ifs.placeholder);
-            DrawText(node.widget.placeholder, textRect, fontId, ph, TextAlign::Left, z + UI_Z_STEP);
+            DrawText(node.widget.placeholder, textRect, fontId,
+                node.style.placeholder.value_or(ifs.placeholder), TextAlign::Left, z + UI_Z_STEP);
         }
         else
         {
-            Color fg = node.style.foreground.value_or(ifs.foreground);
-            DrawText(val, textRect, fontId, fg, TextAlign::Left, z + UI_Z_STEP);
+            DrawText(val, textRect, fontId,
+                node.style.foreground.value_or(ifs.foreground), TextAlign::Left, z + UI_Z_STEP);
 
-            // Cursor — a thin vertical quad
             if (focused)
             {
-                TTF_Font* font = ResolveFont(node);
                 float cursorX = 0.0f;
+                TTF_Font* font = ResolveFont(node);
                 if (font && !val.empty())
                 {
                     std::string before = val.substr(0, node.widget.cursorPos);
-                    int w = 0;
-                    TTF_GetStringSize(font, before.c_str(), 0, &w, nullptr);
-                    cursorX = (float)w;
+                    int cw = 0;
+                    TTF_GetStringSize(font, before.c_str(), 0, &cw, nullptr);
+                    cursorX = (float)cw;
                 }
-
-                SDL_FRect cursorRect = {
-                    textRect.x + cursorX,
-                    textRect.y,
-                    2.0f,
-                    textRect.h
-                };
-                DrawRect(cursorRect, ifs.foreground, z + UI_Z_STEP * 2.0f);
+                DrawRect({ textRect.x + cursorX, textRect.y, 2.0f, textRect.h },
+                    ifs.foreground, z + UI_Z_STEP * 2.0f);
             }
         }
     }
@@ -1299,23 +1168,13 @@ namespace UI
     void Context::RenderImage(const Node& node, float z)
     {
         if (node.widget.textureId.id == 0) return;
-
         Vec2 pos, scale;
-        RectToRendererTransform(node.computedRect, pos, scale);
-
-        const SDL_FRect& src = node.widget.textureRect;
-
+        RectToWorld(node.computedRect, pos, scale);
         MaterialInstance mat("ui_image_mat");
         mat.AddTexture(node.widget.textureId);
-
-        renderer_->SubmitSprite(
-            std::move(mat),
-            src,
-            Vec3{ pos.x, pos.y, z },
-            Vec2{ 1.0f, 1.0f },
-            0.0f,
-            { 1.0f, 1.0f, 1.0f, 1.0f }
-        );
+        renderer_->SubmitSprite(std::move(mat), node.widget.textureRect,
+            Vec3{ pos.x, pos.y, z }, Vec2{ 1.0f, 1.0f }, 0.0f,
+            { 1.0f, 1.0f, 1.0f, 1.0f });
     }
 
     void Context::RenderNode(const Node& node, float z)
@@ -1332,7 +1191,7 @@ namespace UI
         case WidgetType::Image:      RenderImage(node, z);     break;
         }
 
-        float childZ = z - UI_Z_STEP;  // children draw on top (lower Z = closer in default depth order)
+        float childZ = z - UI_Z_STEP;
         for (NodeHandle ch : node.children)
         {
             auto it = nodes_.find(ch);
@@ -1353,7 +1212,7 @@ namespace UI
             if (it != nodes_.end())
             {
                 RenderNode(it->second, z);
-                z -= UI_Z_STEP * 100.0f;  // gap between root trees
+                z -= UI_Z_STEP * 100.0f;
             }
         }
     }

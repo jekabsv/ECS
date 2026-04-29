@@ -32,26 +32,21 @@ namespace UI
 
     struct WidgetData
     {
-        // Label / Button
         std::string text;
 
-        // Interaction
         InteractionState interactionState = InteractionState::None;
 
-        // Slider
         float sliderValue = 0.0f;
         float sliderMin = 0.0f;
         float sliderMax = 1.0f;
         bool  sliderChanged = false;
 
-        // InputField
         std::string inputValue;
         std::string placeholder;
         bool        inputChanged = false;
         bool        focused = false;
         uint32_t    cursorPos = 0;
 
-        // Image
         StringId  textureId = {};
         SDL_FRect textureRect = { 0,0,0,0 };
     };

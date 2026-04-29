@@ -6,7 +6,6 @@
 #include <unordered_map>
 #include <string>
 #include <string_view>
-#include <memory>
 #include <vector>
 #include <optional>
 #include <SDL3/SDL_video.h>
@@ -41,13 +40,11 @@ namespace UI
         ~Context() = default;
 
         // -- Lifecycle --------------------------------------------------------
-
         void Init(Renderer* renderer, float canvasW, float canvasH, SDL_Window* window);
         void Resize(float canvasW, float canvasH);
         void Update(const InputState& input, float dt);
 
         // -- Tree building ----------------------------------------------------
-
         NodeHandle AddContainer(NodeHandle parent = NULL_HANDLE, std::string_view id = "");
         NodeHandle AddLabel(std::string_view text, NodeHandle parent = NULL_HANDLE, std::string_view id = "");
         NodeHandle AddButton(std::string_view label, NodeHandle parent = NULL_HANDLE, std::string_view id = "");
@@ -59,21 +56,18 @@ namespace UI
         void ClearChildren(NodeHandle handle);
 
         // -- Node lookup ------------------------------------------------------
-
         NodeHandle Find(std::string_view id) const;
-        bool Exists(NodeHandle handle) const;
+        bool       Exists(NodeHandle handle)   const;
 
         // -- Polling ----------------------------------------------------------
-
-        InteractionState Poll(NodeHandle handle) const;
-        bool IsClicked(NodeHandle handle) const;
-        bool SliderChanged(NodeHandle handle) const;
-        float GetSliderValue(NodeHandle handle) const;
-        bool InputChanged(NodeHandle handle) const;
+        InteractionState   Poll(NodeHandle handle) const;
+        bool               IsClicked(NodeHandle handle) const;
+        bool               SliderChanged(NodeHandle handle) const;
+        float              GetSliderValue(NodeHandle handle) const;
+        bool               InputChanged(NodeHandle handle) const;
         const std::string& GetInputValue(NodeHandle handle) const;
 
         // -- Mutation ---------------------------------------------------------
-
         void SetText(NodeHandle handle, std::string_view text);
         void SetVisible(NodeHandle handle, bool visible);
         void SetEnabled(NodeHandle handle, bool enabled);
@@ -95,16 +89,13 @@ namespace UI
         void SetStyleOverride(NodeHandle handle, const StyleOverride& style);
 
         // -- Font -------------------------------------------------------------
-
         void RegisterFont(std::string_view fontName, TTF_Font* font, StringId gpuFontId);
 
         // -- Theme ------------------------------------------------------------
-
         Theme& GetTheme() { return theme_; }
         const Theme& GetTheme() const { return theme_; }
 
         // -- Per-frame passes -------------------------------------------------
-
         void ProcessInput(const InputState& input, float dt);
         void LayoutPass();
         void RenderPass();
@@ -115,8 +106,8 @@ namespace UI
 
         Node& GetNode(NodeHandle handle);
         const Node& GetNode(NodeHandle handle) const;
-        NodeHandle AllocNode(WidgetType type, NodeHandle parent, std::string_view id);
-        void RemoveRecursive(NodeHandle handle);
+        NodeHandle  AllocNode(WidgetType type, NodeHandle parent, std::string_view id);
+        void        RemoveRecursive(NodeHandle handle);
 
         struct FlexLine
         {
@@ -143,18 +134,19 @@ namespace UI
         void DrawText(const std::string& text, SDL_FRect rect, StringId fontId, Color color, TextAlign align, float z);
 
         TTF_Font* ResolveFont(const Node& node) const;
+        TTF_Font* ResolveFont_ById(StringId id)     const;
         StringId  ResolveFontId(const Node& node) const;
 
         Renderer* renderer_ = nullptr;
-        float canvasW_ = 0.0f;
-        float canvasH_ = 0.0f;
+        float     canvasW_ = 0.0f;
+        float     canvasH_ = 0.0f;
 
         Theme theme_;
 
-        std::unordered_map<NodeHandle, Node> nodes_;
-        std::vector<NodeHandle>              freeHandles_;
-        NodeHandle                           nextHandle_ = 1;
-        std::vector<NodeHandle>              roots_;
+        std::unordered_map<NodeHandle, Node>        nodes_;
+        std::vector<NodeHandle>                     freeHandles_;
+        NodeHandle                                  nextHandle_ = 1;
+        std::vector<NodeHandle>                     roots_;
         std::unordered_map<std::string, NodeHandle> idMap_;
 
         std::unordered_map<std::string, TTF_Font*> fonts_;

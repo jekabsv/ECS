@@ -111,6 +111,11 @@ void StartState::Init()
     _data->assets.AddMaterial(StringId("text_mat"), textMat);
 
 
+    MaterialBase uiMat("vert", "frag");
+    MaterialBase::MakeOverlay(uiMat);
+    MaterialBase::SetVertexAttr(uiMat);
+
+    _data->assets.AddMaterial(StringId("ui_mat"), uiMat);
 
 
 
@@ -167,7 +172,25 @@ void StartState::Init()
 
     //_data->state.AddState(StateRef(new depthState(_data)), 0);
     //_data->state.AddState(StateRef(new Level1(_data)), 0);
-    _data->state.AddState(StateRef(new Boids(_data)), 0);
+    //_data->state.AddState(StateRef(new Boids(_data)), 0);
+
+
+    ui.RegisterFont("font-default", _data->assets.GetFont(StringId("tnr")), StringId("tnr"));
+
+    UI::NodeHandle panel = ui.AddContainer();
+    ui.SetSize(panel, UI::SizeValue::Px(300.0f), UI::SizeValue::Px(200.0f));
+    ui.SetFlexDirection(panel, UI::FlexDirection::Column);
+    ui.SetAlignItems(panel, UI::AlignItems::Stretch);
+    ui.SetGap(panel, 12.0f);
+    ui.SetPadding(panel, UI::Edges::All(16.0f));
+    ui.SetMargin(panel, UI::Edges::TRBL(200.0f, 0.0f, 0.0f, 200.0f));
+
+    UI::StyleOverride bg;
+    bg.background = UI::Color::RGBA(40, 40, 50, 220);
+    ui.SetStyleOverride(panel, bg);
+
+    btnTest = ui.AddButton("Click Me", panel);
+    sliderVol = ui.AddSlider(0.5f, 0.0f, 1.0f, panel);
 }
 
 float rotation = 0;

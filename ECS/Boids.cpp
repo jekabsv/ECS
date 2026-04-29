@@ -271,12 +271,12 @@ void Boids::Init()
         ECS::SystemGroup::Render);
 
 
-    ui.GetTheme().LoadDarkDefaults();
+    //ui.GetTheme().LoadDarkDefaults();
 
-    ui.RegisterFont("main", _data->assets.GetFont("main"));
+    //ui.RegisterFont("main", _data->assets.GetFont("main"));
 
 
-    UI::NodeHandle root = ui.AddContainer();
+   /* UI::NodeHandle root = ui.AddContainer();
     ui.SetSize(root, UI::SizeValue::Px(500), UI::SizeValue::Auto());
     ui.SetFlexDirection(root, UI::FlexDirection::Column);
     ui.SetJustify(root, UI::JustifyContent::FlexStart);
@@ -284,7 +284,7 @@ void Boids::Init()
     ui.SetGap(root, 12.0f);
     ui.SetPadding(root, UI::Edges::All(20.0f));
 
-    back = ui.AddButton("Back to menu", root);
+    back = ui.AddButton("Back to menu", root);*/
 
 
 }

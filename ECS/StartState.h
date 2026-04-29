@@ -10,10 +10,9 @@ public:
 	void Update(float dt) override;
 	void Render(float dt) override;
 
-    UI::NodeHandle btnBoids = UI::NULL_HANDLE;
-    UI::NodeHandle btnSillyGame = UI::NULL_HANDLE;
-    UI::NodeHandle btnSlider = UI::NULL_HANDLE;
-    UI::NodeHandle btnQuit_ = UI::NULL_HANDLE;
+    UI::Context ui;
+    UI::NodeHandle btnTest;
+    UI::NodeHandle sliderVol;
 
     float rotationAngle = 0.0f;
     float x = 400.f;
