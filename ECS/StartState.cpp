@@ -1,4 +1,3 @@
-//#include <windows.h>
 #include <iostream>
 #include <format>
 
@@ -7,7 +6,7 @@
 #include "Level1.h"
 //#include "SPH.h"
 #include "Boids.h"
-#include "depthState.h"
+
 
 class ProcessWASD : public InputSystem::Processor
 {
@@ -44,8 +43,6 @@ public:
     }
 };
 
-
-static float y{};
 static bool focused;
 
 void StartState::Init()
@@ -77,20 +74,17 @@ void StartState::Init()
     _data->assets.LoadBMPSurface("player", "../ECS/player.bmp");
     _data->assets.AddTexture("player", _data->renderer.CreateTexture(_data->assets.GetSurface("player")));
 
-
     _data->assets.LoadFont("tnr", "../ECS/times.ttf");
     _data->assets.AddGPUFont("tnr", _data->renderer.CreateFontt("tnr"));
 
-
- 
 	_data->assets.AddTexture("atlas", _data->assets.GetGPUFont("tnr")->atlas);
+
 
 
     //Materials
     MaterialBase spriteMaterial("vertSprite", "fragSprite");
     MaterialBase::MakeOpaque(spriteMaterial);
     MaterialBase::SetVertexAttr(spriteMaterial);
-
     _data->assets.AddMaterial(StringId("sprite_mat"), spriteMaterial);
 
 
@@ -98,12 +92,10 @@ void StartState::Init()
     MaterialBase mat("vert", "frag");
     MaterialBase::MakeOpaque(mat);
     MaterialBase::SetVertexAttr(mat);
-
     _data->assets.AddMaterial(StringId("mat"), mat);
 
 
     MaterialBase::MakeAdditive(mat);
-
     _data->assets.AddMaterial(StringId("mat_transp"), mat);
     
 
@@ -167,6 +159,8 @@ void StartState::Init()
 
 
 
+
+    //UI
     ui.GetTheme().LoadDarkDefaults();
     ui.GetTheme().SetToken("font-default", StringId("tnr"));
 
@@ -175,9 +169,12 @@ void StartState::Init()
     ui.SetSize(root, UI::SizeValue::Px(300), UI::SizeValue::Auto());
     ui.SetFlexDirection(root, UI::FlexDirection::Column);
     ui.SetJustify(root, UI::JustifyContent::Center);
+	ui.SetPadding(root, UI::Edges::All(20.f));
+
 
     ui.SetGap(root, 16.f);
-
+    auto img = ui.AddImage("player", { 0, 0, 64, 64 }, root);
+    ui.SetSize(img, UI::SizeValue::Px(128), UI::SizeValue::Px(128));
 
     btnSillyGame = ui.AddButton("Silly game", root);
     btnBoids = ui.AddButton("Boids", root);
@@ -187,11 +184,14 @@ void StartState::Init()
     btnLabel = ui.AddLabel("This is a label", root);
     btnInput = ui.AddInputField("Type here...", root);
     
-    y = 0;
 }
 
 void StartState::Update(float dt) 
 {
+
+	//_data->renderer.SubmitSprite(MaterialInstance("sprite_mat", "atlas"), 
+        //{ 0, 0, 512, 512 }, { 960.f, 540.f, 0.1f }, { 1.f, 1.f }, 0.f, { 1.f, 1.f, 1.f, 1.f });
+
 	auto &x = ui.GetInputValue(btnInput);
 
     if (ui.Poll(btnInput) != UI::InteractionState::Focused)
@@ -204,8 +204,6 @@ void StartState::Update(float dt)
     if(!focused)
         ui.SetInputValue(btnInput, std::format("{:.0f}", ui.GetSliderValue(btnSlider)));
 
-    y += _data->inputs.GetActionAxis("move")[0] * dt * 5;
-
     if (ui.IsClicked(btnSillyGame))
 		_data->state.AddState(StateRef(new Level1(_data)), 0);
     if (ui.IsClicked(btnBoids))
@@ -216,11 +214,6 @@ void StartState::Update(float dt)
 
 void StartState::Render(float dt)
 {
-    //_data->renderer.SubmitText("qwertyuiopasdfghjklzxcvbnm;,.[]'/", StringId("tnr"), MaterialInstance("text_mat"),
-		//{ 400.f, 100.f, 0.f }, { 1.f, 1.f }, 0.f);
-
-    //_data->renderer.SubmitSprite(MaterialInstance("sprite_mat", "atlas"), {0.f, 0.f, 999.f, 999.f},
-		//{ 500.f, 500.f, 0.f }, { 1.f, 1.f }, 0.f, { 1.f, 1.f, 1.f, 1.f });
 
 }
 

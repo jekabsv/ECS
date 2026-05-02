@@ -5,7 +5,6 @@
 #include "Transform.h"
 #include "Utility.h"
 
-//#include <Windows.h>
 #include <iostream>
 
 struct Clicked { bool clicked = false; };

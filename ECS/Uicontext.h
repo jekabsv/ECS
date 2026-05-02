@@ -89,7 +89,7 @@ namespace UI
         NodeHandle AddInputField(std::string_view placeholder = "", NodeHandle parent = NULL_HANDLE, std::string_view id = "");
 
         /// Add an image widget.
-        NodeHandle AddImage(const SDL_Texture* texture, SDL_FRect sourceRect = { 0,0,0,0 }, NodeHandle parent = NULL_HANDLE, std::string_view id = "");
+        NodeHandle AddImage(StringId texture, SDL_FRect sourceRect = { 0,0,0,0 }, NodeHandle parent = NULL_HANDLE, std::string_view id = "");
 
         /// Remove a node (and all its children) from the tree.
         void Remove(NodeHandle handle);
@@ -132,7 +132,7 @@ namespace UI
         void SetEnabled(NodeHandle handle, bool enabled);
         void SetSliderValue(NodeHandle handle, float value);
         void SetInputValue(NodeHandle handle, std::string_view value);
-        void SetImage(NodeHandle handle, SDL_Texture* texture, SDL_FRect sourceRect = { 0,0,0,0 });
+        void SetImage(NodeHandle handle, StringId texture, SDL_FRect sourceRect = { 0,0,0,0 });
 
         // Flex mutations
         void SetSize(NodeHandle handle, SizeValue width, SizeValue height);

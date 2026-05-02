@@ -116,12 +116,11 @@ namespace UI
         return h;
     }
 
-    NodeHandle Context::AddImage(const SDL_Texture* texture, SDL_FRect sourceRect, NodeHandle parent, std::string_view id)
+    NodeHandle Context::AddImage(StringId texture, SDL_FRect sourceRect, NodeHandle parent, std::string_view id)
     {
-        SDL_Texture* tex = const_cast<SDL_Texture*>(texture);
         NodeHandle h = AllocNode(WidgetType::Image, parent, id);
         auto& w = nodes_[h].widget;
-        w.texture = tex;
+        w.texture = texture;
         w.textureRect = sourceRect;
         return h;
     }
@@ -299,7 +298,7 @@ namespace UI
         w.cursorPos = (uint32_t)w.inputValue.size();
     }
 
-    void Context::SetImage(NodeHandle handle, SDL_Texture* texture, SDL_FRect sourceRect)
+    void Context::SetImage(NodeHandle handle, StringId texture, SDL_FRect sourceRect)
     {
         auto it = nodes_.find(handle);
         if (it == nodes_.end()) return;
@@ -658,16 +657,27 @@ namespace UI
 
         case WidgetType::Image:
         {
-            if (node.widget.texture && w < 0.0f && h < 0.0f)
+            if (!node.widget.texture.empty() && w < 0.0f && h < 0.0f)
             {
+
+				auto *x = _assets->GetTexture(node.widget.texture);
+
+
                 float tw = 0, th = 0;
-                SDL_GetTextureSize(node.widget.texture, &tw, &th);
-                if (node.widget.textureRect.w > 0) tw = node.widget.textureRect.w;
-                if (node.widget.textureRect.h > 0) th = node.widget.textureRect.h;
-                w = tw; h = th;
+				tw = (float)x->width;
+				th = (float)x->height;
+
+                if (node.widget.textureRect.w > 0) 
+                    tw = node.widget.textureRect.w;
+                if (node.widget.textureRect.h > 0) 
+                    th = node.widget.textureRect.h;
+                w = tw;
+                h = th;
             }
-            if (w < 0.0f) w = 0.0f;
-            if (h < 0.0f) h = 0.0f;
+            if (w < 0.0f)
+                w = 0.0f;
+            if (h < 0.0f)
+                h = 0.0f;
             break;
         }
 
@@ -1331,7 +1341,7 @@ namespace UI
                     // Match the same scale DrawText uses
                     Vec3 fullMeasured = MeasureText(font, val);
                     float lineHeight = fullMeasured.y - fullMeasured.z;
-                    float scale = textRect.h / lineHeight;
+                    float scale = textRect.h / lineHeight;  
                     if (fullMeasured.x * scale > textRect.w)
                         scale = textRect.w / fullMeasured.x;
 
@@ -1351,11 +1361,20 @@ namespace UI
 
     void Context::RenderImage(const Node& node)
     {
-        if (!node.widget.texture) return;
+        if (node.widget.texture.empty()) return;
 
-        const SDL_FRect& src = node.widget.textureRect;
-        const SDL_FRect* srcPtr = (src.w > 0 && src.h > 0) ? &src : nullptr;
-        //SDL_RenderTexture(renderer_, node.widget.texture, srcPtr, &node.computedRect);
+        float cx = node.computedRect.x + node.computedRect.w * 0.5f;
+        float cy = node.computedRect.y + node.computedRect.h * 0.5f;
+
+        float scaleX = node.computedRect.w / node.widget.textureRect.w;
+        float scaleY = node.computedRect.h / node.widget.textureRect.h;
+
+        _renderer->SubmitSprite(
+            MaterialInstance("sprite_mat", node.widget.texture),
+            node.widget.textureRect,
+            { cx, cy, 0.1f },
+            { scaleX, scaleY }, 0.f,
+            { 1.f, 1.f, 1.f, 1.f });
     }
 
     void Context::RenderNode(const Node& node)

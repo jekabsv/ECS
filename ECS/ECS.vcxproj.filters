@@ -123,9 +123,6 @@
     <ClCompile Include="Boids.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="depthState.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECS.h">
@@ -204,9 +201,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Boids.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="depthState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="EngineMath.h">

@@ -139,7 +139,6 @@
     <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="Boids.cpp" />
     <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="depthState.cpp" />
     <ClCompile Include="ECS.cpp" />
     <ClCompile Include="Level1.cpp" />
     <ClCompile Include="logger.cpp" />
@@ -164,7 +163,6 @@
     <ClInclude Include="Boids.h" />
     <ClInclude Include="BoxCollider.h" />
     <ClInclude Include="Camera.h" />
-    <ClInclude Include="depthState.h" />
     <ClInclude Include="ECS.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="EngineMath.h" />

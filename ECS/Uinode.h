@@ -62,7 +62,7 @@ namespace UI
         uint32_t    cursorPos = 0;
 
         // Image
-        SDL_Texture* texture = nullptr;    // not owned
+        StringId texture;
         SDL_FRect    textureRect = { 0,0,0,0 }; // source rect, zeroed = full texture
     };
 
