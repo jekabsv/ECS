@@ -1,10 +1,12 @@
+//#include <windows.h>
+#include <iostream>
+#include <format>
+
+#include "Uicontext.h";
 #include "StartState.h"
 #include "Level1.h"
-#include <windows.h>
 //#include "SPH.h"
 #include "Boids.h"
-#include "Uicontext.h";
-#include <iostream>
 #include "depthState.h"
 
 class ProcessWASD : public InputSystem::Processor
@@ -43,7 +45,8 @@ public:
 };
 
 
-
+static float y{};
+static bool focused;
 
 void StartState::Init()
 {
@@ -80,7 +83,7 @@ void StartState::Init()
 
 
  
-
+	_data->assets.AddTexture("atlas", _data->assets.GetGPUFont("tnr")->atlas);
 
 
     //Materials
@@ -109,9 +112,6 @@ void StartState::Init()
     MaterialBase::MakeOverlay(textMat);
     MaterialBase::SetVertexAttr(textMat);
     _data->assets.AddMaterial(StringId("text_mat"), textMat);
-
-
-
 
 
 
@@ -165,23 +165,62 @@ void StartState::Init()
 
     _data->inputs.AssignMapToPlayer("level1");
 
-    //_data->state.AddState(StateRef(new depthState(_data)), 0);
-    //_data->state.AddState(StateRef(new Level1(_data)), 0);
-    _data->state.AddState(StateRef(new Boids(_data)), 0);
+
+
+    ui.GetTheme().LoadDarkDefaults();
+    ui.GetTheme().SetToken("font-default", StringId("tnr"));
+
+
+    UI::NodeHandle root = ui.AddContainer();
+    ui.SetSize(root, UI::SizeValue::Px(300), UI::SizeValue::Auto());
+    ui.SetFlexDirection(root, UI::FlexDirection::Column);
+    ui.SetJustify(root, UI::JustifyContent::Center);
+
+    ui.SetGap(root, 16.f);
+
+
+    btnSillyGame = ui.AddButton("Silly game", root);
+    btnBoids = ui.AddButton("Boids", root);
+    btnQuit_ = ui.AddButton("Quit", root);
+
+    btnSlider = ui.AddSlider(5000.f, 500.0f, 10000.0f, root);
+    btnLabel = ui.AddLabel("This is a label", root);
+    btnInput = ui.AddInputField("Type here...", root);
+    
+    y = 0;
 }
 
-float rotation = 0;
+void StartState::Update(float dt) 
+{
+	auto &x = ui.GetInputValue(btnInput);
 
-void StartState::Update(float dt) {
-    rotation += _data->inputs.GetActionAxis("move")[0] * dt * 5;
+    if (ui.Poll(btnInput) != UI::InteractionState::Focused)
+        if(focused)
+        {
+            ui.SetText(btnLabel, x);
+			ui.SetSliderValue(btnSlider, std::stof(x));
+        }
+	focused = ui.Poll(btnInput) == UI::InteractionState::Focused;
+    if(!focused)
+        ui.SetInputValue(btnInput, std::format("{:.0f}", ui.GetSliderValue(btnSlider)));
+
+    y += _data->inputs.GetActionAxis("move")[0] * dt * 5;
+
+    if (ui.IsClicked(btnSillyGame))
+		_data->state.AddState(StateRef(new Level1(_data)), 0);
+    if (ui.IsClicked(btnBoids))
+        _data->state.AddState(StateRef(new Boids(_data)), 0);
+    if (ui.IsClicked(btnQuit_))
+		_data->quit = true;
 }
 
 void StartState::Render(float dt)
 {
-    _data->renderer.SubmitText("hello world!", "tnr", MaterialInstance("text_mat"), { 100.f, 150.f, 0.f }, { 1.f, 1.f }, rotation);
+    //_data->renderer.SubmitText("qwertyuiopasdfghjklzxcvbnm;,.[]'/", StringId("tnr"), MaterialInstance("text_mat"),
+		//{ 400.f, 100.f, 0.f }, { 1.f, 1.f }, 0.f);
 
-    auto gpuFont = _data->assets.GetGPUFont("tnr");
+    //_data->renderer.SubmitSprite(MaterialInstance("sprite_mat", "atlas"), {0.f, 0.f, 999.f, 999.f},
+		//{ 500.f, 500.f, 0.f }, { 1.f, 1.f }, 0.f, { 1.f, 1.f, 1.f, 1.f });
 
-    SDL_FRect fullRect = { 0, 0, (float)gpuFont->atlas.width, (float)gpuFont->atlas.height };
 }
 

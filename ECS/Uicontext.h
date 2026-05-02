@@ -9,9 +9,9 @@
 #include <vector>
 #include <optional>
 #include <SDL3/SDL_video.h>
+#include "Renderer.h"
 
 struct SDL_Renderer;
-struct TTF_Font;
 struct SDL_Texture;
 
 namespace UI
@@ -61,7 +61,7 @@ namespace UI
         // -- Lifecycle --------------------------------------------------------
 
         /// Call once. Provide renderer + initial canvas size.
-        void Init(SDL_Renderer* renderer, float canvasW, float canvasH, SDL_Window* window);
+        void Init(Renderer* renderer, float canvasW, float canvasH, SDL_Window* window, AssetManager *assets);
 
         /// Call when the window is resized.
         void Resize(float canvasW, float canvasH);
@@ -150,12 +150,6 @@ namespace UI
         // Style overrides
         void SetStyleOverride(NodeHandle handle, const StyleOverride& style);
 
-        // -- Font -------------------------------------------------------------
-
-        /// Register a font. fontName must match what's in your AssetManager.
-        /// The context does not own the font pointer.
-        void RegisterFont(std::string_view fontName, TTF_Font* font);
-
         // -- Theme ------------------------------------------------------------
 
         Theme& GetTheme() { return theme_; }
@@ -169,6 +163,9 @@ namespace UI
 
     private:
 
+        AssetManager* _assets = nullptr;
+
+        Renderer* _renderer = nullptr;
 
         SDL_Window* window_ = nullptr;
         // -- Internal node management -----------------------------------------
@@ -204,17 +201,17 @@ namespace UI
         void RenderImage(const Node& node);
         void RenderContainer(const Node& node);
 
-        void DrawRect(SDL_FRect rect, Color color);
+        void DrawRect(SDL_FRect rect, Color color, float z = 0.f);
         void DrawRectBorder(SDL_FRect rect, Color color, float width);
         void DrawRoundedRect(SDL_FRect rect, Color color, float radius);
-        void DrawText(const std::string& text, SDL_FRect rect, TTF_Font* font, Color color, TextAlign align);
-
-        TTF_Font* ResolveFont(const Node& node) const;
-        float     ResolveFontSize(const Node& node) const;
+        void DrawText(const std::string& text, SDL_FRect rect, StringId font, Color color, TextAlign align);
 
         // -- State ------------------------------------------------------------
 
-        SDL_Renderer* renderer_ = nullptr;
+        // In Renderer:
+        Vec3 MeasureText(StringId fontId, const std::string& text);
+
+
         float         canvasW_ = 0.0f;
         float         canvasH_ = 0.0f;
 
@@ -231,9 +228,6 @@ namespace UI
 
         // String-id lookup
         std::unordered_map<std::string, NodeHandle> idMap_;
-
-        // Font registry: name → TTF_Font* (not owned)
-        std::unordered_map<std::string, TTF_Font*> fonts_;
 
         // Input state snapshot (kept for render pass to use for hover etc.)
         InputState currentInput_;

@@ -5,7 +5,7 @@
 #include "Transform.h"
 #include "Utility.h"
 
-#include <Windows.h>
+//#include <Windows.h>
 #include <iostream>
 
 struct Clicked { bool clicked = false; };
@@ -197,12 +197,11 @@ void Level1::Init()
 
 
     ui.GetTheme().LoadDarkDefaults();
-
-    ui.RegisterFont("main", _data->assets.GetFont("main"));
+    ui.GetTheme().SetToken("font-default", StringId("tnr"));
 
 
     UI::NodeHandle root = ui.AddContainer();
-    ui.SetSize(root, UI::SizeValue::Px(500), UI::SizeValue::Auto());
+    ui.SetSize(root, UI::SizeValue::Px(200), UI::SizeValue::Auto());
     ui.SetFlexDirection(root, UI::FlexDirection::Column);
     ui.SetJustify(root, UI::JustifyContent::FlexStart);
     ui.SetAlignItems(root, UI::AlignItems::Stretch);

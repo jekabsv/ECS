@@ -1,10 +1,10 @@
 #include "UIContext.h"
 #include <SDL3/SDL.h>
-#include <SDL3_ttf/SDL_ttf.h>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstring>
+#include <iostream>
 
 namespace UI
 {
@@ -15,10 +15,11 @@ namespace UI
     // Lifecycle
     // =============================================================================
 
-    void Context::Init(SDL_Renderer* renderer, float canvasW, float canvasH, SDL_Window* window)
+    void Context::Init(Renderer* renderer, float canvasW, float canvasH, SDL_Window* window, AssetManager* assets)
     {
+        _assets = assets;
+        _renderer = renderer;
         window_ = window;
-        renderer_ = renderer;
         canvasW_ = canvasW;
         canvasH_ = canvasH;
         theme_.LoadDarkDefaults();
@@ -392,11 +393,6 @@ namespace UI
         it->second.style = style;
     }
 
-    void Context::RegisterFont(std::string_view fontName, TTF_Font* font)
-    {
-        fonts_[std::string(fontName)] = font;
-    }
-
     // =============================================================================
     // Input processing
     // =============================================================================
@@ -565,7 +561,7 @@ namespace UI
                     {
                         node.widget.focused = false;
                         focusedNode_ = NULL_HANDLE;
-                        SDL_StopTextInput(nullptr);
+                        SDL_StopTextInput(window_);
                     }
 
                     node.widget.inputChanged = changed;
@@ -612,20 +608,21 @@ namespace UI
         case WidgetType::Label:
         case WidgetType::Button:
         {
-            TTF_Font* font = ResolveFont(node);
-            if (font && !node.widget.text.empty())
-            {
-                int tw = 0, th = 0;
-                TTF_GetStringSize(font, node.widget.text.c_str(), 0, &tw, &th);
 
+            StringId font = node.style.fontName.value_or("");
+            if (font.empty()) font = theme_.button.fontName;
+            if (font.empty()) font = theme_.GetString("font-default");
+
+            if (!node.widget.text.empty())
+            {
                 const Edges& pad = node.style.padding.value_or(
-                    node.type == WidgetType::Button
-                    ? theme_.button.padding
-                    : Edges::All(0.0f)
+                    node.type == WidgetType::Button ? theme_.button.padding : Edges::All(0.0f)
                 );
 
-                if (w < 0.0f) w = (float)tw + pad.left + pad.right;
-                if (h < 0.0f) h = (float)th + pad.top + pad.bottom;
+                Vec3 measured = MeasureText(font, node.widget.text);
+                float lineHeight = measured.y - measured.z;
+                if (w < 0.0f) w = measured.x + pad.left + pad.right;
+                if (h < 0.0f) h = lineHeight + pad.top + pad.bottom;
             }
             else
             {
@@ -644,12 +641,18 @@ namespace UI
 
         case WidgetType::InputField:
         {
-            TTF_Font* font = ResolveFont(node);
-            int th = 0;
-            if (font) TTF_GetStringSize(font, "M", 0, nullptr, &th);
+            StringId font = node.style.fontName.value_or("");
+            if (font.empty()) font = theme_.button.fontName;
+            if (font.empty()) font = StringId(theme_.GetString("font-default"));
+
             const Edges& pad = node.style.padding.value_or(theme_.inputField.padding);
+
+            auto *x = _assets->GetGPUFont(font);
+            
+            float lineHeight = x->lineHeight;
+
             if (w < 0.0f) w = 200.0f;
-            if (h < 0.0f) h = (float)th + pad.top + pad.bottom;
+            if (h < 0.0f) h = lineHeight + pad.top + pad.bottom;
             break;
         }
 
@@ -856,9 +859,9 @@ namespace UI
 
                 if (resolvedAlign == AlignItems::Stretch)
                 {
-                    if (isRow) child.computedRect.h = line.crossSize
+                    if (isRow) child.computedRect.h = crossAvail
                         - child.flex.margin.top - child.flex.margin.bottom;
-                    else       child.computedRect.w = line.crossSize
+                    else       child.computedRect.w = crossAvail
                         - child.flex.margin.left - child.flex.margin.right;
                 }
             }
@@ -962,6 +965,7 @@ namespace UI
                     mainOffset -= childMain + mMarginB + gap + spaceBetween + spaceAround;
                 else
                     mainOffset += childMain + mMarginB + gap + spaceBetween + spaceAround;
+
             }
 
             crossOffset += line.crossSize + crossGap;
@@ -1029,157 +1033,136 @@ namespace UI
     }
 
     // =============================================================================
-    // Font resolution
-    // =============================================================================
-
-    TTF_Font* Context::ResolveFont(const Node& node) const
-    {
-        // 1. Per-node override
-        if (node.style.fontName.has_value() && !node.style.fontName->empty())
-        {
-            auto it = fonts_.find(*node.style.fontName);
-            if (it != fonts_.end()) return it->second;
-        }
-
-        // 2. Widget-type default
-        std::string widgetFont;
-        switch (node.type)
-        {
-        case WidgetType::Button:     widgetFont = theme_.button.fontName;     break;
-        case WidgetType::Label:      widgetFont = theme_.label.fontName;      break;
-        case WidgetType::InputField: widgetFont = theme_.inputField.fontName; break;
-        default: break;
-        }
-        if (!widgetFont.empty())
-        {
-            auto it = fonts_.find(widgetFont);
-            if (it != fonts_.end()) return it->second;
-        }
-
-        // 3. Theme default font token
-        std::string themeFont = theme_.GetString("font-default");
-        if (!themeFont.empty())
-        {
-            auto it = fonts_.find(themeFont);
-            if (it != fonts_.end()) return it->second;
-        }
-
-        // 4. First registered font
-        if (!fonts_.empty()) return fonts_.begin()->second;
-
-        return nullptr;
-    }
-
-    float Context::ResolveFontSize(const Node& node) const
-    {
-        if (node.style.fontSize.has_value() && *node.style.fontSize > 0.0f)
-            return *node.style.fontSize;
-        switch (node.type)
-        {
-        case WidgetType::Button:     if (theme_.button.fontSize > 0.0f) return theme_.button.fontSize;     break;
-        case WidgetType::Label:      if (theme_.label.fontSize > 0.0f) return theme_.label.fontSize;      break;
-        case WidgetType::InputField: if (theme_.inputField.fontSize > 0.0f) return theme_.inputField.fontSize; break;
-        default: break;
-        }
-        return theme_.GetFloat("font-size-body", 14.0f);
-    }
-
-    // =============================================================================
     // Render pass
     // =============================================================================
 
-    void Context::DrawRect(SDL_FRect rect, Color color)
+    void Context::DrawRect(SDL_FRect rect, Color color, float z)
     {
-        SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, color.a);
-        SDL_RenderFillRect(renderer_, &rect);
+
+        _renderer->SubmitMesh(MeshInstance("unit_quad"), MaterialInstance("mat"), { rect.x + rect.w/2, rect.y + rect.h/2, z }, {rect.w, rect.h}, 0.f, 
+            { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f });
     }
 
     void Context::DrawRectBorder(SDL_FRect rect, Color color, float width)
     {
-        if (width <= 0.0f) return;
-        SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, color.a);
-        // Draw 4 filled rects for border sides (simple, no radius)
-        SDL_FRect top = { rect.x,               rect.y,                rect.w, width };
-        SDL_FRect bottom = { rect.x,               rect.y + rect.h - width, rect.w, width };
-        SDL_FRect left = { rect.x,               rect.y + width,        width, rect.h - width * 2.0f };
-        SDL_FRect right = { rect.x + rect.w - width, rect.y + width,    width, rect.h - width * 2.0f };
-        SDL_RenderFillRect(renderer_, &top);
-        SDL_RenderFillRect(renderer_, &bottom);
-        SDL_RenderFillRect(renderer_, &left);
-        SDL_RenderFillRect(renderer_, &right);
+        if (width <= 0.0f) 
+            return;
+
+        SDL_FRect top = { rect.x, rect.y, rect.w, width };
+        SDL_FRect bottom = { rect.x, rect.y + rect.h - width, rect.w, width };
+        SDL_FRect left = { rect.x, rect.y + width, width, rect.h - width * 2.0f };
+        SDL_FRect right = { rect.x + rect.w - width, rect.y + width, width, rect.h - width * 2.0f };
+
+
+        _renderer->SubmitMesh(MeshInstance("unit_quad"), MaterialInstance("mat"), { top.x + top.w/2.f, top.y + top.h/2.f, 0.1f }, { top.w, top.h }, 0.f, 
+            { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f });
+        _renderer->SubmitMesh(MeshInstance("unit_quad"), MaterialInstance("mat"), { bottom.x + bottom.w/2.f, bottom.y + bottom.h/2.f, 0.1f }, { bottom.w, bottom.h }, 0.f,
+            { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f });
+        _renderer->SubmitMesh(MeshInstance("unit_quad"), MaterialInstance("mat"), { left.x + left.w/2.f, left.y + left.h/2.f, 0.1f }, { left.w, left.h }, 0.f, 
+            { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f });
+        _renderer->SubmitMesh(MeshInstance("unit_quad"), MaterialInstance("mat"), { right.x + right.w/2.f, right.y + right.h/2.f, 0.1f }, { right.w, right.h }, 0.f,
+            { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f });
     }
 
     void Context::DrawRoundedRect(SDL_FRect rect, Color color, float radius)
     {
-        // SDL3 has no built-in rounded rect fill, so we approximate with
-        // three overlapping rects + filled circles at corners.
-        if (radius <= 0.0f) { DrawRect(rect, color); return; }
 
+        if (radius <= 0.0f) { DrawRect(rect, color); return; }
         radius = std::min(radius, std::min(rect.w, rect.h) * 0.5f);
-        SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, color.a);
+
+        float diameter = radius * 2.0f;
 
         // Center horizontal band
-        SDL_FRect hBand = { rect.x + radius, rect.y, rect.w - radius * 2.0f, rect.h };
-        SDL_RenderFillRect(renderer_, &hBand);
+        SDL_FRect hBand = { rect.x + radius, rect.y, rect.w - diameter, rect.h };
+        // Left and right vertical bands (excluding corners)
+        SDL_FRect lBand = { rect.x,                  rect.y + radius, radius, rect.h - diameter };
+        SDL_FRect rBand = { rect.x + rect.w - radius, rect.y + radius, radius, rect.h - diameter };
 
-        // Left and right vertical bands
-        SDL_FRect lBand = { rect.x, rect.y + radius, radius, rect.h - radius * 2.0f };
-        SDL_FRect rBand = { rect.x + rect.w - radius, rect.y + radius, radius, rect.h - radius * 2.0f };
-        SDL_RenderFillRect(renderer_, &lBand);
-        SDL_RenderFillRect(renderer_, &rBand);
-
-        // Filled quarter-circles at corners using point drawing
-        int r = (int)radius;
-        for (int dy = -r; dy <= r; dy++)
-        {
-            for (int dx = -r; dx <= r; dx++)
+        auto submitQuad = [&](const SDL_FRect& r)
             {
-                if (dx * dx + dy * dy <= r * r)
-                {
-                    // Top-left
-                    SDL_RenderPoint(renderer_,
-                        rect.x + radius + dx, rect.y + radius + dy);
-                    // Top-right
-                    SDL_RenderPoint(renderer_,
-                        rect.x + rect.w - radius + dx, rect.y + radius + dy);
-                    // Bottom-left
-                    SDL_RenderPoint(renderer_,
-                        rect.x + radius + dx, rect.y + rect.h - radius + dy);
-                    // Bottom-right
-                    SDL_RenderPoint(renderer_,
-                        rect.x + rect.w - radius + dx, rect.y + rect.h - radius + dy);
-                }
-            }
-        }
+                _renderer->SubmitMesh(MeshInstance("unit_quad"), MaterialInstance("mat"),
+                    { r.x + r.w / 2.f, r.y + r.h / 2.f, 0.f },
+                    { r.w, r.h }, 0.f,
+                    { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f });
+            };
+
+        auto submitCircle = [&](float cx, float cy)
+            {
+                _renderer->SubmitMesh(MeshInstance("unit_circle32"), MaterialInstance("mat"),
+                    { cx, cy, 0.1f },
+                    { diameter, diameter }, 0.f,
+                    { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f });
+            };
+
+        submitQuad(hBand);
+        submitQuad(lBand);
+        submitQuad(rBand);
+
+        // Four corner circles
+        submitCircle(rect.x + radius, rect.y + radius);           // top-left
+        submitCircle(rect.x + rect.w - radius, rect.y + radius);           // top-right
+        submitCircle(rect.x + radius, rect.y + rect.h - radius);  // bottom-left
+        submitCircle(rect.x + rect.w - radius, rect.y + rect.h - radius);  // bottom-right
     }
 
-    void Context::DrawText(const std::string& text, SDL_FRect rect, TTF_Font* font, Color color, TextAlign align)
+
+    void Context::DrawText(const std::string& text, SDL_FRect rect, StringId font, Color color, TextAlign align)
     {
-        if (!font || text.empty()) return;
+        if (text.empty())
+            return;
 
-        int tw = 0, th = 0;
-        TTF_GetStringSize(font, text.c_str(), 0, &tw, &th);
 
-        SDL_Color sdlColor = { color.r, color.g, color.b, color.a };
-        SDL_Surface* surface = TTF_RenderText_Blended(font, text.c_str(), 0, sdlColor);
-        if (!surface) return;
+        auto* gpuFont = _assets->GetGPUFont(font);
+        if (!gpuFont)
+            return;
 
-        SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer_, surface);
-        SDL_DestroySurface(surface);
-        if (!tex) return;
 
-        float x = rect.x;
+
+        auto size = MeasureText(font, text);
+        float lineHeight = size.y - size.z;
+        float scale = rect.h / lineHeight;
+
+        if (size.x * scale > rect.w)
+            scale = rect.w / size.x;
+
+        float finalW = size.x * scale;
+        float x;
+
         switch (align)
         {
-        case TextAlign::Center: x = rect.x + (rect.w - tw) * 0.5f; break;
-        case TextAlign::Right:  x = rect.x + rect.w - tw;           break;
-        default:                x = rect.x;                          break;
+        case TextAlign::Center: x = rect.x + (rect.w - finalW) * 0.5f; break;
+        case TextAlign::Right:  x = rect.x + rect.w - finalW; break;
+        default:                x = rect.x; break;
         }
-        float y = rect.y + (rect.h - th) * 0.5f;
 
-        SDL_FRect dst = { x, y, (float)tw, (float)th };
-        SDL_RenderTexture(renderer_, tex, nullptr, &dst);
-        SDL_DestroyTexture(tex);
+        float y = rect.y + (rect.h + (size.y + size.z/2.f) * scale) * 0.5f;
+
+        _renderer->SubmitText(text, font, MaterialInstance("text_mat"),
+            { x, y, 0.2f }, { scale, scale }, 0.f,
+            { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f });
+    }
+
+    Vec3 Context::MeasureText(StringId fontId, const std::string& text)
+    {
+        float width = 0;
+        float maxHeight = 0;
+        auto* x = _assets->GetGPUFont(fontId);
+
+        if (!x) 
+        {
+			std::cout << "Warning: font '" << fontId.id << "' not found for measuring text.\n";
+            return { 0.f, 0.f, 0.f };
+        }
+
+        for (char c : text)
+        {
+            const GlyphInfo& g = x->glyphs[c];
+            width += g.advance;
+            float glyphHeight = g.bearingY;
+            maxHeight = std::max(maxHeight, glyphHeight);
+        }
+
+        return { width, (float)x->ascent , (float)x->descent};
     }
 
     void Context::RenderContainer(const Node& node)
@@ -1194,6 +1177,7 @@ namespace UI
 
     void Context::RenderButton(const Node& node, const InputState& input)
     {
+
         const ButtonStyle& bs = theme_.button;
         InteractionState state = node.widget.interactionState;
 
@@ -1223,7 +1207,10 @@ namespace UI
         if (!node.enabled) fg.a = (uint8_t)(fg.a * 0.5f);
 
         TextAlign ta = node.style.textAlign.value_or(bs.textAlign);
-        TTF_Font* font = ResolveFont(node);
+
+        StringId font = node.style.fontName.value_or("");
+        if (font.empty()) font = theme_.button.fontName;
+        if (font.empty()) font = StringId(theme_.GetString("font-default"));
 
         const Edges& pad = node.style.padding.value_or(bs.padding);
         SDL_FRect textRect = {
@@ -1234,6 +1221,12 @@ namespace UI
         };
 
         DrawText(node.widget.text, textRect, font, fg, ta);
+
+        /*printf("Button computedRect: x=%.1f y=%.1f w=%.1f h=%.1f\n",
+            node.computedRect.x, node.computedRect.y,
+            node.computedRect.w, node.computedRect.h);
+        printf("textRect: x=%.1f y=%.1f w=%.1f h=%.1f\n",
+            textRect.x, textRect.y, textRect.w, textRect.h);*/
     }
 
     void Context::RenderLabel(const Node& node)
@@ -1241,7 +1234,13 @@ namespace UI
         const LabelStyle& ls = theme_.label;
         Color fg = node.style.foreground.value_or(ls.foreground);
         TextAlign ta = node.style.textAlign.value_or(ls.textAlign);
-        TTF_Font* font = ResolveFont(node);
+
+        StringId font = node.style.fontName.value_or("");
+        if (font.empty()) 
+            font = theme_.button.fontName;
+        if (font.empty()) 
+            font = StringId(theme_.GetString("font-default"));
+
         DrawText(node.widget.text, node.computedRect, font, fg, ta);
     }
 
@@ -1273,13 +1272,11 @@ namespace UI
         Color thumbColor = (state == InteractionState::Hovered || state == InteractionState::Pressed)
             ? ss.thumbHover : ss.thumb;
 
-        // Draw thumb as a filled circle (via point sampling)
-        SDL_SetRenderDrawColor(renderer_, thumbColor.r, thumbColor.g, thumbColor.b, thumbColor.a);
-        int ri = (int)thumbR;
-        for (int dy = -ri; dy <= ri; dy++)
-            for (int dx = -ri; dx <= ri; dx++)
-                if (dx * dx + dy * dy <= ri * ri)
-                    SDL_RenderPoint(renderer_, thumbX + dx, thumbY + dy);
+
+        _renderer->SubmitMesh(MeshInstance("unit_circle32"), MaterialInstance("mat"),
+            { thumbX, thumbY, 0.2f },
+            { thumbR * 2.0f, thumbR * 2.0f }, 0.f,
+			{ thumbColor.r / 255.f, thumbColor.g / 255.f, thumbColor.b / 255.f, thumbColor.a / 255.f });
     }
 
     void Context::RenderInput(const Node& node)
@@ -1305,7 +1302,11 @@ namespace UI
             node.computedRect.h - pad.top - pad.bottom
         };
 
-        TTF_Font* font = ResolveFont(node);
+        StringId font = node.style.fontName.value_or("");
+        if (font.empty()) font = theme_.button.fontName;
+        if (font.empty()) font = StringId(theme_.GetString("font-default"));
+
+
 
         const std::string& val = node.widget.inputValue;
         if (val.empty() && !focused)
@@ -1321,13 +1322,20 @@ namespace UI
             // Cursor
             if (focused)
             {
-                int cursorX = 0;
-                if (font && !val.empty())
+                float cursorX = 0.0f;
+                if (!val.empty() && node.widget.cursorPos > 0)
                 {
                     std::string before = val.substr(0, node.widget.cursorPos);
-                    int w = 0;
-                    TTF_GetStringSize(font, before.c_str(), 0, &w, nullptr);
-                    cursorX = w;
+                    Vec3 measured = MeasureText(font, before);
+
+                    // Match the same scale DrawText uses
+                    Vec3 fullMeasured = MeasureText(font, val);
+                    float lineHeight = fullMeasured.y - fullMeasured.z;
+                    float scale = textRect.h / lineHeight;
+                    if (fullMeasured.x * scale > textRect.w)
+                        scale = textRect.w / fullMeasured.x;
+
+                    cursorX = measured.x * scale;
                 }
 
                 SDL_FRect cursor = {
@@ -1336,7 +1344,7 @@ namespace UI
                     2.0f,
                     textRect.h
                 };
-                DrawRect(cursor, ifs.foreground);
+                DrawRect(cursor, ifs.foreground, 0.15f);
             }
         }
     }
@@ -1347,7 +1355,7 @@ namespace UI
 
         const SDL_FRect& src = node.widget.textureRect;
         const SDL_FRect* srcPtr = (src.w > 0 && src.h > 0) ? &src : nullptr;
-        SDL_RenderTexture(renderer_, node.widget.texture, srcPtr, &node.computedRect);
+        //SDL_RenderTexture(renderer_, node.widget.texture, srcPtr, &node.computedRect);
     }
 
     void Context::RenderNode(const Node& node)

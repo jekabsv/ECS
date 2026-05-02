@@ -209,6 +209,9 @@
     <ClInclude Include="depthState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="EngineMath.h">
+      <Filter>Header Files\Internals\Util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="SpatialIndex.h">

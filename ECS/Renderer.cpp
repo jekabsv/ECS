@@ -7,6 +7,12 @@
 //Vertex shader has ObjectData at slot 1
 //Vertex shader has custom at slot 2
 
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+
 //Fragment shader has custom at slot 0
 
 static constexpr char GLYPH_FIRST = 32;
@@ -16,7 +22,7 @@ static constexpr int  GLYPH_COUNT = GLYPH_LAST - GLYPH_FIRST + 1;
 static constexpr int ATLAS_COLS = 16;
 static constexpr int ATLAS_ROWS = (GLYPH_COUNT + ATLAS_COLS - 1) / ATLAS_COLS;
 
-static constexpr int PAD = 8;
+static constexpr int PAD = 12;
 
 int Renderer::Init(SDL_GPUDevice* gpuDevice, SDL_Window* sdlWindow, AssetManager* assets, uint32_t screenWidth, uint32_t screenHeight)
 {
@@ -44,6 +50,7 @@ int Renderer::Init(SDL_GPUDevice* gpuDevice, SDL_Window* sdlWindow, AssetManager
     tBuf = SDL_CreateGPUTransferBuffer(_device, &tbi);
 
 	CreateUnitQuad();
+    CreateUnitCircle();
 
     UpdateDefaultProjection();
 
@@ -286,7 +293,8 @@ int Renderer::SubmitText(std::string_view text, StringId fontName, MaterialInsta
     if (material.texturebases[0] == nullptr)
         material.texturebases[0] = &gpuFont->atlas;
 
-    float penX = 0.0f;
+    float penX = -gpuFont->glyphs[text[0]].bearingX - PAD;
+    //std::cout << penX;
     float cosR = cosf(rotation);
     float sinR = sinf(rotation);
 
@@ -316,9 +324,11 @@ int Renderer::SubmitText(std::string_view text, StringId fontName, MaterialInsta
             (float)(gpuFont->cellH - PAD * 2)
         };
 
+        cellRect.h -= (gpuFont->descent);
         // Center of cell, with bottom of cell sitting on baseline
         float localX = penX + gpuFont->cellW * 0.5f;
-        float localY = baselineY - gpuFont->cellH * 0.5f;
+        float localY = -(cellRect.h + gpuFont->descent) / 2.0f;
+
 
         float worldX = position.x + (localX * cosR - localY * sinR) * scale.x;
         float worldY = position.y + (localX * sinR + localY * cosR) * scale.y;
@@ -595,6 +605,7 @@ GPUFont Renderer::CreateFontt(StringId fontName)
     gpuFont.lineHeight = TTF_GetFontHeight(font);
     gpuFont.ascent = TTF_GetFontAscent(font);
     gpuFont.atlasName = fontName;
+	gpuFont.descent = TTF_GetFontDescent(font);
 
     SDL_Color white = { 255, 255, 255, 255 };
     for (int i = 0; i < GLYPH_COUNT; ++i)
@@ -613,8 +624,10 @@ GPUFont Renderer::CreateFontt(StringId fontName)
         info.bearingX = minX;
         info.bearingY = maxY;
         // Default srcRect from metrics (used for space / invisible glyphs)
-        info.srcRect = { (float)(cellX + PAD), (float)(cellY + PAD),
-                          (float)(maxX - minX),  (float)(maxY - minY) };
+        info.srcRect = { (float)(cellX + PAD),
+            (float)(cellY + PAD),
+            (float)(maxX - minX), 
+            (float)(maxY - minY) };
         gpuFont.glyphs[c] = info;  // store early so space etc. are covered
 
         if (c == ' ' || (maxX - minX) <= 0 || (maxY - minY) <= 0)
@@ -624,12 +637,6 @@ GPUFont Renderer::CreateFontt(StringId fontName)
         if (!glyphSurf)
             continue;
 
-        info.srcRect = {
-            (float)(cellX + PAD),
-            (float)(cellY + PAD),
-            (float)glyphSurf->w,
-            (float)glyphSurf->h
-        };
         info.bearingY = maxY;
 
         gpuFont.glyphs[c] = info;
@@ -1039,6 +1046,37 @@ void Renderer::CreateUnitQuad()
     _unitQuadMesh.meshVertices = vertices;
     _unitQuadMesh.meshIndices = indices;
     _assets->AddMesh("unit_quad", vertices, indices);
+}
+
+
+void Renderer::CreateUnitCircle()
+{
+
+	static constexpr int segments = 32;
+    
+    MeshVertices vertices;
+    MeshIndices indices;
+
+    vertices.push_back({ 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.5f, 0.5f });
+
+    for (int i = 0; i <= segments; i++)
+    {
+        float angle = (float)i / (float)segments * 2.0f * M_PI;
+        float x = std::cos(angle) * 0.5f;
+        float y = std::sin(angle) * 0.5f;
+        float u = x + 0.5f;
+        float v = y + 0.5f;
+        vertices.push_back({ x, y, 1.0f, 1.0f, 1.0f, 1.0f, u, v });
+    }
+
+    for (int i = 1; i <= segments; i++)
+    {
+        indices.push_back(0);
+        indices.push_back(i);
+        indices.push_back(i < segments ? i + 1 : 1);
+    }
+
+    _assets->AddMesh("unit_circle32", vertices, indices);
 }
 
 void Renderer::UpdateDefaultProjection()

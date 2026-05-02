@@ -108,6 +108,8 @@ private:
 
 	void CreateUnitQuad();
 
+	void CreateUnitCircle();
+
 	void UpdateDefaultProjection();
 
 	void UploadMesh(MeshBase* mesh);

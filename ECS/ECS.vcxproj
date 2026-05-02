@@ -167,6 +167,7 @@
     <ClInclude Include="depthState.h" />
     <ClInclude Include="ECS.h" />
     <ClInclude Include="Engine.h" />
+    <ClInclude Include="EngineMath.h" />
     <ClInclude Include="GPUAssets.h" />
     <ClInclude Include="InputComponent.h" />
     <ClInclude Include="InputSystem.h" />

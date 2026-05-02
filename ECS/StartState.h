@@ -13,6 +13,8 @@ public:
     UI::NodeHandle btnBoids = UI::NULL_HANDLE;
     UI::NodeHandle btnSillyGame = UI::NULL_HANDLE;
     UI::NodeHandle btnSlider = UI::NULL_HANDLE;
+    UI::NodeHandle btnLabel = UI::NULL_HANDLE;
+    UI::NodeHandle btnInput = UI::NULL_HANDLE;
     UI::NodeHandle btnQuit_ = UI::NULL_HANDLE;
 
     float rotationAngle = 0.0f;

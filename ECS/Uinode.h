@@ -7,6 +7,7 @@
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_pixels.h>
 #include <optional>
+#include "Struct.h"
 
 struct SDL_Texture;
 struct TTF_Font;
@@ -29,7 +30,7 @@ namespace UI
         std::optional<float>       borderRadius;
         std::optional<Edges>       padding;
         std::optional<Edges>       margin;
-        std::optional<std::string> fontName;
+        std::optional<StringId> fontName;
         std::optional<float>       fontSize;
         std::optional<TextAlign>   textAlign;
         std::optional<Color>       placeholder;    // InputField only
@@ -130,7 +131,7 @@ namespace UI
         SDL_FRect computedRect = { 0, 0, 0, 0 };
 
         // Resolved font (set during render pass; ptr not owned)
-        TTF_Font* resolvedFont = nullptr;
+        StringId font;
     };
 
 } // namespace UI

@@ -4,13 +4,14 @@
 #include <string>
 #include <string_view>
 #include <variant>
+#include "Struct.h"
 
 namespace UI
 {
     // -------------------------------------------------------------------------
     // A token value is one of: Color, float (size/spacing), string (font name)
     // -------------------------------------------------------------------------
-    using TokenValue = std::variant<Color, float, std::string>;
+    using TokenValue = std::variant<Color, float, StringId>;
 
     // -------------------------------------------------------------------------
     // Widget-type style overrides
@@ -27,7 +28,7 @@ namespace UI
         float       borderWidth = 0.0f;
         float       borderRadius = 4.0f;
         Edges       padding = Edges::Axes(8.0f, 16.0f);
-        std::string fontName = "";      // empty = theme default
+        StringId fontName = "";      // empty = theme default
         float       fontSize = 0.0f;    // 0 = theme default
         TextAlign   textAlign = TextAlign::Center;
     };
@@ -35,7 +36,7 @@ namespace UI
     struct LabelStyle
     {
         Color       foreground = Color::RGBA(255, 255, 255);
-        std::string fontName = "";
+        StringId fontName = "";
         float       fontSize = 0.0f;
         TextAlign   textAlign = TextAlign::Left;
     };
@@ -60,9 +61,9 @@ namespace UI
         Color       border = Color::RGBA(80, 80, 80);
         Color       borderFocus = Color::RGBA(100, 160, 255);
         float       borderWidth = 1.0f;
-        float       borderRadius = 4.0f;
+        float       borderRadius = 8.0f;
         Edges       padding = Edges::Axes(6.0f, 10.0f);
-        std::string fontName = "";
+        StringId fontName = "";
         float       fontSize = 0.0f;
     };
 
@@ -80,7 +81,7 @@ namespace UI
         // Returns token or a fallback if not found
         Color       GetColor(std::string_view name, Color       fallback = {}) const;
         float       GetFloat(std::string_view name, float       fallback = 0.f) const;
-        std::string GetString(std::string_view name, std::string fallback = "") const;
+        StringId GetString(std::string_view name, StringId fallback = "") const;
 
         // -- Per-widget style defaults ----------------------------------------
         ButtonStyle     button;
