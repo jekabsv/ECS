@@ -5,7 +5,6 @@
 int main()
 {
     Engine engine;
-    engine.Initialize();
     if (engine.Initialize() != 0)
         return 1;
     engine.run();
