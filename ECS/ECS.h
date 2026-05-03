@@ -589,10 +589,7 @@ namespace ECS
     T& World::Get(Entity e)
     {
         if(!Alive(e))
-        {
-			//LOG_ERROR(GlobalLogger(), "ECS", "Get: Entity: " + std::to_string(e) + " is not alive");
-			return *reinterpret_cast<T*>(nullptr);
-        }
+            assert(Alive(e) && "World::Get called on dead entity");
         uint32_t eid = EntityId(e);
         return records_[eid].arch->Get<T>(records_[eid].chunk_idx, records_[eid].row);
     }

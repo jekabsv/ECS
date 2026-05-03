@@ -12,9 +12,11 @@ public:
 
 	int SetWindowSize(uint32_t width, uint32_t height);
 
-	int StartRenderPass();
+	int StartRenderPass(int reserveDrawCalls = 0);
 	int EndRenderPass();
 	int Present();
+
+	int ReserveDrawCalls(size_t count);
 
 	int SubmitMesh(MeshInstance mesh, MaterialInstance& material,
 		Vec3 Position = { 0.0f, 0.0f, 0.0f }, Vec2 Scale = { 1.0f, 1.0f }, float Rotation = 0.0f,
@@ -107,6 +109,8 @@ private:
 	int ReserveTransferBuffer(size_t size);
 
 	void CreateUnitQuad();
+
+	void CreateUnitCircle();
 
 	void UpdateDefaultProjection();
 

@@ -1,5 +1,6 @@
 #include "State.h"
 #include "SharedDataRef.h"
+#include <iostream>
 
 void State::SetData()
 {
@@ -8,14 +9,7 @@ void State::SetData()
 	_data->physics.Tie(ecs);
 	ecs.Tie(_data);
 
-
-	MaterialBase base;
-	MaterialBase::MakeTransparent(base);
-	MaterialBase::SetVertexAttr(base);
-	base.vertexShader = "sprite_vert";
-	base.fragmentShader = "sprite_frag";
-
-
-
-	ui.Init(&_data->renderer, _data->GAME_WIDTH, _data->GAME_HEIGHT, _data->window);
+	ui.Init(&_data->renderer, (float)_data->GAME_WIDTH, (float)_data->GAME_HEIGHT, _data->window, &_data->assets);
+	
+	LOG_DEBUG(GlobalLogger(), "State", "State data set");
 }

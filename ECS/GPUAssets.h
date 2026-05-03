@@ -223,6 +223,7 @@ struct GPUFont
 	int cellH = 0;  // atlas grid cell height (max glyph bbox)
 	int lineHeight = 0;  // full line height from TTF
 	int ascent = 0;  // pixels above baseline
+	int descent = 0; // pixels below baseline
 
 	// StringId of the atlas registered in AssetManager so MaterialInstances
 	// can reference it by name.

@@ -29,11 +29,12 @@ namespace UI
         return fallback;
     }
 
-    std::string Theme::GetString(std::string_view name, std::string fallback) const
+    StringId Theme::GetString(std::string_view name, StringId fallback) const
     {
         auto it = tokens_.find(std::string(name));
         if (it == tokens_.end()) return fallback;
-        if (auto* v = std::get_if<std::string>(&it->second)) return *v;
+        if (auto* v = std::get_if<StringId>(&it->second)) 
+            return *v;
         return fallback;
     }
 
@@ -66,13 +67,15 @@ namespace UI
         SetToken("font-size-md", 16.0f);
         SetToken("font-size-lg", 20.0f);
         SetToken("font-size-xl", 28.0f);
-        SetToken("font-default", std::string(""));   // empty = first registered font
+        SetToken("font-default", StringId(""));   // empty = first registered font
 
         // -- Radius tokens --------------------------------------------------------
         SetToken("radius-sm", 2.0f);
         SetToken("radius-md", 4.0f);
         SetToken("radius-lg", 8.0f);
         SetToken("radius-full", 9999.0f);
+
+        SetToken("spacing-gap", 8.0f);
 
         // -- Per-widget defaults (wired to tokens) --------------------------------
 
@@ -81,7 +84,7 @@ namespace UI
         button.backgroundPress = Color::RGBA(25, 25, 25);
         button.foreground = GetColor("color-text");
         button.border = GetColor("color-border");
-        button.borderWidth = 1.0f;
+        button.borderWidth = 4.0f;
         button.borderRadius = GetFloat("radius-md");
         button.padding = Edges::Axes(GetFloat("spacing-sm"), GetFloat("spacing-md"));
         button.fontSize = GetFloat("font-size-body");

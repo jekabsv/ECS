@@ -31,16 +31,21 @@ bool Engine::InitializeWeb(const std::string& elementId)
 }
 #endif // __EMSCRIPTEN__
 
-bool Engine::Initialize()
+int Engine::Initialize()
 {
     GlobalLogger().AddSink(std::make_shared<ConsoleSink>());
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS))
+    {
         LOG_ERROR(GlobalLogger(), "Engine", "SDL_Init failed: " + std::string(SDL_GetError()));
+        return -1;
+    }
 
-    bool ttf_init;
-    if (!(ttf_init = TTF_Init()))
+    if (!TTF_Init())
+    {
         LOG_ERROR(GlobalLogger(), "Engine", "TTF_Init failed: " + std::string(SDL_GetError()));
+        return -1;
+    }
 
 
 
@@ -51,8 +56,10 @@ bool Engine::Initialize()
         NULL
     );
 
-    if (_device == NULL) {
+    if (!_device) 
+    {
         SDL_Log("GPU Device creation failed: %s", SDL_GetError());
+        return -1;
     }
 
     _data->device = _device;
@@ -88,7 +95,7 @@ bool Engine::Initialize()
     _data->state.AddState(StateRef(new StartState(_data)), 0);
     _data->state.ProcessStateChanges();
 
-    _data->spatialIndex.Init(0.f, 0.f, _data->GAME_WIDTH, _data->GAME_HEIGHT, 32);
+    _data->spatialIndex.Init(0.f, 0.f, (float)_data->GAME_WIDTH, (float)_data->GAME_HEIGHT, 32);
 
     return 0;
     
@@ -176,8 +183,10 @@ void Engine::HandleInput(float dt)
     inp.mousePressed = _data->inputs.GetActionState("click") == InputSystem::Pressed;
     inp.mouseReleased = _data->inputs.GetActionState("click") == InputSystem::Released;
 
-    _data->state.GetActiveState()->ui.ProcessInput(inp, dt);
-    //_data->state.GetActiveState()->ui.Update(inp, dt);
+    _data->state.GetActiveState()->ui.Update(inp, dt);
+
+
+	_data->state.GetActiveState()->HandleInput();
 }
 
 void Engine::Render(float dt)
@@ -194,13 +203,14 @@ void Engine::Render(float dt)
 
     start = std::chrono::high_resolution_clock::now();
 
+    _data->state.GetActiveState()->Render(dt);
+
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Render, dt);
 
     end = std::chrono::high_resolution_clock::now();
     duration = end - start;
     //std::cout << "ECS Render Took: " << duration.count() << "ms" << std::endl;
 
-    _data->state.GetActiveState()->Render(dt);
 
     start = std::chrono::high_resolution_clock::now();
 

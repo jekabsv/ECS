@@ -3,24 +3,49 @@
 #include "Transform.h"
 #include "RigidBody.h"
 #include "BoxCollider.h"
-#include <cstdlib>
-#include <cmath>
-#include <chrono>
-#include <iostream>
+#include <format>
 
-static double TryGetTime;
+using namespace Math;
 
-static float randf(float lo, float hi)
+static const StringId BB_AREA = StringId("boids_area");
+static const StringId BB_PERCEPTION = StringId("boids_perception");
+
+
+void Boids::SpawnBoid(const PlayArea& area)
 {
-    return lo + (float)(rand() % 10000) / 10000.0f * (hi - lo);
+    ECS::Entity e = ecs.Create();
+
+    float angle = RandAngle();
+    Vec2  vel = AngleToVec2(angle) * RandFloat(MIN_SPEED, MAX_SPEED);
+    Vec2  pos = RandPointInRect(area.x, 0.0f, area.w, area.h);
+
+    TransformComponent tr;
+    tr.position = { pos.x, pos.y };
+    tr.position = { area.x + area.w / 2.f, area.h / 2.f};
+    tr.scale = { 1.0f, 1.0f };
+    tr.rotation = angle;
+
+    RigidBody rb;
+    rb.vx = vel.x;  rb.vy = vel.y;
+    rb.isStatic = false;
+    rb.drag = 0.0f;
+
+    ecs.Add<TransformComponent>(e, tr);
+    ecs.Add<RigidBody>(e, rb);
+    ecs.Add<BoxCollider>(e, BoxCollider(1, 1, true));
+    ecs.Add<MeshComponent>(e, MeshComponent("boid", "mat", true));
+
+    _boidEntities.push_back(e);
+    _currentCount++;
 }
 
-static float angleDiff(float target, float current)
+void Boids::DespawnLastBoid()
 {
-    float d = target - current;
-    while (d > 3.14159265f) d -= 6.28318530f;
-    while (d < -3.14159265f) d += 6.28318530f;
-    return d;
+    if (_boidEntities.empty()) 
+        return;
+    ecs.Destroy(_boidEntities.back());
+    _boidEntities.pop_back();
+    _currentCount--;
 }
 
 void Boids::Init()
@@ -28,70 +53,40 @@ void Boids::Init()
     _data->physics.EnableCollisionDetection(false);
     _data->physics.EnableSpatialIndexBuild(true);
 
-    const float W = (float)_data->GAME_WIDTH;
-    const float H = (float)_data->GAME_HEIGHT;
-
-    MeshVertices boidMesh = {
-        {   8.0f,  0.0f,  1.0f, 1.0f, 1.0f, 1.0f  },
-        {  -5.0f, -4.0f,  0.5f, 0.6f, 1.0f, 1.0f  },
-        {  -5.0f,  4.0f,  0.5f, 0.6f, 1.0f, 1.0f  },
+    const PlayArea area{
+        .x = (float)inputContainerWidth,
+        .w = (float)_data->GAME_WIDTH - inputContainerWidth,
+        .h = (float)_data->GAME_HEIGHT
     };
-	MeshIndices boidIndices = { 0, 1, 2 };
+    _data->session.Set<PlayArea>(BB_AREA, area);
+    _data->session.Set<float>(BB_PERCEPTION, PERCEPTION);
 
 
-    _data->assets.AddMesh("boid", boidMesh, boidIndices);
+    _data->assets.AddMesh("boid",
+        MeshVertices{
+            {  8.0f,  0.0f,  1.0f, 1.0f, 1.0f, 1.0f },
+            { -5.0f, -4.0f,  0.5f, 0.6f, 1.0f, 1.0f },
+            { -5.0f,  4.0f,  0.5f, 0.6f, 1.0f, 1.0f },
+        },
+        { 0, 1, 2 });
 
-
-    for (int i = 0; i < COUNT; i++)
-    {
-        ECS::Entity e = ecs.Create();
-
-        float angle = randf(0.0f, 6.2831f);
-        float speed = randf(MIN_SPEED, MAX_SPEED);
-
-        TransformComponent tr;
-        tr.position.x = randf(0.0f, W);
-        tr.position.y = randf(0.0f, H);
-        tr.scale = { 1.0f, 1.0f };
-
-        RigidBody rb;
-        rb.vx = std::cos(angle) * speed;
-        rb.vy = std::sin(angle) * speed;
-        rb.isStatic = false;
-        rb.drag = 0.0f;
-
-        tr.rotation = angle;
-
-        BoxCollider bc(1, 1, true);
-
-        ecs.Add<TransformComponent>(e, tr);
-        ecs.Add<RigidBody>(e, rb);
-        ecs.Add<BoxCollider>(e, bc);
-        ecs.Add<MeshComponent>(e, MeshComponent("boid", "mat", true));
-    }
-
-
+    _boidEntities.reserve(MAX_COUNT);
+    for (int i = 0; i < DEFAULT_COUNT; i++)
+        SpawnBoid(area);
 
     ecs.RegisterSystem<TransformComponent, RigidBody>(
         "boidFlock",
         [](ECS::ArchetypeContext ctx, float dt, SharedDataRef data)
         {
-
-            auto start = std::chrono::high_resolution_clock::now();
-
-
-            const float W = (float)data->GAME_WIDTH;
-            const float H = (float)data->GAME_HEIGHT;
-
+            const auto area = data->session.Get<PlayArea>(BB_AREA);
             auto trs = ctx.Slice<TransformComponent>();
             auto rbs = ctx.Slice<RigidBody>();
             auto entities = ctx.Slice<ECS::Entity>();
 
+            const float PERCEPTION = data->session.Get<float>(BB_PERCEPTION);
+
             std::vector<ECS::Entity> found;
             found.reserve(200);
-
-            
-
 
             for (std::size_t i = 0; i < entities.size(); i++)
             {
@@ -100,148 +95,68 @@ void Boids::Init()
 
                 found.clear();
                 data->spatialIndex.QueryRectangle(
-                    tr.position.x - PERCEPTION,
-                    tr.position.y - PERCEPTION,
-                    PERCEPTION * 2.0f,
-                    PERCEPTION * 2.0f,
+                    tr.position.x - PERCEPTION, tr.position.y - PERCEPTION,
+                    PERCEPTION * 2.0f, PERCEPTION * 2.0f,
                     found);
 
-                float sepX = 0, sepY = 0;
-                float alignSin = 0, alignCos = 0;
-                float cohX = 0, cohY = 0;
-                int   neighbors = 0;
-                int   separators = 0;
+                Vec2 sep = {};
+                Vec2 align = {};
+                Vec2 coh = {};
+                int n = 0;
+                int ns = 0;
 
                 for (ECS::Entity other : found)
                 {
-                    if (other == entities[i])
+                    if (other == entities[i] || n > 32) 
                         continue;
 
-                    if (neighbors > 16)
-                        break;
-                    auto start = std::chrono::high_resolution_clock::now();
-                    
-                    TransformComponent* otherTr = data->physics.GetWorld()->TryGet<TransformComponent>(other);
-                    RigidBody* otherRb = data->physics.GetWorld()->TryGet<RigidBody>(other);
+                    auto* oTr = data->physics.GetWorld()->TryGet<TransformComponent>(other);
+                    if (!oTr) continue;
 
-                    auto end = std::chrono::high_resolution_clock::now();
-                    std::chrono::duration<double, std::milli> duration = end - start;
-
-                    TryGetTime += duration.count();
-
-
-                    if (!otherTr || !otherRb)
-                        continue;
-
-                    float dx = otherTr->position.x - tr.position.x;
-                    float dy = otherTr->position.y - tr.position.y;
-                    if (dx > W * 0.5f) dx -= W;
-                    if (dx < -W * 0.5f) dx += W;
-                    if (dy > H * 0.5f) dy -= H;
-                    if (dy < -H * 0.5f) dy += H;
-
-                    float distSq = dx * dx + dy * dy;
+                    Vec2  delta = ToroidalDelta({ oTr->position.x - tr.position.x,
+                                                   oTr->position.y - tr.position.y },
+                        area.w, area.h);
+                    float distSq = delta.LengthSq();
                     if (distSq > PERCEPTION * PERCEPTION) continue;
 
-                    
+                    coh += delta;
+                    align += AngleToVec2(oTr->rotation);
+                    n++;
 
-                    cohX += dx;
-                    cohY += dy;
-
-                    alignSin += std::sin(otherTr->rotation);
-                    alignCos += std::cos(otherTr->rotation);
-
-                    neighbors++;
-
-                    if (distSq < SEPARATION_DIST * SEPARATION_DIST && distSq > 0.0001f)
+                    if (distSq < SEPARATION_DIST * SEPARATION_DIST && distSq > EPSILON)
                     {
-                        float dist = std::sqrt(distSq);
-                        sepX -= dx / dist;
-                        sepY -= dy / dist;
-                        separators++;
+                        sep -= delta * (1.0f / std::sqrt(distSq));
+                        ns++;
                     }
                 }
 
-                if (neighbors == 0)
+                if (n == 0)
                 {
                     tr.position.x += rb.vx * dt;
                     tr.position.y += rb.vy * dt;
-                    if (tr.position.x < 0) tr.position.x += W;
-                    if (tr.position.x >= W) tr.position.x -= W;
-                    if (tr.position.y < 0) tr.position.y += H;
-                    if (tr.position.y >= H) tr.position.y -= H;
+                    WrapPosition(tr.position.x, tr.position.y, area.x, area.w, area.h);
                     continue;
                 }
+            
+                Vec2 blend = align.Normalized() * W_ALIGNMENT
+                    + (coh / (float)n).Normalized() * W_COHESION
+                    + (ns > 0 ? sep.Normalized() * W_SEPARATION : Vec2{});
 
-                float blendSin = 0, blendCos = 0;
+                float desired = blend.ToAngle();
 
-                // Alignment
-                {
-                    float a = std::atan2(alignSin, alignCos);
-                    blendSin += std::sin(a) * W_ALIGNMENT;
-                    blendCos += std::cos(a) * W_ALIGNMENT;
-                }
+                tr.rotation = MoveTowardAngle(tr.rotation, desired, MAX_TURN_RATE * dt);
 
-                // Cohesion
-                {
-                    float a = std::atan2(cohY / neighbors, cohX / neighbors);
-                    blendSin += std::sin(a) * W_COHESION;
-                    blendCos += std::cos(a) * W_COHESION;
-                }
+                float speed = ClampMagnitudeRange({ rb.vx, rb.vy }, MIN_SPEED, MAX_SPEED).Length();
+                Vec2  vel = AngleToVec2(tr.rotation) * speed;
+                rb.vx = vel.x;
+                rb.vy = vel.y;
 
-                // Separation
-                if (separators > 0)
-                {
-                    float a = std::atan2(sepY, sepX);
-                    blendSin += std::sin(a) * W_SEPARATION;
-                    blendCos += std::cos(a) * W_SEPARATION;
-                }
-
-                float desiredAngle = std::atan2(blendSin, blendCos);
-
-                // Rotate current angle toward desired by at most MAX_TURN_RATE * dt
-                float diff = angleDiff(desiredAngle, tr.rotation);
-                float maxTurn = MAX_TURN_RATE * dt;
-                if (diff > maxTurn) diff = maxTurn;
-                else if (diff < -maxTurn) diff = -maxTurn;
-
-                tr.rotation += diff;
-
-                // Normalise angle
-                while (tr.rotation > 3.14159265f)  tr.rotation -= 6.28318530f;
-                while (tr.rotation < -3.14159265f) tr.rotation += 6.28318530f;
-
-                // Rebuild velocity from new angle, preserving speed
-                float speed = std::sqrt(rb.vx * rb.vx + rb.vy * rb.vy);
-                if (speed < MIN_SPEED) speed = MIN_SPEED;
-                if (speed > MAX_SPEED) speed = MAX_SPEED;
-                rb.vx = std::cos(tr.rotation) * speed;
-                rb.vy = std::sin(tr.rotation) * speed;
-
-                // Move
                 tr.position.x += rb.vx * dt;
                 tr.position.y += rb.vy * dt;
-
-                if (tr.position.x < 0) tr.position.x += W;
-                if (tr.position.x >= W) tr.position.x -= W;
-                if (tr.position.y < 0) tr.position.y += H;
-                if (tr.position.y >= H) tr.position.y -= H;
+                WrapPosition(tr.position.x, tr.position.y, area.x, area.w, area.h);
             }
-
-
-            auto end = std::chrono::high_resolution_clock::now();
-
-
-            std::chrono::duration<double, std::milli> duration = end - start;
-
-            //std::cout << "Update Pass Time: " << duration.count() << "ms" << std::endl;
-
-
         },
         ECS::SystemGroup::Update);
-
-
-    
 
     ecs.RegisterSystem<TransformComponent, MeshComponent>(
         "RenderMesh",
@@ -249,57 +164,86 @@ void Boids::Init()
         {
             auto trs = ctx.Slice<TransformComponent>();
             auto meshes = ctx.Slice<MeshComponent>();
-            
-            auto start = std::chrono::high_resolution_clock::now();
-
 
             for (std::size_t i = 0; i < trs.size(); i++)
             {
-                if (!meshes[i].render) 
-                    continue;
-
-                data->renderer.SubmitMesh(meshes[i].MeshName, meshes[i].Material, trs[i].position, trs[i].scale, trs[i].rotation, { 1.f, 1.f, 1.f, 1.f });
-
-				//data->renderer.DrawMesh(meshes[i].MeshName, meshes[i].Material, trs[i].position, trs[i].scale, trs[i].rotation, { 1.f, 1.f, 1.f, 1.f });
+                if (!meshes[i].render) continue;
+                data->renderer.SubmitMesh(
+                    meshes[i].MeshName, meshes[i].Material,
+                    trs[i].position, trs[i].scale, trs[i].rotation,
+                    { 1.f, 1.f, 1.f, 1.f });
             }
-
-            auto end = std::chrono::high_resolution_clock::now();
-
-
-            std::chrono::duration<double, std::milli> duration = end - start;
         },
         ECS::SystemGroup::Render);
 
+    ui.GetTheme().LoadDarkDefaults();
+    ui.GetTheme().SetToken("font-default", StringId("tnr"));
 
-    //ui.GetTheme().LoadDarkDefaults();
-
-    //ui.RegisterFont("main", _data->assets.GetFont("main"));
-
-
-   /* UI::NodeHandle root = ui.AddContainer();
-    ui.SetSize(root, UI::SizeValue::Px(500), UI::SizeValue::Auto());
+    UI::NodeHandle root = ui.AddContainer();
+    ui.SetSize(root, UI::SizeValue::Px(inputContainerWidth), UI::SizeValue::Auto());
     ui.SetFlexDirection(root, UI::FlexDirection::Column);
     ui.SetJustify(root, UI::JustifyContent::FlexStart);
     ui.SetAlignItems(root, UI::AlignItems::Stretch);
-    ui.SetGap(root, 12.0f);
+    ui.SetGap(root, 6.0f);
     ui.SetPadding(root, UI::Edges::All(20.0f));
 
-    back = ui.AddButton("Back to menu", root);*/
-
-
+    back = ui.AddButton("Back to menu", root);
+	ui.SetSize(back, UI::SizeValue::Auto(), UI::SizeValue::Px(60));
+	ui.SetSize(ui.AddLabel("Number of boids:", root), UI::SizeValue::Auto(), UI::SizeValue::Px(20));
+    input = ui.AddInputField(std::format("{}", DEFAULT_COUNT), root);
+	ui.SetSize(input, UI::SizeValue::Auto(), UI::SizeValue::Px(60));
+    slider = ui.AddSlider((float)DEFAULT_COUNT, (float)MIN_COUNT, (float)MAX_COUNT, root);
+	ui.SetSize(ui.AddLabel("Perception radius:", root), UI::SizeValue::Auto(), UI::SizeValue::Px(20));
+    perceptionInput = ui.AddInputField(std::format("{:.0f}", PERCEPTION), root);
+	ui.SetSize(perceptionInput, UI::SizeValue::Auto(), UI::SizeValue::Px(60));
 }
+
 
 void Boids::Update(float dt)
 {
+    bool currentlyFocused = (ui.Poll(input) == UI::InteractionState::Focused);
+	bool currentlyFocusedPerception = (ui.Poll(perceptionInput) == UI::InteractionState::Focused);
 
+    if (!currentlyFocused && focused)
+    {
+        try
+        {
+            float v = Clamp(std::stof(ui.GetInputValue(input)),
+                (float)MIN_COUNT, (float)MAX_COUNT);
+            ui.SetSliderValue(slider, v);
+        }
+        catch (...) {}
+    }
 
-    std::cout << "time wasted: " << TryGetTime << '\n';
+    if(!currentlyFocusedPerception && focusedPerception)
+    {
+        try
+        {
+            PERCEPTION = std::stof(ui.GetInputValue(perceptionInput));
+            _data->session.Set<float>(BB_PERCEPTION, PERCEPTION);
+        }
+        catch (...) {}
+	}
 
-    TryGetTime = 0;
+    focused = currentlyFocused;
+    if (!focused)
+        ui.SetInputValue(input, std::format("{:.0f}", ui.GetSliderValue(slider)));
 
-    if (ui.IsClicked(back))
+	focusedPerception = currentlyFocusedPerception;
+
+    const auto area = _data->session.Get<PlayArea>(BB_AREA);
+    int delta = DrainSpawnBudget(_currentCount, (int)ui.GetSliderValue(slider), SPAWN_BUDGET);
+
+    for (int i = 0; i < delta; i++) 
+        SpawnBoid(area);
+    for (int i = 0; i < -delta; i++) 
+        DespawnLastBoid();
+
+    if (ui.IsClicked(back) || _data->inputs.GetActionState("next") == InputSystem::Pressed)
         _data->state.RemoveState();
+}
 
-    if (_data->inputs.GetActionState("next") == InputSystem::Pressed)
-        _data->state.RemoveState();
+void Boids::Render(float dt)
+{
+	_data->renderer.ReserveDrawCalls(_currentCount);
 }

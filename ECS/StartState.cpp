@@ -1,11 +1,12 @@
+#include <iostream>
+#include <format>
+
+#include "Uicontext.h";
 #include "StartState.h"
 #include "Level1.h"
-#include <windows.h>
 //#include "SPH.h"
 #include "Boids.h"
-#include "Uicontext.h";
-#include <iostream>
-#include "depthState.h"
+
 
 class ProcessWASD : public InputSystem::Processor
 {
@@ -42,8 +43,7 @@ public:
     }
 };
 
-
-
+static bool focused;
 
 void StartState::Init()
 {
@@ -69,17 +69,15 @@ void StartState::Init()
 
 	//Textures
     _data->assets.LoadBMPSurface("test", "../ECS/test.bmp");
-	_data->assets.AddTexture("test", _data->renderer.CreateTexture(_data->assets.GetSurface("test")));
+	_data->assets.AddTexture("test", _data->renderer.CreateTexture(_data->assets.TryGetSurface("test")));
 
     _data->assets.LoadBMPSurface("player", "../ECS/player.bmp");
-    _data->assets.AddTexture("player", _data->renderer.CreateTexture(_data->assets.GetSurface("player")));
-
+    _data->assets.AddTexture("player", _data->renderer.CreateTexture(_data->assets.TryGetSurface("player")));
 
     _data->assets.LoadFont("tnr", "../ECS/times.ttf");
     _data->assets.AddGPUFont("tnr", _data->renderer.CreateFontt("tnr"));
 
-
- 
+	_data->assets.AddTexture("atlas", _data->assets.TryGetGPUFont("tnr")->atlas);
 
 
 
@@ -87,7 +85,6 @@ void StartState::Init()
     MaterialBase spriteMaterial("vertSprite", "fragSprite");
     MaterialBase::MakeOpaque(spriteMaterial);
     MaterialBase::SetVertexAttr(spriteMaterial);
-
     _data->assets.AddMaterial(StringId("sprite_mat"), spriteMaterial);
 
 
@@ -95,12 +92,10 @@ void StartState::Init()
     MaterialBase mat("vert", "frag");
     MaterialBase::MakeOpaque(mat);
     MaterialBase::SetVertexAttr(mat);
-
     _data->assets.AddMaterial(StringId("mat"), mat);
 
 
     MaterialBase::MakeAdditive(mat);
-
     _data->assets.AddMaterial(StringId("mat_transp"), mat);
     
 
@@ -116,9 +111,6 @@ void StartState::Init()
     MaterialBase::SetVertexAttr(uiMat);
 
     _data->assets.AddMaterial(StringId("ui_mat"), uiMat);
-
-
-
 
     //Meshes
     MeshVertices verts = {
@@ -170,41 +162,44 @@ void StartState::Init()
 
     _data->inputs.AssignMapToPlayer("level1");
 
-    //_data->state.AddState(StateRef(new depthState(_data)), 0);
-    //_data->state.AddState(StateRef(new Level1(_data)), 0);
-    //_data->state.AddState(StateRef(new Boids(_data)), 0);
 
 
-    ui.RegisterFont("font-default", _data->assets.GetFont(StringId("tnr")), StringId("tnr"));
 
-    UI::NodeHandle panel = ui.AddContainer();
-    ui.SetSize(panel, UI::SizeValue::Px(300.0f), UI::SizeValue::Px(200.0f));
-    ui.SetFlexDirection(panel, UI::FlexDirection::Column);
-    ui.SetAlignItems(panel, UI::AlignItems::Stretch);
-    ui.SetGap(panel, 12.0f);
-    ui.SetPadding(panel, UI::Edges::All(16.0f));
-    ui.SetMargin(panel, UI::Edges::TRBL(200.0f, 0.0f, 0.0f, 200.0f));
+    //UI
+    ui.GetTheme().LoadDarkDefaults();
+    ui.GetTheme().SetToken("font-default", StringId("tnr"));
 
-    UI::StyleOverride bg;
-    bg.background = UI::Color::RGBA(40, 40, 50, 220);
-    ui.SetStyleOverride(panel, bg);
 
-    btnTest = ui.AddButton("Click Me", panel);
-    sliderVol = ui.AddSlider(0.5f, 0.0f, 1.0f, panel);
+    UI::NodeHandle root = ui.AddContainer();
+    ui.SetSize(root, UI::SizeValue::Px(300), UI::SizeValue::Auto());
+    ui.SetFlexDirection(root, UI::FlexDirection::Column);
+    ui.SetJustify(root, UI::JustifyContent::Center);
+	ui.SetPadding(root, UI::Edges::All(20.f));
+
+
+    ui.SetGap(root, 16.f);
+    auto img = ui.AddImage("player", { 0, 0, 64, 64 }, root);
+    ui.SetSize(img, UI::SizeValue::Px(128), UI::SizeValue::Px(128));
+
+    btnSillyGame = ui.AddButton("Test world", root);
+    btnBoids = ui.AddButton("Boids", root);
+    btnQuit_ = ui.AddButton("Quit", root);
+    
 }
 
-float rotation = 0;
+void StartState::Update(float dt) 
+{
 
-void StartState::Update(float dt) {
-    rotation += _data->inputs.GetActionAxis("move")[0] * dt * 5;
+    if (ui.IsClicked(btnSillyGame))
+		_data->state.AddState(StateRef(new Level1(_data)), 0);
+    if (ui.IsClicked(btnBoids))
+        _data->state.AddState(StateRef(new Boids(_data)), 0);
+    if (ui.IsClicked(btnQuit_))
+		_data->quit = true;
 }
 
 void StartState::Render(float dt)
 {
-    _data->renderer.SubmitText("hello world!", "tnr", MaterialInstance("text_mat"), { 100.f, 150.f, 0.f }, { 1.f, 1.f }, rotation);
 
-    auto gpuFont = _data->assets.GetGPUFont("tnr");
-
-    SDL_FRect fullRect = { 0, 0, (float)gpuFont->atlas.width, (float)gpuFont->atlas.height };
 }
 

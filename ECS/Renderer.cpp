@@ -7,6 +7,12 @@
 //Vertex shader has ObjectData at slot 1
 //Vertex shader has custom at slot 2
 
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+
 //Fragment shader has custom at slot 0
 
 static constexpr char GLYPH_FIRST = 32;
@@ -16,7 +22,7 @@ static constexpr int  GLYPH_COUNT = GLYPH_LAST - GLYPH_FIRST + 1;
 static constexpr int ATLAS_COLS = 16;
 static constexpr int ATLAS_ROWS = (GLYPH_COUNT + ATLAS_COLS - 1) / ATLAS_COLS;
 
-static constexpr int PAD = 8;
+static constexpr int PAD = 12;
 
 int Renderer::Init(SDL_GPUDevice* gpuDevice, SDL_Window* sdlWindow, AssetManager* assets, uint32_t screenWidth, uint32_t screenHeight)
 {
@@ -44,6 +50,7 @@ int Renderer::Init(SDL_GPUDevice* gpuDevice, SDL_Window* sdlWindow, AssetManager
     tBuf = SDL_CreateGPUTransferBuffer(_device, &tbi);
 
 	CreateUnitQuad();
+    CreateUnitCircle();
 
     UpdateDefaultProjection();
 
@@ -95,7 +102,7 @@ int Renderer::SetWindowSize(uint32_t width, uint32_t height)
     return 0;
 }
 
-int Renderer::StartRenderPass()
+int Renderer::StartRenderPass(int reserveDrawCalls)
 {
     currentMesh = "";
     currentPipeline = "";
@@ -132,7 +139,7 @@ int Renderer::StartRenderPass()
     SDL_PushGPUVertexUniformData(currentCmd, 0, &_engineData, sizeof(EngineData));
 
 
-    drawCalls.reserve(10000);
+    drawCalls.reserve(reserveDrawCalls);
 
     return 0;
 }
@@ -165,6 +172,12 @@ int Renderer::Present()
     currentCmd = nullptr;
     currentSwapchainTexture = nullptr;
 
+    return 0;
+}
+
+int Renderer::ReserveDrawCalls(size_t count)
+{
+	drawCalls.reserve(count);
     return 0;
 }
 
@@ -229,7 +242,7 @@ int Renderer::SubmitSprite(MaterialInstance& material, SDL_FRect sRect, Vec3 Pos
     if (material.textureCount == 0)
         return -1;
     if (material.texturebases[0] == nullptr)
-        material.texturebases[0] = _assets->GetTexture(material.textures[0]);
+        material.texturebases[0] = _assets->TryGetTexture(material.textures[0]);
     auto* texBase = material.texturebases[0];
     if (!texBase)
         return -1;
@@ -253,7 +266,7 @@ int Renderer::SubmitSprite(MaterialInstance&& material, SDL_FRect sRect, Vec3 Po
     if (material.textureCount == 0)
         return -1;
     if (material.texturebases[0] == nullptr)
-        material.texturebases[0] = _assets->GetTexture(material.textures[0]);
+        material.texturebases[0] = _assets->TryGetTexture(material.textures[0]);
     auto* texBase = material.texturebases[0];
     if (!texBase)
         return -1;
@@ -273,7 +286,7 @@ int Renderer::SubmitSprite(MaterialInstance&& material, SDL_FRect sRect, Vec3 Po
 
 int Renderer::SubmitText(std::string_view text, StringId fontName, MaterialInstance material, Vec3 position, Vec2 scale, float rotation, SDL_FColor color)
 {
-    GPUFont* gpuFont = _assets->GetGPUFont(fontName);
+    GPUFont* gpuFont = _assets->TryGetGPUFont(fontName);
     if (!gpuFont)
     {
         SDL_Log("SubmitText ERROR: GPUFont '%llu' not found.", (unsigned long long)fontName.id);
@@ -286,7 +299,8 @@ int Renderer::SubmitText(std::string_view text, StringId fontName, MaterialInsta
     if (material.texturebases[0] == nullptr)
         material.texturebases[0] = &gpuFont->atlas;
 
-    float penX = 0.0f;
+    float penX = -gpuFont->glyphs[text[0]].bearingX - PAD;
+    //std::cout << penX;
     float cosR = cosf(rotation);
     float sinR = sinf(rotation);
 
@@ -316,9 +330,11 @@ int Renderer::SubmitText(std::string_view text, StringId fontName, MaterialInsta
             (float)(gpuFont->cellH - PAD * 2)
         };
 
+        cellRect.h -= (gpuFont->descent);
         // Center of cell, with bottom of cell sitting on baseline
         float localX = penX + gpuFont->cellW * 0.5f;
-        float localY = baselineY - gpuFont->cellH * 0.5f;
+        float localY = -(cellRect.h + gpuFont->descent) / 2.0f;
+
 
         float worldX = position.x + (localX * cosR - localY * sinR) * scale.x;
         float worldY = position.y + (localX * sinR + localY * cosR) * scale.y;
@@ -448,7 +464,7 @@ int Renderer::SpriteDraw(MaterialInstance& material, SDL_FRect sRect, Vec2 Posit
         return -1;
 
 	if (material.texturebases[0] == nullptr)
-		material.texturebases[0] = _assets->GetTexture(material.textures[0]);
+		material.texturebases[0] = _assets->TryGetTexture(material.textures[0]);
 
 	auto* texBase = material.texturebases[0];
 
@@ -548,7 +564,7 @@ TextureBase Renderer::CreateTexture(SDL_Surface* surface)
 GPUFont Renderer::CreateFontt(StringId fontName)
 {
     SDL_Log("CreateFontt: looking up id=%u, _assets=%p", fontName.id, (void*)_assets);
-    TTF_Font* font = _assets->GetFont(fontName);
+    TTF_Font* font = _assets->TryGetFont(fontName);
     if (!font)
     {
         SDL_Log("CreateFont ERROR: font '%llu' not found.", (unsigned long long)fontName.id);
@@ -595,6 +611,7 @@ GPUFont Renderer::CreateFontt(StringId fontName)
     gpuFont.lineHeight = TTF_GetFontHeight(font);
     gpuFont.ascent = TTF_GetFontAscent(font);
     gpuFont.atlasName = fontName;
+	gpuFont.descent = TTF_GetFontDescent(font);
 
     SDL_Color white = { 255, 255, 255, 255 };
     for (int i = 0; i < GLYPH_COUNT; ++i)
@@ -613,8 +630,10 @@ GPUFont Renderer::CreateFontt(StringId fontName)
         info.bearingX = minX;
         info.bearingY = maxY;
         // Default srcRect from metrics (used for space / invisible glyphs)
-        info.srcRect = { (float)(cellX + PAD), (float)(cellY + PAD),
-                          (float)(maxX - minX),  (float)(maxY - minY) };
+        info.srcRect = { (float)(cellX + PAD),
+            (float)(cellY + PAD),
+            (float)(maxX - minX), 
+            (float)(maxY - minY) };
         gpuFont.glyphs[c] = info;  // store early so space etc. are covered
 
         if (c == ' ' || (maxX - minX) <= 0 || (maxY - minY) <= 0)
@@ -624,12 +643,6 @@ GPUFont Renderer::CreateFontt(StringId fontName)
         if (!glyphSurf)
             continue;
 
-        info.srcRect = {
-            (float)(cellX + PAD),
-            (float)(cellY + PAD),
-            (float)glyphSurf->w,
-            (float)glyphSurf->h
-        };
         info.bearingY = maxY;
 
         gpuFont.glyphs[c] = info;
@@ -916,8 +929,8 @@ SDL_GPUGraphicsPipeline* Renderer::GetOrCreatePipeline(MaterialBase* base)
         base->depthWriteEnabled,
         base->hasDepthTarget);
 
-    const Shader* vertShader = _assets->GetShader(base->vertexShader);
-    const Shader* fragShader = _assets->GetShader(base->fragmentShader);
+    const Shader* vertShader = _assets->TryGetShader(base->vertexShader);
+    const Shader* fragShader = _assets->TryGetShader(base->fragmentShader);
 
     if (!vertShader || !fragShader)
     {
@@ -1009,7 +1022,7 @@ void Renderer::BindMaterialTextures(MaterialInstance material)
 
     for (uint32_t i = 0; i < material.textureCount;i++) 
     {
-        TextureBase* texBase = _assets->GetTexture(material.textures[i]);
+        TextureBase* texBase = _assets->TryGetTexture(material.textures[i]);
 
         if (texBase && texBase->texture && texBase->sampler)
         {
@@ -1039,6 +1052,37 @@ void Renderer::CreateUnitQuad()
     _unitQuadMesh.meshVertices = vertices;
     _unitQuadMesh.meshIndices = indices;
     _assets->AddMesh("unit_quad", vertices, indices);
+}
+
+
+void Renderer::CreateUnitCircle()
+{
+
+	static constexpr int segments = 32;
+    
+    MeshVertices vertices;
+    MeshIndices indices;
+
+    vertices.push_back({ 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.5f, 0.5f });
+
+    for (int i = 0; i <= segments; i++)
+    {
+        float angle = (float)i / (float)segments * 2.0f * M_PI;
+        float x = std::cos(angle) * 0.5f;
+        float y = std::sin(angle) * 0.5f;
+        float u = x + 0.5f;
+        float v = y + 0.5f;
+        vertices.push_back({ x, y, 1.0f, 1.0f, 1.0f, 1.0f, u, v });
+    }
+
+    for (int i = 1; i <= segments; i++)
+    {
+        indices.push_back(0);
+        indices.push_back(i);
+        indices.push_back(i < segments ? i + 1 : 1);
+    }
+
+    _assets->AddMesh("unit_circle32", vertices, indices);
 }
 
 void Renderer::UpdateDefaultProjection()

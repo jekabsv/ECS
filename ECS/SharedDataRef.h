@@ -25,7 +25,7 @@ struct SharedData
     AnimationSystem animation;
     PhysicsSystem physics;
 	SpatialIndex spatialIndex;
-    SDL_GPUDevice* device;
+    SDL_GPUDevice* device = nullptr;
 	Renderer renderer;
 };
 
