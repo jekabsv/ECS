@@ -174,7 +174,7 @@ void StartState::Init()
 
     ui.SetGap(root, 16.f);
     auto img = ui.AddImage("player", { 0, 0, 64, 64 }, root);
-    ui.SetSize(img, UI::SizeValue::Px(128), UI::SizeValue::Px(128));
+    ui.SetSize(img, UI::SizeValue::Px(128), UI::SizeValue::Px(192));
 
     btnSillyGame = ui.AddButton("Test world", root);
     btnBoids = ui.AddButton("Boids", root);

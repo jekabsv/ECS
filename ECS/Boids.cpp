@@ -187,13 +187,18 @@ void Boids::Init()
     ui.SetGap(root, 6.0f);
     ui.SetPadding(root, UI::Edges::All(20.0f));
 
+
     back = ui.AddButton("Back to menu", root);
 	ui.SetSize(back, UI::SizeValue::Auto(), UI::SizeValue::Px(60));
-	ui.SetSize(ui.AddLabel("Number of boids:", root), UI::SizeValue::Auto(), UI::SizeValue::Px(20));
+
+	ui.SetSize(ui.AddLabel("Number of boids:", root), UI::SizeValue::Auto(), UI::SizeValue::Px(30));
+
     input = ui.AddInputField(std::format("{}", DEFAULT_COUNT), root);
 	ui.SetSize(input, UI::SizeValue::Auto(), UI::SizeValue::Px(60));
+
     slider = ui.AddSlider((float)DEFAULT_COUNT, (float)MIN_COUNT, (float)MAX_COUNT, root);
-	ui.SetSize(ui.AddLabel("Perception radius:", root), UI::SizeValue::Auto(), UI::SizeValue::Px(20));
+	ui.SetSize(ui.AddLabel("Perception radius:", root), UI::SizeValue::Auto(), UI::SizeValue::Px(30));
+
     perceptionInput = ui.AddInputField(std::format("{:.0f}", PERCEPTION), root);
 	ui.SetSize(perceptionInput, UI::SizeValue::Auto(), UI::SizeValue::Px(60));
 }
