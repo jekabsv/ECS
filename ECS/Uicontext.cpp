@@ -67,9 +67,7 @@ namespace UI
             idMap_[std::string(id)] = handle;
 
         if (parent == NULL_HANDLE)
-        {
             roots_.push_back(handle);
-        }
         else
         {
             auto it = nodes_.find(parent);
@@ -155,9 +153,7 @@ namespace UI
 
         // Detach from parent's children list
         if (parent == NULL_HANDLE)
-        {
             roots_.erase(std::remove(roots_.begin(), roots_.end(), handle), roots_.end());
-        }
         else
         {
             auto pit = nodes_.find(parent);
@@ -630,7 +626,6 @@ namespace UI
             }
             break;
         }
-
         case WidgetType::Slider:
         {
             if (w < 0.0f) w = 200.0f;   // sensible default width
@@ -654,7 +649,6 @@ namespace UI
             if (h < 0.0f) h = lineHeight + pad.top + pad.bottom;
             break;
         }
-
         case WidgetType::Image:
         {
             if (!node.widget.texture.empty() && w < 0.0f && h < 0.0f)
@@ -861,13 +855,13 @@ namespace UI
                     : node.flex.alignItems; // placeholder
 
                 AlignSelf selfAlign = child.flex.alignSelf;
-                AlignItems resolvedAlign = node.flex.alignItems;
-                if (selfAlign == AlignSelf::FlexStart)   resolvedAlign = AlignItems::FlexStart;
-                else if (selfAlign == AlignSelf::FlexEnd) resolvedAlign = AlignItems::FlexEnd;
-                else if (selfAlign == AlignSelf::Center)  resolvedAlign = AlignItems::Center;
-                else if (selfAlign == AlignSelf::Stretch) resolvedAlign = AlignItems::Stretch;
+                AlignItems resolved = node.flex.alignItems;
+                if (selfAlign == AlignSelf::FlexStart)   resolved = AlignItems::FlexStart;
+                else if (selfAlign == AlignSelf::FlexEnd) resolved = AlignItems::FlexEnd;
+                else if (selfAlign == AlignSelf::Center)  resolved = AlignItems::Center;
+                else if (selfAlign == AlignSelf::Stretch) resolved = AlignItems::Stretch;
 
-                if (resolvedAlign == AlignItems::Stretch)
+                if (resolved == AlignItems::Stretch)
                 {
                     if (isRow) child.computedRect.h = crossAvail
                         - child.flex.margin.top - child.flex.margin.bottom;
@@ -939,11 +933,11 @@ namespace UI
                 // Cross position
                 float crossPos = 0.0f;
                 AlignSelf selfAlign = child.flex.alignSelf;
-                AlignItems resolvedAlign = node.flex.alignItems;
-                if (selfAlign == AlignSelf::FlexStart)   resolvedAlign = AlignItems::FlexStart;
-                else if (selfAlign == AlignSelf::FlexEnd) resolvedAlign = AlignItems::FlexEnd;
-                else if (selfAlign == AlignSelf::Center)  resolvedAlign = AlignItems::Center;
-                else if (selfAlign == AlignSelf::Stretch) resolvedAlign = AlignItems::Stretch;
+                AlignItems resolved = node.flex.alignItems;
+                if (selfAlign == AlignSelf::FlexStart)   resolved = AlignItems::FlexStart;
+                else if (selfAlign == AlignSelf::FlexEnd) resolved = AlignItems::FlexEnd;
+                else if (selfAlign == AlignSelf::Center)  resolved = AlignItems::Center;
+                else if (selfAlign == AlignSelf::Stretch) resolved = AlignItems::Stretch;
 
                 switch (resolvedAlign)
                 {
@@ -960,16 +954,8 @@ namespace UI
                 float finalMain = mainOffset + mMarginA;
                 float finalCross = crossOffset + crossPos;
 
-                if (isRow)
-                {
-                    child.computedRect.x = baseX + finalMain;
-                    child.computedRect.y = baseY + finalCross;
-                }
-                else
-                {
-                    child.computedRect.x = baseX + finalCross;
-                    child.computedRect.y = baseY + finalMain;
-                }
+                if (isRow) { child.computedRect.x = baseX + finalMain;  child.computedRect.y = baseY + finalCross; }
+                else { child.computedRect.x = baseX + finalCross; child.computedRect.y = baseY + finalMain; }
 
                 if (reverseMain)
                     mainOffset -= childMain + mMarginB + gap + spaceBetween + spaceAround;
@@ -1192,18 +1178,10 @@ namespace UI
         InteractionState state = node.widget.interactionState;
 
         Color bg = node.style.background.value_or(bs.background);
-        if (state == InteractionState::Pressed)
-            bg = node.style.backgroundPress.value_or(bs.backgroundPress);
-        else if (state == InteractionState::Hovered)
-            bg = node.style.backgroundHover.value_or(bs.backgroundHover);
+        if (state == InteractionState::Pressed)  bg = node.style.backgroundPress.value_or(bs.backgroundPress);
+        else if (state == InteractionState::Hovered)  bg = node.style.backgroundHover.value_or(bs.backgroundHover);
 
-        if (!node.enabled)
-        {
-            bg.r = (uint8_t)(bg.r * 0.5f);
-            bg.g = (uint8_t)(bg.g * 0.5f);
-            bg.b = (uint8_t)(bg.b * 0.5f);
-            bg.a = (uint8_t)(bg.a * 0.7f);
-        }
+        if (!node.enabled) { bg.r = (uint8_t)(bg.r * 0.5f); bg.g = (uint8_t)(bg.g * 0.5f); bg.b = (uint8_t)(bg.b * 0.5f); bg.a = (uint8_t)(bg.a * 0.7f); }
 
         float radius = node.style.borderRadius.value_or(bs.borderRadius);
         radius *= 2;
@@ -1224,10 +1202,8 @@ namespace UI
 
         const Edges& pad = node.style.padding.value_or(bs.padding);
         SDL_FRect textRect = {
-            node.computedRect.x + pad.left,
-            node.computedRect.y + pad.top,
-            node.computedRect.w - pad.left - pad.right,
-            node.computedRect.h - pad.top - pad.bottom
+            node.computedRect.x + pad.left,   node.computedRect.y + pad.top,
+            node.computedRect.w - pad.left - pad.right, node.computedRect.h - pad.top - pad.bottom
         };
 
         DrawText(node.widget.text, textRect, font, fg, ta);
@@ -1258,7 +1234,6 @@ namespace UI
     {
         const SliderStyle& ss = theme_.slider;
         const SDL_FRect& r = node.computedRect;
-        InteractionState state = node.widget.interactionState;
 
         float thumbR = ss.thumbRadius;
         float trackH = ss.trackHeight;
@@ -1268,7 +1243,6 @@ namespace UI
         SDL_FRect trackBg = { r.x + thumbR, trackY, r.w - thumbR * 2.0f, trackH };
         DrawRoundedRect(trackBg, ss.trackBackground, ss.borderRadius);
 
-        // Track fill
         float range = node.widget.sliderMax - node.widget.sliderMin;
         float t = (range > 0.0f) ? (node.widget.sliderValue - node.widget.sliderMin) / range : 0.0f;
         float fillW = t * trackBg.w;
@@ -1278,8 +1252,8 @@ namespace UI
         // Thumb
         float thumbX = trackBg.x + fillW;
         float thumbY = r.y + r.h * 0.5f;
-
-        Color thumbColor = (state == InteractionState::Hovered || state == InteractionState::Pressed)
+        Color thumbColor = (node.widget.interactionState == InteractionState::Hovered ||
+            node.widget.interactionState == InteractionState::Pressed)
             ? ss.thumbHover : ss.thumb;
 
 
@@ -1306,10 +1280,8 @@ namespace UI
 
         const Edges& pad = node.style.padding.value_or(ifs.padding);
         SDL_FRect textRect = {
-            node.computedRect.x + pad.left,
-            node.computedRect.y + pad.top,
-            node.computedRect.w - pad.left - pad.right,
-            node.computedRect.h - pad.top - pad.bottom
+            node.computedRect.x + pad.left,   node.computedRect.y + pad.top,
+            node.computedRect.w - pad.left - pad.right, node.computedRect.h - pad.top - pad.bottom
         };
 
         StringId font = node.style.fontName.value_or("");

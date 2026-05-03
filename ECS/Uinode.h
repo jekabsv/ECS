@@ -42,7 +42,6 @@ namespace UI
     // -------------------------------------------------------------------------
     struct WidgetData
     {
-        // Label / Button
         std::string text;
 
         // Button / InputField / Slider interaction results (written each frame)
@@ -54,7 +53,6 @@ namespace UI
         float   sliderMax = 1.0f;
         bool    sliderChanged = false;  // true for exactly one frame after change
 
-        // InputField
         std::string inputValue;
         std::string placeholder;
         bool        inputChanged = false;

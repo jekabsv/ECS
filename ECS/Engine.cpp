@@ -141,6 +141,9 @@ void Engine::Update(float dt)
 
 
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::PostUpdate, dt);
+    
+    //_data->state.GetActiveState()->ui.LayoutPass();
+
 }
 
 void Engine::HandleInput(float dt)

@@ -106,6 +106,11 @@ void StartState::Init()
     _data->assets.AddMaterial(StringId("text_mat"), textMat);
 
 
+    MaterialBase uiMat("vert", "frag");
+    MaterialBase::MakeOverlay(uiMat);
+    MaterialBase::SetVertexAttr(uiMat);
+
+    _data->assets.AddMaterial(StringId("ui_mat"), uiMat);
 
     //Meshes
     MeshVertices verts = {

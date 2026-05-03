@@ -5,7 +5,6 @@
 #include <unordered_map>
 #include <string>
 #include <string_view>
-#include <memory>
 #include <vector>
 #include <optional>
 #include <SDL3/SDL_video.h>
@@ -126,7 +125,6 @@ namespace UI
         const std::string& GetInputValue(NodeHandle handle) const;
 
         // -- Mutation ---------------------------------------------------------
-
         void SetText(NodeHandle handle, std::string_view text);
         void SetVisible(NodeHandle handle, bool visible);
         void SetEnabled(NodeHandle handle, bool enabled);
@@ -151,12 +149,10 @@ namespace UI
         void SetStyleOverride(NodeHandle handle, const StyleOverride& style);
 
         // -- Theme ------------------------------------------------------------
-
         Theme& GetTheme() { return theme_; }
         const Theme& GetTheme() const { return theme_; }
 
         // -- Per-frame passes -------------------------------------------------
-
         void ProcessInput(const InputState& input, float dt);
         void LayoutPass();
         void RenderPass();
