@@ -646,7 +646,7 @@ namespace UI
 
             const Edges& pad = node.style.padding.value_or(theme_.inputField.padding);
 
-            auto *x = _assets->GetGPUFont(font);
+            auto *x = _assets->TryGetGPUFont(font);
             
             float lineHeight = x->lineHeight;
 
@@ -660,7 +660,7 @@ namespace UI
             if (!node.widget.texture.empty() && w < 0.0f && h < 0.0f)
             {
 
-				auto *x = _assets->GetTexture(node.widget.texture);
+				auto *x = _assets->TryGetTexture(node.widget.texture);
 
 
                 float tw = 0, th = 0;
@@ -1122,7 +1122,7 @@ namespace UI
             return;
 
 
-        auto* gpuFont = _assets->GetGPUFont(font);
+        auto* gpuFont = _assets->TryGetGPUFont(font);
         if (!gpuFont)
             return;
 
@@ -1156,7 +1156,7 @@ namespace UI
     {
         float width = 0;
         float maxHeight = 0;
-        auto* x = _assets->GetGPUFont(fontId);
+        auto* x = _assets->TryGetGPUFont(fontId);
 
         if (!x) 
         {

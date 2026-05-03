@@ -236,7 +236,7 @@ int Renderer::SubmitSprite(MaterialInstance& material, SDL_FRect sRect, Vec3 Pos
     if (material.textureCount == 0)
         return -1;
     if (material.texturebases[0] == nullptr)
-        material.texturebases[0] = _assets->GetTexture(material.textures[0]);
+        material.texturebases[0] = _assets->TryGetTexture(material.textures[0]);
     auto* texBase = material.texturebases[0];
     if (!texBase)
         return -1;
@@ -260,7 +260,7 @@ int Renderer::SubmitSprite(MaterialInstance&& material, SDL_FRect sRect, Vec3 Po
     if (material.textureCount == 0)
         return -1;
     if (material.texturebases[0] == nullptr)
-        material.texturebases[0] = _assets->GetTexture(material.textures[0]);
+        material.texturebases[0] = _assets->TryGetTexture(material.textures[0]);
     auto* texBase = material.texturebases[0];
     if (!texBase)
         return -1;
@@ -280,7 +280,7 @@ int Renderer::SubmitSprite(MaterialInstance&& material, SDL_FRect sRect, Vec3 Po
 
 int Renderer::SubmitText(std::string_view text, StringId fontName, MaterialInstance material, Vec3 position, Vec2 scale, float rotation, SDL_FColor color)
 {
-    GPUFont* gpuFont = _assets->GetGPUFont(fontName);
+    GPUFont* gpuFont = _assets->TryGetGPUFont(fontName);
     if (!gpuFont)
     {
         SDL_Log("SubmitText ERROR: GPUFont '%llu' not found.", (unsigned long long)fontName.id);
@@ -458,7 +458,7 @@ int Renderer::SpriteDraw(MaterialInstance& material, SDL_FRect sRect, Vec2 Posit
         return -1;
 
 	if (material.texturebases[0] == nullptr)
-		material.texturebases[0] = _assets->GetTexture(material.textures[0]);
+		material.texturebases[0] = _assets->TryGetTexture(material.textures[0]);
 
 	auto* texBase = material.texturebases[0];
 
@@ -558,7 +558,7 @@ TextureBase Renderer::CreateTexture(SDL_Surface* surface)
 GPUFont Renderer::CreateFontt(StringId fontName)
 {
     SDL_Log("CreateFontt: looking up id=%u, _assets=%p", fontName.id, (void*)_assets);
-    TTF_Font* font = _assets->GetFont(fontName);
+    TTF_Font* font = _assets->TryGetFont(fontName);
     if (!font)
     {
         SDL_Log("CreateFont ERROR: font '%llu' not found.", (unsigned long long)fontName.id);
@@ -923,8 +923,8 @@ SDL_GPUGraphicsPipeline* Renderer::GetOrCreatePipeline(MaterialBase* base)
         base->depthWriteEnabled,
         base->hasDepthTarget);
 
-    const Shader* vertShader = _assets->GetShader(base->vertexShader);
-    const Shader* fragShader = _assets->GetShader(base->fragmentShader);
+    const Shader* vertShader = _assets->TryGetShader(base->vertexShader);
+    const Shader* fragShader = _assets->TryGetShader(base->fragmentShader);
 
     if (!vertShader || !fragShader)
     {
@@ -1016,7 +1016,7 @@ void Renderer::BindMaterialTextures(MaterialInstance material)
 
     for (uint32_t i = 0; i < material.textureCount;i++) 
     {
-        TextureBase* texBase = _assets->GetTexture(material.textures[i]);
+        TextureBase* texBase = _assets->TryGetTexture(material.textures[i]);
 
         if (texBase && texBase->texture && texBase->sampler)
         {

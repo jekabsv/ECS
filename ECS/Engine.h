@@ -17,7 +17,7 @@ public:
     Engine() = default;
     ~Engine() = default;
 
-    bool Initialize();
+    int Initialize();
     void Update(float dt);
     void HandleInput(float dt);
     void Render(float dt);

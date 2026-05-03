@@ -31,16 +31,21 @@ bool Engine::InitializeWeb(const std::string& elementId)
 }
 #endif // __EMSCRIPTEN__
 
-bool Engine::Initialize()
+int Engine::Initialize()
 {
     GlobalLogger().AddSink(std::make_shared<ConsoleSink>());
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS))
+    {
         LOG_ERROR(GlobalLogger(), "Engine", "SDL_Init failed: " + std::string(SDL_GetError()));
+        return -1;
+    }
 
-    bool ttf_init;
-    if (!(ttf_init = TTF_Init()))
+    if (!TTF_Init())
+    {
         LOG_ERROR(GlobalLogger(), "Engine", "TTF_Init failed: " + std::string(SDL_GetError()));
+        return -1;
+    }
 
 
 
@@ -51,8 +56,10 @@ bool Engine::Initialize()
         NULL
     );
 
-    if (_device == NULL) {
+    if (!_device) 
+    {
         SDL_Log("GPU Device creation failed: %s", SDL_GetError());
+        return -1;
     }
 
     _data->device = _device;
@@ -174,6 +181,9 @@ void Engine::HandleInput(float dt)
     inp.mouseReleased = _data->inputs.GetActionState("click") == InputSystem::Released;
 
     _data->state.GetActiveState()->ui.Update(inp, dt);
+
+
+	_data->state.GetActiveState()->HandleInput();
 }
 
 void Engine::Render(float dt)

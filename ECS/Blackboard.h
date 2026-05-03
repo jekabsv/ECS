@@ -1,9 +1,9 @@
 #pragma once
 #include <any>
 #include <unordered_map>
+#include <cassert>
 #include "Struct.h"
 #include "logger.h"
-#include "SpatialIndex.h"
 
 class Blackboard
 {
@@ -16,21 +16,24 @@ public:
         _store[key] = std::move(value);
     }
 
+  
     template<typename T>
-    T Get(StringId key) const
+    T& Get(StringId key)
     {
         auto it = _store.find(key);
-        if (it == _store.end())
-        {
-            LOG_WARN(GlobalLogger(), "Blackboard", "Get: key not found");
-            return T{};
-        }
+        assert(it != _store.end() && "Blackboard::Get — key not found");
+        T* ptr = std::any_cast<T>(&it->second);
+        assert(ptr && "Blackboard::Get — type mismatch");
+        return *ptr;
+    }
+
+    template<typename T>
+    const T& Get(StringId key) const
+    {
+        auto it = _store.find(key);
+        assert(it != _store.end() && "Blackboard::Get — key not found");
         const T* ptr = std::any_cast<T>(&it->second);
-        if (!ptr)
-        {
-            LOG_WARN(GlobalLogger(), "Blackboard", "Get: type mismatch for key");
-            return T{};
-        }
+        assert(ptr && "Blackboard::Get — type mismatch");
         return *ptr;
     }
 
@@ -67,7 +70,6 @@ public:
         }
         _store.erase(it);
     }
-
 
     void Clear()
     {

@@ -69,15 +69,15 @@ void StartState::Init()
 
 	//Textures
     _data->assets.LoadBMPSurface("test", "../ECS/test.bmp");
-	_data->assets.AddTexture("test", _data->renderer.CreateTexture(_data->assets.GetSurface("test")));
+	_data->assets.AddTexture("test", _data->renderer.CreateTexture(_data->assets.TryGetSurface("test")));
 
     _data->assets.LoadBMPSurface("player", "../ECS/player.bmp");
-    _data->assets.AddTexture("player", _data->renderer.CreateTexture(_data->assets.GetSurface("player")));
+    _data->assets.AddTexture("player", _data->renderer.CreateTexture(_data->assets.TryGetSurface("player")));
 
     _data->assets.LoadFont("tnr", "../ECS/times.ttf");
     _data->assets.AddGPUFont("tnr", _data->renderer.CreateFontt("tnr"));
 
-	_data->assets.AddTexture("atlas", _data->assets.GetGPUFont("tnr")->atlas);
+	_data->assets.AddTexture("atlas", _data->assets.TryGetGPUFont("tnr")->atlas);
 
 
 
