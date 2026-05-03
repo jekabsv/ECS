@@ -18,10 +18,10 @@ private:
     void DespawnLastBoid();
 
     // Flocking constants
-    static constexpr float PERCEPTION = 80.0f;
+    float PERCEPTION = 40.0f;
     static constexpr float SEPARATION_DIST = 20.0f;
     static constexpr float MIN_SPEED = 80.0f;
-    static constexpr float MAX_SPEED = 220.0f;
+    static constexpr float MAX_SPEED = 150.0f;
     static constexpr float MAX_TURN_RATE = 2.0f;
     static constexpr float W_SEPARATION = 3.8f;
     static constexpr float W_ALIGNMENT = 1.0f;
@@ -41,5 +41,8 @@ private:
     UI::NodeHandle back = UI::NULL_HANDLE;
     UI::NodeHandle slider = UI::NULL_HANDLE;
     UI::NodeHandle input = UI::NULL_HANDLE;
+    UI::NodeHandle perceptionInput = UI::NULL_HANDLE;
+    UI::NodeHandle ScaleInput = UI::NULL_HANDLE;
     bool focused = false;
+    bool focusedPerception = false;
 };

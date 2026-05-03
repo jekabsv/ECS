@@ -8,6 +8,8 @@
 using namespace Math;
 
 static const StringId BB_AREA = StringId("boids_area");
+static const StringId BB_PERCEPTION = StringId("boids_perception");
+
 
 void Boids::SpawnBoid(const PlayArea& area)
 {
@@ -19,6 +21,7 @@ void Boids::SpawnBoid(const PlayArea& area)
 
     TransformComponent tr;
     tr.position = { pos.x, pos.y };
+    tr.position = { area.x + area.w / 2.f, area.h / 2.f };
     tr.scale = { 1.0f, 1.0f };
     tr.rotation = angle;
 
@@ -38,7 +41,8 @@ void Boids::SpawnBoid(const PlayArea& area)
 
 void Boids::DespawnLastBoid()
 {
-    if (_boidEntities.empty()) return;
+    if (_boidEntities.empty())
+        return;
     ecs.Destroy(_boidEntities.back());
     _boidEntities.pop_back();
     _currentCount--;
@@ -55,6 +59,8 @@ void Boids::Init()
         .h = (float)_data->GAME_HEIGHT
     };
     _data->session.Set<PlayArea>(BB_AREA, area);
+    _data->session.Set<float>(BB_PERCEPTION, PERCEPTION);
+
 
     _data->assets.AddMesh("boid",
         MeshVertices{
@@ -76,6 +82,8 @@ void Boids::Init()
             auto trs = ctx.Slice<TransformComponent>();
             auto rbs = ctx.Slice<RigidBody>();
             auto entities = ctx.Slice<ECS::Entity>();
+
+            const float PERCEPTION = data->session.Get<float>(BB_PERCEPTION);
 
             std::vector<ECS::Entity> found;
             found.reserve(200);
@@ -99,7 +107,8 @@ void Boids::Init()
 
                 for (ECS::Entity other : found)
                 {
-                    if (other == entities[i] || n > 16) continue;
+                    if (other == entities[i] || n > 32)
+                        continue;
 
                     auto* oTr = data->physics.GetWorld()->TryGet<TransformComponent>(other);
                     if (!oTr) continue;
@@ -128,12 +137,13 @@ void Boids::Init()
                     WrapPosition(tr.position.x, tr.position.y, area.x, area.w, area.h);
                     continue;
                 }
-            
+
                 Vec2 blend = align.Normalized() * W_ALIGNMENT
                     + (coh / (float)n).Normalized() * W_COHESION
                     + (ns > 0 ? sep.Normalized() * W_SEPARATION : Vec2{});
 
                 float desired = blend.ToAngle();
+
                 tr.rotation = MoveTowardAngle(tr.rotation, desired, MAX_TURN_RATE * dt);
 
                 float speed = ClampMagnitudeRange({ rb.vx, rb.vy }, MIN_SPEED, MAX_SPEED).Length();
@@ -174,20 +184,25 @@ void Boids::Init()
     ui.SetFlexDirection(root, UI::FlexDirection::Column);
     ui.SetJustify(root, UI::JustifyContent::FlexStart);
     ui.SetAlignItems(root, UI::AlignItems::Stretch);
-    ui.SetGap(root, 12.0f);
+    ui.SetGap(root, 6.0f);
     ui.SetPadding(root, UI::Edges::All(20.0f));
 
     back = ui.AddButton("Back to menu", root);
-    input = ui.AddInputField("Boid nr.", root);
+    ui.SetSize(back, UI::SizeValue::Auto(), UI::SizeValue::Px(60));
+    ui.SetSize(ui.AddLabel("Number of boids:", root), UI::SizeValue::Auto(), UI::SizeValue::Px(20));
+    input = ui.AddInputField(std::format("{}", DEFAULT_COUNT), root);
+    ui.SetSize(input, UI::SizeValue::Auto(), UI::SizeValue::Px(60));
     slider = ui.AddSlider((float)DEFAULT_COUNT, (float)MIN_COUNT, (float)MAX_COUNT, root);
-
-    ui.SetInputValue(input, std::format("{}", DEFAULT_COUNT));
+    ui.SetSize(ui.AddLabel("Perception radius:", root), UI::SizeValue::Auto(), UI::SizeValue::Px(20));
+    perceptionInput = ui.AddInputField(std::format("{:.0f}", PERCEPTION), root);
+    ui.SetSize(perceptionInput, UI::SizeValue::Auto(), UI::SizeValue::Px(60));
 }
 
 
 void Boids::Update(float dt)
 {
     bool currentlyFocused = (ui.Poll(input) == UI::InteractionState::Focused);
+    bool currentlyFocusedPerception = (ui.Poll(perceptionInput) == UI::InteractionState::Focused);
 
     if (!currentlyFocused && focused)
     {
@@ -200,16 +215,29 @@ void Boids::Update(float dt)
         catch (...) {}
     }
 
+    if (!currentlyFocusedPerception && focusedPerception)
+    {
+        try
+        {
+            PERCEPTION = std::stof(ui.GetInputValue(perceptionInput));
+            _data->session.Set<float>(BB_PERCEPTION, PERCEPTION);
+        }
+        catch (...) {}
+    }
+
     focused = currentlyFocused;
     if (!focused)
         ui.SetInputValue(input, std::format("{:.0f}", ui.GetSliderValue(slider)));
 
+    focusedPerception = currentlyFocusedPerception;
 
     const auto area = _data->session.Get<PlayArea>(BB_AREA);
     int delta = DrainSpawnBudget(_currentCount, (int)ui.GetSliderValue(slider), SPAWN_BUDGET);
 
-    for (int i = 0; i < delta; i++) SpawnBoid(area);
-    for (int i = 0; i < -delta; i++) DespawnLastBoid();
+    for (int i = 0; i < delta; i++)
+        SpawnBoid(area);
+    for (int i = 0; i < -delta; i++)
+        DespawnLastBoid();
 
     if (ui.IsClicked(back) || _data->inputs.GetActionState("next") == InputSystem::Pressed)
         _data->state.RemoveState();
