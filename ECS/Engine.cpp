@@ -95,7 +95,7 @@ int Engine::Initialize()
     _data->state.AddState(StateRef(new StartState(_data)), 0);
     _data->state.ProcessStateChanges();
 
-    _data->spatialIndex.Init(0.f, 0.f, _data->GAME_WIDTH, _data->GAME_HEIGHT, 32);
+    _data->spatialIndex.Init(0.f, 0.f, (float)_data->GAME_WIDTH, (float)_data->GAME_HEIGHT, 32);
 
     return 0;
     
@@ -200,13 +200,14 @@ void Engine::Render(float dt)
 
     start = std::chrono::high_resolution_clock::now();
 
+    _data->state.GetActiveState()->Render(dt);
+
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Render, dt);
 
     end = std::chrono::high_resolution_clock::now();
     duration = end - start;
     //std::cout << "ECS Render Took: " << duration.count() << "ms" << std::endl;
 
-    _data->state.GetActiveState()->Render(dt);
 
     start = std::chrono::high_resolution_clock::now();
 

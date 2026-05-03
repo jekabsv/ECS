@@ -242,3 +242,8 @@ void Boids::Update(float dt)
     if (ui.IsClicked(back) || _data->inputs.GetActionState("next") == InputSystem::Pressed)
         _data->state.RemoveState();
 }
+
+void Boids::Render(float dt)
+{
+	_data->renderer.ReserveDrawCalls(_currentCount);
+}

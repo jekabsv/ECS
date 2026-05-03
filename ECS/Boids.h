@@ -9,6 +9,7 @@ public:
     using State::State;
     void Init()         override;
     void Update(float dt) override;
+	void Render(float dt) override;
 
 private:
     // Play area passed to spawn and into the blackboard

@@ -176,33 +176,14 @@ void StartState::Init()
     auto img = ui.AddImage("player", { 0, 0, 64, 64 }, root);
     ui.SetSize(img, UI::SizeValue::Px(128), UI::SizeValue::Px(128));
 
-    btnSillyGame = ui.AddButton("Silly game", root);
+    btnSillyGame = ui.AddButton("Test world", root);
     btnBoids = ui.AddButton("Boids", root);
     btnQuit_ = ui.AddButton("Quit", root);
-
-    btnSlider = ui.AddSlider(5000.f, 500.0f, 10000.0f, root);
-    btnLabel = ui.AddLabel("This is a label", root);
-    btnInput = ui.AddInputField("Type here...", root);
     
 }
 
 void StartState::Update(float dt) 
 {
-
-	//_data->renderer.SubmitSprite(MaterialInstance("sprite_mat", "atlas"), 
-        //{ 0, 0, 512, 512 }, { 960.f, 540.f, 0.1f }, { 1.f, 1.f }, 0.f, { 1.f, 1.f, 1.f, 1.f });
-
-	auto &x = ui.GetInputValue(btnInput);
-
-    if (ui.Poll(btnInput) != UI::InteractionState::Focused)
-        if(focused)
-        {
-            ui.SetText(btnLabel, x);
-			ui.SetSliderValue(btnSlider, std::stof(x));
-        }
-	focused = ui.Poll(btnInput) == UI::InteractionState::Focused;
-    if(!focused)
-        ui.SetInputValue(btnInput, std::format("{:.0f}", ui.GetSliderValue(btnSlider)));
 
     if (ui.IsClicked(btnSillyGame))
 		_data->state.AddState(StateRef(new Level1(_data)), 0);

@@ -102,7 +102,7 @@ int Renderer::SetWindowSize(uint32_t width, uint32_t height)
     return 0;
 }
 
-int Renderer::StartRenderPass()
+int Renderer::StartRenderPass(int reserveDrawCalls)
 {
     currentMesh = "";
     currentPipeline = "";
@@ -139,7 +139,7 @@ int Renderer::StartRenderPass()
     SDL_PushGPUVertexUniformData(currentCmd, 0, &_engineData, sizeof(EngineData));
 
 
-    drawCalls.reserve(10000);
+    drawCalls.reserve(reserveDrawCalls);
 
     return 0;
 }
@@ -172,6 +172,12 @@ int Renderer::Present()
     currentCmd = nullptr;
     currentSwapchainTexture = nullptr;
 
+    return 0;
+}
+
+int Renderer::ReserveDrawCalls(size_t count)
+{
+	drawCalls.reserve(count);
     return 0;
 }
 
