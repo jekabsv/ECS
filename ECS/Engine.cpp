@@ -31,16 +31,21 @@ bool Engine::InitializeWeb(const std::string& elementId)
 }
 #endif // __EMSCRIPTEN__
 
-bool Engine::Initialize()
+int Engine::Initialize()
 {
     GlobalLogger().AddSink(std::make_shared<ConsoleSink>());
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS))
+    {
         LOG_ERROR(GlobalLogger(), "Engine", "SDL_Init failed: " + std::string(SDL_GetError()));
+        return -1;
+    }
 
-    bool ttf_init;
-    if (!(ttf_init = TTF_Init()))
+    if (!TTF_Init())
+    {
         LOG_ERROR(GlobalLogger(), "Engine", "TTF_Init failed: " + std::string(SDL_GetError()));
+        return -1;
+    }
 
 
 
@@ -51,8 +56,10 @@ bool Engine::Initialize()
         NULL
     );
 
-    if (_device == NULL) {
+    if (!_device)
+    {
         SDL_Log("GPU Device creation failed: %s", SDL_GetError());
+        return -1;
     }
 
     _data->device = _device;
@@ -71,13 +78,13 @@ bool Engine::Initialize()
 
 
 
-	_data->renderer.Init(_data->device, _data->window, &_data->assets, _data->GAME_WIDTH, _data->GAME_HEIGHT);
+    _data->renderer.Init(_data->device, _data->window, &_data->assets, _data->GAME_WIDTH, _data->GAME_HEIGHT);
 
 
 
 
     _data->SDLrenderer = SDL_CreateRenderer(_data->window, nullptr);
-    if (!_data->SDLrenderer) 
+    if (!_data->SDLrenderer)
         LOG_ERROR(GlobalLogger(), "Engine", std::string("SDL_CreateRenderer failed: ") + SDL_GetError());
 
 
@@ -91,7 +98,7 @@ bool Engine::Initialize()
     _data->spatialIndex.Init(0.f, 0.f, _data->GAME_WIDTH, _data->GAME_HEIGHT, 32);
 
     return 0;
-    
+
 }
 
 
@@ -109,7 +116,7 @@ void Engine::Update(float dt)
 
     _data->spatialIndex.Clear();
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Initialise, dt); //40ms on 10k entities
-	_data->spatialIndex.Build(); //30ms on 10k entities
+    _data->spatialIndex.Build(); //30ms on 10k entities
 
     end = std::chrono::high_resolution_clock::now();
     duration = end - start;
@@ -126,7 +133,7 @@ void Engine::Update(float dt)
 
     start = std::chrono::high_resolution_clock::now();
 
-    _data->state.GetActiveState()->Update(dt); 
+    _data->state.GetActiveState()->Update(dt);
 
     end = std::chrono::high_resolution_clock::now();
     duration = end - start;
@@ -174,6 +181,9 @@ void Engine::HandleInput(float dt)
     inp.mouseReleased = _data->inputs.GetActionState("click") == InputSystem::Released;
 
     _data->state.GetActiveState()->ui.Update(inp, dt);
+
+
+    _data->state.GetActiveState()->HandleInput();
 }
 
 void Engine::Render(float dt)
@@ -211,7 +221,7 @@ void Engine::Render(float dt)
 
 void Engine::Physics(float dt)
 {
-	_data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Physics, dt);
+    _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Physics, dt);
 }
 
 
@@ -223,7 +233,7 @@ void Engine::run()
     const float TARGET_FRAME_TIME = 1000.0f / TARGET_FPS;
     uint64_t lastTicks = SDL_GetTicks();
 
-	LOG_INFO(GlobalLogger(), "Engine", "Starting main loop");
+    LOG_INFO(GlobalLogger(), "Engine", "Starting main loop");
 
     while (!_data->quit)
     {
@@ -237,7 +247,7 @@ void Engine::run()
 
 
         _data->state.ProcessStateChanges();
-        
+
         auto start = std::chrono::high_resolution_clock::now();
 
 
@@ -283,11 +293,11 @@ void Engine::run()
 
         end = std::chrono::high_resolution_clock::now();
         duration = end - framestart;
-		//std::cout << "FPS: " << 1000.0f / duration.count() << " | Total Frame Took: " << duration.count() << "ms" << '\n' << std::endl;
-		//std::cout << "Total Frame Took: " << duration.count() << "ms" << '\n' << std::endl;
+        //std::cout << "FPS: " << 1000.0f / duration.count() << " | Total Frame Took: " << duration.count() << "ms" << '\n' << std::endl;
+        //std::cout << "Total Frame Took: " << duration.count() << "ms" << '\n' << std::endl;
 
     }
 
     _data->renderer.Shutdown();
-	LOG_INFO(GlobalLogger(), "Engine", "Exiting main loop");
+    LOG_INFO(GlobalLogger(), "Engine", "Exiting main loop");
 }

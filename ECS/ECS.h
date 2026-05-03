@@ -588,14 +588,13 @@ namespace ECS
     template<typename T>
     T& World::Get(Entity e)
     {
-        if(!Alive(e))
-        {
-			//LOG_ERROR(GlobalLogger(), "ECS", "Get: Entity: " + std::to_string(e) + " is not alive");
-			return *reinterpret_cast<T*>(nullptr);
-        }
+        assert(Alive(e) && "ECS::World::Get — entity is not alive");
         uint32_t eid = EntityId(e);
-        return records_[eid].arch->Get<T>(records_[eid].chunk_idx, records_[eid].row);
+        auto& rec = records_[eid];
+        assert(rec.arch->HasComponent(GetComponentId<T>()) && "ECS::World::Get — entity does not have component");
+        return rec.arch->Get<T>(rec.chunk_idx, rec.row);
     }
+
 
     template<typename T>
     T* World::TryGet(Entity e) noexcept

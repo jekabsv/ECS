@@ -3,9 +3,9 @@
 #include "logger.h"
 
 
-StateMachine::StateMachine() : _isRemoving(false), _isAdding(false), _isReplacing(false){}
+StateMachine::StateMachine() : _isRemoving(false), _isAdding(false), _isReplacing(false) {}
 
-StateMachine::~StateMachine() {};
+StateMachine::~StateMachine() = default;
 
 void StateMachine::AddState(StateRef newState, bool isreplacing)
 {
@@ -16,13 +16,14 @@ void StateMachine::AddState(StateRef newState, bool isreplacing)
 int StateMachine::RemoveState()
 {
 	if (_states.empty()) {
-		LOG_WARN(GlobalLogger(), "StateMachine", "RemoveState called on empty stack"); 
-		return -1; 
+		LOG_WARN(GlobalLogger(), "StateMachine", "RemoveState called on empty stack");
+		return -1;
 	}
 
-	_isRemoving = 1;
+	_isRemoving = true;
 	return 0;
 }
+
 
 void StateMachine::ProcessStateChanges()
 {
@@ -30,24 +31,23 @@ void StateMachine::ProcessStateChanges()
 	{
 		_states.pop();
 		if (!_states.empty())
-		{
 			_states.top()->Resume();
-		}
-		_isRemoving = 0;
+		_isRemoving = false;
 	}
 	if (_isAdding)
 	{
 		if (_isReplacing && !_states.empty())
 			_states.pop();
 		else if (!_states.empty())
-		{ 
 			_states.top()->Pause();
-		}
+
 		_states.push(std::move(_newState));
-		_isAdding = 0;
+		_isAdding = false;
+
 		this->_states.top()->SetData();
 		this->_states.top()->Init();
-		LOG_DEBUG(GlobalLogger(), "StateMachine", "State transition completed");		
+
+		LOG_DEBUG(GlobalLogger(), "StateMachine", "State transition completed");
 	}
 }
 

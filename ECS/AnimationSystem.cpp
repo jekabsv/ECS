@@ -1,23 +1,25 @@
 #include "AnimationSystem.h"
 #include "logger.h"
-#include <string>
+#include <cassert>
 
 int AnimationSystem::AddClip(StringId name, const AnimationClip& clip)
 {
     _clips[name] = clip;
-	LOG_DEBUG(GlobalLogger(), "AnimationSystem", "Added clip: " + std::to_string(name.id));
+    LOG_DEBUG(GlobalLogger(), "AnimationSystem", "Added clip: " + std::to_string(name.id));
     return 0;
 }
 
-const AnimationClip* AnimationSystem::GetClip(StringId name) const
+const AnimationClip* AnimationSystem::TryGetClip(StringId name) const
 {
     auto it = _clips.find(name);
-    if (it == _clips.end())
-    {
-        LOG_WARN(GlobalLogger(), "AnimationSystem", "GetClip: clip not found");
-        return nullptr;
-    }
-    return &it->second;
+    return it != _clips.end() ? &it->second : nullptr;
+}
+
+const AnimationClip& AnimationSystem::GetClip(StringId name) const
+{
+    auto it = _clips.find(name);
+    assert(it != _clips.end() && "AnimationSystem::GetClip — clip not found");
+    return it->second;
 }
 
 int AnimationSystem::RemoveClip(StringId name)
@@ -34,7 +36,7 @@ int AnimationSystem::RemoveClip(StringId name)
 
 int AnimationSystem::Play(AnimationPlayer& player, StringId clipName, bool loop)
 {
-    const AnimationClip* clip = GetClip(clipName);
+    const AnimationClip* clip = TryGetClip(clipName);
     if (!clip)
     {
         LOG_WARN(GlobalLogger(), "AnimationSystem", "Play: clip not found, player unchanged");
@@ -46,7 +48,6 @@ int AnimationSystem::Play(AnimationPlayer& player, StringId clipName, bool loop)
     player.elapsed = 0.0f;
     player.loop = loop;
     player.playing = true;
-
     player.currentSpritesheet = clip->spritesheet;
     player.currentRect = {
         (float)clip->startX,
@@ -54,15 +55,19 @@ int AnimationSystem::Play(AnimationPlayer& player, StringId clipName, bool loop)
         (float)clip->frameWidth,
         (float)clip->frameHeight
     };
-	LOG_DEBUG(GlobalLogger(), "AnimationSystem", "Playing clip: " + std::to_string(clipName.id) + ", loop: " + (loop ? "true" : "false"));
+
+    LOG_DEBUG(GlobalLogger(), "AnimationSystem",
+        "Playing clip: " + std::to_string(clipName.id) +
+        ", loop: " + (loop ? "true" : "false"));
     return 0;
 }
 
-void AnimationSystem::Stop(AnimationPlayer& player)
+int AnimationSystem::Stop(AnimationPlayer& player)
 {
     player.playing = false;
     player.elapsed = 0.0f;
-	LOG_DEBUG(GlobalLogger(), "AnimationSystem", "Stopped animation player");
+    LOG_DEBUG(GlobalLogger(), "AnimationSystem", "Stopped animation player");
+    return 0;
 }
 
 void AnimationSystem::Update(AnimationPlayer& player, float dt)
@@ -70,7 +75,7 @@ void AnimationSystem::Update(AnimationPlayer& player, float dt)
     if (!player.playing)
         return;
 
-    const AnimationClip* clip = GetClip(player.currentClip);
+    const AnimationClip* clip = TryGetClip(player.currentClip);
     if (!clip)
     {
         LOG_WARN(GlobalLogger(), "AnimationSystem", "Update: active clip no longer exists");
@@ -79,7 +84,6 @@ void AnimationSystem::Update(AnimationPlayer& player, float dt)
     }
 
     player.elapsed += dt;
-
     if (player.elapsed < clip->frameDuration)
         return;
 
@@ -93,7 +97,6 @@ void AnimationSystem::Update(AnimationPlayer& player, float dt)
             nextFrameX = clip->startX;
         else
         {
-            // One-shot finished: freeze on last frame, stop playing
             player.playing = false;
             return;
         }

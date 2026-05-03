@@ -4,6 +4,7 @@
 #include <SDL3/SDL.h>
 #include "logger.h"
 #include "Utility.h"
+#include <cassert>
 
 
 int AssetManager::LoadBMPSurface(StringId TextureName, const std::string& filename)
@@ -18,9 +19,9 @@ int AssetManager::LoadBMPSurface(StringId TextureName, const std::string& filena
     return 0;
 }
 
-SDL_Surface* AssetManager::GetSurface(StringId TextureName)
+SDL_Surface* AssetManager::TryGetSurface(StringId name)
 {
-    auto it = _surfaces.find(TextureName);
+    auto it = _surfaces.find(name);
     if (it == _surfaces.end())
     {
         return nullptr;
@@ -28,12 +29,20 @@ SDL_Surface* AssetManager::GetSurface(StringId TextureName)
     return it->second;
 }
 
+SDL_Surface& AssetManager::GetSurface(StringId name)
+{
+    auto it = _surfaces.find(name);
+    assert(it != _surfaces.end() && "AssetManager::GetSurface — surface not found");
+    return *it->second;
+
+}
+
 int AssetManager::LoadFont(StringId FontName, const std::string& filename)
 {
     TTF_Font* font = TTF_OpenFont(filename.c_str(), 64);
     if (!font)
     {
-		LOG_WARN(GlobalLogger(), "AssetManager", std::string("Failed to load font: ") + SDL_GetError());
+        LOG_WARN(GlobalLogger(), "AssetManager", std::string("Failed to load font: ") + SDL_GetError());
         return -1;
     }
     _fonts[FontName] = font;
@@ -41,15 +50,23 @@ int AssetManager::LoadFont(StringId FontName, const std::string& filename)
     return 0;
 }
 
-TTF_Font* AssetManager::GetFont(StringId FontName) const
+TTF_Font* AssetManager::TryGetFont(StringId name) const
 {
-    auto it = _fonts.find(FontName);
+    auto it = _fonts.find(name);
     if (it == _fonts.end())
     {
-		LOG_WARN(GlobalLogger(), "AssetManager", "Font not found");
+        LOG_WARN(GlobalLogger(), "AssetManager", "Font not found");
         return nullptr;
     }
     return it->second;
+}
+
+TTF_Font& AssetManager::GetFont(StringId name) const
+{
+    auto it = _fonts.find(name);
+    assert(it != _fonts.end() && "AssetManager::GetFont — font not found");
+    return *it->second;
+
 }
 
 int AssetManager::LoadShader(StringId shaderName, const std::string& filename,
@@ -118,9 +135,16 @@ int AssetManager::LoadShader(StringId shaderName, const std::string& filename,
     return 0;
 }
 
-const Shader* AssetManager::GetShader(StringId shaderName) const
+const Shader& AssetManager::GetShader(StringId name) const
 {
-    auto it = _shaders.find(shaderName);
+    auto it = _shaders.find(name);
+    assert(it != _shaders.end() && "AssetManager::GetShader — shader not found");
+    return it->second;
+}
+
+const Shader* AssetManager::TryGetShader(StringId name) const
+{
+    auto it = _shaders.find(name);
     if (it == _shaders.end())
         return nullptr;
     return &it->second;
@@ -128,11 +152,11 @@ const Shader* AssetManager::GetShader(StringId shaderName) const
 
 int AssetManager::AddMesh(StringId meshName, const MeshVertices& vertices, const MeshIndices& indices)
 {
-	MeshBase mesh;
-	mesh.name = meshName;
-	mesh.meshVertices = vertices;
-	mesh.meshIndices = indices;
-	_meshBases[meshName] = mesh;
+    MeshBase mesh;
+    mesh.name = meshName;
+    mesh.meshVertices = vertices;
+    mesh.meshIndices = indices;
+    _meshBases[meshName] = mesh;
     return 0;
 }
 
@@ -141,7 +165,7 @@ MeshBase* AssetManager::GetMesh(StringId meshName)
     auto it = _meshBases.find(meshName);
     if (it == _meshBases.end())
         return nullptr;
-	return &it->second;
+    return &it->second;
 }
 
 MaterialBase* AssetManager::GetMaterial(StringId materialName)
@@ -164,22 +188,35 @@ int AssetManager::AddTexture(StringId textureName, const TextureBase& texture)
     return 0;
 }
 
-TextureBase* AssetManager::GetTexture(StringId textureName)
+TextureBase* AssetManager::TryGetTexture(StringId name)
 {
-    auto it = _textureBases.find(textureName);
+    auto it = _textureBases.find(name);
     if (it == _textureBases.end())
         return nullptr;
     return &it->second;
 }
 
-GPUFont* AssetManager::GetGPUFont(StringId fontName)
+TextureBase& AssetManager::GetTexture(StringId name)
 {
-    auto it = _GPUFonts.find(fontName);
+    auto it = _textureBases.find(name);
+    assert(it != _textureBases.end() && "AssetManager::GetTexture — texture not found");
+    return it->second;
+}
+
+GPUFont* AssetManager::TryGetGPUFont(StringId name)
+{
+    auto it = _GPUFonts.find(name);
     if (it == _GPUFonts.end())
         return nullptr;
     return &it->second;
 }
 
+GPUFont& AssetManager::GetGPUFont(StringId name)
+{
+    auto it = _GPUFonts.find(name);
+    assert(it != _GPUFonts.end() && "AssetManager::GetGPUFont — GPUFont not found");
+    return it->second;
+}
 int AssetManager::AddGPUFont(StringId fontName, GPUFont font)
 {
     _GPUFonts[fontName] = font;

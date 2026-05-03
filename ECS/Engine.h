@@ -11,18 +11,18 @@ static bool mainLoopRegistered = false;
 class Engine
 {
 public:
-    
+
     SharedDataRef _data = std::make_shared<SharedData>();
 
     Engine() = default;
     ~Engine() = default;
 
-    bool Initialize();
+    int Initialize();
     void Update(float dt);
     void HandleInput(float dt);
     void Render(float dt);
     void Physics(float dt);
-    
+
     void run();
 
 
