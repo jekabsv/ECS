@@ -19,7 +19,7 @@ public:
     UI::NodeHandle btnSPH = UI::NULL_HANDLE;
     UI::NodeHandle tickRateLabel = UI::NULL_HANDLE;
     UI::NodeHandle tickRateSlider = UI::NULL_HANDLE;
-
+    UI::NodeHandle btnHeat = UI::NULL_HANDLE;
 
     float rotationAngle = 0.0f;
     float x = 400.f;

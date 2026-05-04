@@ -126,6 +126,9 @@
     <ClCompile Include="SPH.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Heat.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECS.h">
@@ -210,6 +213,9 @@
       <Filter>Header Files\Internals\Util</Filter>
     </ClInclude>
     <ClInclude Include="SPH.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Heat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

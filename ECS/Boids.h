@@ -30,8 +30,8 @@ private:
     // Count management
     static constexpr int DEFAULT_COUNT = 1000;
     static constexpr int MIN_COUNT = 100;
-    static constexpr int MAX_COUNT = 20000;
-    static constexpr int SPAWN_BUDGET = 200;
+    static constexpr int MAX_COUNT = 8000;
+    static constexpr int SPAWN_BUDGET = 5;
     static constexpr int inputContainerWidth = 200;
 
     std::vector<ECS::Entity> _boidEntities;
