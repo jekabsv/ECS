@@ -47,6 +47,12 @@ namespace Math
         return a + (b - a) * t;
     }
 
+	// Linear interpolation for colors
+    inline SDL_FColor LerpColor(SDL_FColor a, SDL_FColor b, float t)
+    {
+        return { a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t, a.a + (b.a - a.a) * t };
+    }
+
     // Inverse lerp — what t gives value v between a and b?
     inline float InvLerp(float a, float b, float v)
     {

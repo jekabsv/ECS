@@ -148,6 +148,7 @@
     <ClCompile Include="PhysicsSystem.cpp" />
     <ClCompile Include="PhysicsSystem.h" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="SPH.cpp" />
     <ClCompile Include="StartState.cpp" />
     <ClCompile Include="State.cpp" />
     <ClCompile Include="StateMachine.cpp" />
@@ -176,6 +177,7 @@
     <ClInclude Include="RigidBody.h" />
     <ClInclude Include="SharedDataRef.h" />
     <ClInclude Include="SimpleSprite.h" />
+    <ClInclude Include="SPH.h" />
     <ClInclude Include="StartState.h" />
     <ClInclude Include="State.h" />
     <ClInclude Include="StateMachine.h" />

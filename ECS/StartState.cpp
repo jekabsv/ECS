@@ -4,7 +4,7 @@
 #include "Uicontext.h";
 #include "StartState.h"
 #include "Level1.h"
-//#include "SPH.h"
+#include "SPH.h"
 #include "Boids.h"
 
 
@@ -166,24 +166,37 @@ void StartState::Init()
 
 
     UI::NodeHandle root = ui.AddContainer();
-    ui.SetSize(root, UI::SizeValue::Px(300), UI::SizeValue::Auto());
-    ui.SetFlexDirection(root, UI::FlexDirection::Column);
-    ui.SetJustify(root, UI::JustifyContent::Center);
-	ui.SetPadding(root, UI::Edges::All(20.f));
+    ui.SetSize(root, UI::SizeValue::Auto(), UI::SizeValue::Auto());
+	ui.SetFlexDirection(root, UI::FlexDirection::Row);
+
+    UI::NodeHandle left = ui.AddContainer(root);
+	ui.SetSize(left, UI::SizeValue::Px(300), UI::SizeValue::Auto());
 
 
-    ui.SetGap(root, 16.f);
-    auto img = ui.AddImage("player", { 0, 0, 64, 64 }, root);
+    ui.SetFlexDirection(left, UI::FlexDirection::Column);
+    ui.SetJustify(left, UI::JustifyContent::Center);
+	ui.SetPadding(left, UI::Edges::All(20.f));
+
+
+    ui.SetGap(left, 16.f);
+    auto img = ui.AddImage("player", { 0, 0, 64, 64 }, left);
     ui.SetSize(img, UI::SizeValue::Px(128), UI::SizeValue::Px(192));
 
-    btnSillyGame = ui.AddButton("Test world", root);
-    btnBoids = ui.AddButton("Boids", root);
-    btnQuit_ = ui.AddButton("Quit", root);
+    btnSillyGame = ui.AddButton("Test world", left);
+    btnBoids = ui.AddButton("Boids", left);
+    btnSPH = ui.AddButton("SPH", left);
+    tickRateLabel = ui.AddLabel("target tick rate: (60)", left);
+    tickRateSlider = ui.AddSlider(60.f, 30.f, 120.f, left);
+    btnQuit_ = ui.AddButton("Quit", left);
     
 }
 
 void StartState::Update(float dt) 
 {
+    auto x = ui.GetSliderValue(tickRateSlider);
+	_data->TargetTickRate = (int)x;
+	ui.SetText(tickRateLabel, std::format("target tick rate: ({:.0f})", x));
+
 
     if (ui.IsClicked(btnSillyGame))
 		_data->state.AddState(StateRef(new Level1(_data)), 0);
@@ -191,6 +204,8 @@ void StartState::Update(float dt)
         _data->state.AddState(StateRef(new Boids(_data)), 0);
     if (ui.IsClicked(btnQuit_))
 		_data->quit = true;
+    if (ui.IsClicked(btnSPH))
+		_data->state.AddState(StateRef(new SPH(_data)), 0);
 }
 
 void StartState::Render(float dt)

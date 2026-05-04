@@ -37,6 +37,7 @@ public:
         m_cellSize = (cellSz > 0.f ? cellSz : 1.f);
         m_invCell = 1.f / m_cellSize;
         m_sorted = false;
+        Clear();
     }
 
     void Clear()
@@ -68,7 +69,13 @@ public:
         {
             m_scratch.resize(n);
             radixPass(m_entries, m_scratch, 0);
-            radixPass(m_scratch, m_entries, 32);
+            radixPass(m_scratch, m_entries, 8);
+            radixPass(m_entries, m_scratch, 16);
+            radixPass(m_scratch, m_entries, 24);
+            radixPass(m_entries, m_scratch, 32);
+            radixPass(m_scratch, m_entries, 40);
+            radixPass(m_entries, m_scratch, 48);
+            radixPass(m_scratch, m_entries, 56);
         }
         else
         {
@@ -264,7 +271,6 @@ private:
     float m_cellSize = 1.f;
     float m_invCell = 1.f;
     bool  m_sorted = false;
-
     std::vector<Entry>         m_entries;
     std::vector<Entry>         m_scratch;
 
@@ -272,5 +278,5 @@ private:
     std::vector<std::uint32_t> m_usedSlots;
 
     mutable std::vector<std::uint32_t> m_visited;
-    mutable std::uint32_t              m_generation = 1u;
+    mutable std::uint64_t m_generation = 1u;
 };

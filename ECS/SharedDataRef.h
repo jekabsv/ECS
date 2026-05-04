@@ -15,6 +15,8 @@ struct SharedData
 {
     const int GAME_WIDTH = 1920;
     const int GAME_HEIGHT = 1080;
+
+	int TargetTickRate = 60;
     SDL_Window* window = nullptr;
     SDL_Renderer* SDLrenderer = nullptr;
     StateMachine state;

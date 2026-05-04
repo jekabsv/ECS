@@ -16,6 +16,10 @@ public:
     UI::NodeHandle btnLabel = UI::NULL_HANDLE;
     UI::NodeHandle btnInput = UI::NULL_HANDLE;
     UI::NodeHandle btnQuit_ = UI::NULL_HANDLE;
+    UI::NodeHandle btnSPH = UI::NULL_HANDLE;
+    UI::NodeHandle tickRateLabel = UI::NULL_HANDLE;
+    UI::NodeHandle tickRateSlider = UI::NULL_HANDLE;
+
 
     float rotationAngle = 0.0f;
     float x = 400.f;

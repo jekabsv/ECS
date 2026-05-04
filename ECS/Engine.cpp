@@ -115,8 +115,8 @@ void Engine::Update(float dt)
     start = std::chrono::high_resolution_clock::now();
 
     _data->spatialIndex.Clear();
-    _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Initialise, dt); //40ms on 10k entities
-	_data->spatialIndex.Build(); //30ms on 10k entities
+    _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::Initialise, dt);
+	_data->spatialIndex.Build(); 
 
     end = std::chrono::high_resolution_clock::now();
     duration = end - start;
@@ -141,7 +141,7 @@ void Engine::Update(float dt)
 
 
     _data->state.GetActiveState()->ecs.Run(ECS::SystemGroup::PostUpdate, dt);
-}
+}   
 
 void Engine::HandleInput(float dt)
 {
@@ -230,27 +230,32 @@ void Engine::Physics(float dt)
 
 void Engine::run()
 {
-    const int TARGET_FPS = 120;
-    const float TARGET_FRAME_TIME = 1000.0f / TARGET_FPS;
-    uint64_t lastTicks = SDL_GetTicks();
+    float FIXED_DELTA_TIME = 1.0f / _data->TargetTickRate;
+    const float MAX_ACCUMULATOR = 0.25f;
+    float accumulator = 0.0f;
 
-	LOG_INFO(GlobalLogger(), "Engine", "Starting main loop");
+    auto lastTime = std::chrono::high_resolution_clock::now();
+
+    LOG_INFO(GlobalLogger(), "Engine", "Starting main loop");
 
     while (!_data->quit)
     {
+        FIXED_DELTA_TIME = 1.0f / _data->TargetTickRate;
+
         auto framestart = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<float> elapsed = framestart - lastTime;
+        lastTime = framestart;
 
-        uint64_t currentTicks = SDL_GetTicks();
-        float dt = (currentTicks - lastTicks) / 1000.0f;
-        lastTicks = currentTicks;
-        if (dt > 0.1f)
-            dt = 0.1f;
+        float dt = elapsed.count();
 
+        if (dt > MAX_ACCUMULATOR)
+            dt = MAX_ACCUMULATOR;
+
+        accumulator += dt;
 
         _data->state.ProcessStateChanges();
-        
-        auto start = std::chrono::high_resolution_clock::now();
 
+        auto start = std::chrono::high_resolution_clock::now();
 
         HandleInput(dt);
 
@@ -258,47 +263,49 @@ void Engine::run()
         std::chrono::duration<double, std::milli> duration = end - start;
         //std::cout << "Input Took: " << duration.count() << "ms" << std::endl;
 
+
+        while (accumulator >= FIXED_DELTA_TIME)
+        {
+            start = std::chrono::high_resolution_clock::now();
+
+            Update(FIXED_DELTA_TIME);
+
+            end = std::chrono::high_resolution_clock::now();
+            duration = end - start;
+            //std::cout << "Update Took: " << duration.count() << "ms" << std::endl;
+
+            start = std::chrono::high_resolution_clock::now();
+
+            Physics(FIXED_DELTA_TIME);
+
+            end = std::chrono::high_resolution_clock::now();
+            duration = end - start;
+            //std::cout << "Physics Took: " << duration.count() << "ms" << std::endl;
+
+            accumulator -= FIXED_DELTA_TIME;
+        }
+
+
+        float alpha = accumulator / FIXED_DELTA_TIME;
+
         start = std::chrono::high_resolution_clock::now();
 
-        Update(dt);
-
-        end = std::chrono::high_resolution_clock::now();
-        duration = end - start;
-        //std::cout << "Update Took: " << duration.count() << "ms" << std::endl;
-
-        start = std::chrono::high_resolution_clock::now();
-
-        Physics(dt);
-
-        end = std::chrono::high_resolution_clock::now();
-        duration = end - start;
-        //std::cout << "Physics Took: " << duration.count() << "ms" << std::endl;
-
-        start = std::chrono::high_resolution_clock::now();
-
-        Render(dt);
+        Render(alpha);
 
         end = std::chrono::high_resolution_clock::now();
         duration = end - start;
         //std::cout << "Render Took: " << duration.count() << "ms" << std::endl;
 
+        auto frameEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<float, std::milli> totalFrameDuration = frameEnd - framestart;
 
+        float currentFPS = 1000.0f / totalFrameDuration.count();
 
-
-
-        uint64_t frameTicks = SDL_GetTicks() - currentTicks;
-        if (frameTicks < TARGET_FRAME_TIME)
-        {
-            SDL_Delay((uint32_t)(TARGET_FRAME_TIME - frameTicks));
-        }
-
-        end = std::chrono::high_resolution_clock::now();
-        duration = end - framestart;
-		//std::cout << "FPS: " << 1000.0f / duration.count() << " | Total Frame Took: " << duration.count() << "ms" << '\n' << std::endl;
-		//std::cout << "Total Frame Took: " << duration.count() << "ms" << '\n' << std::endl;
-
+        //std::cout << "FPS: " << currentFPS
+            //<< " | Total Frame Took: " << totalFrameDuration.count() << "ms"
+            //<< '\n' << std::endl;
     }
 
     _data->renderer.Shutdown();
-	LOG_INFO(GlobalLogger(), "Engine", "Exiting main loop");
+    LOG_INFO(GlobalLogger(), "Engine", "Exiting main loop");
 }
