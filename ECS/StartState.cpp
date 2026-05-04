@@ -7,6 +7,8 @@
 #include "SPH.h"
 #include "Boids.h"
 #include "Heat.h"
+#include "NBody.h"
+
 
 class ProcessWASD : public InputSystem::Processor
 {
@@ -207,6 +209,7 @@ void StartState::Init()
     btnBoids = ui.AddButton("Boids", left);
     btnSPH = ui.AddButton("SPH", left);
     btnHeat = ui.AddButton("Heat", left);
+    btnNBody = ui.AddButton("N-Body", left);
 
     tickRateLabel = ui.AddLabel("target tick rate: (60)", left);
     tickRateSlider = ui.AddSlider(60.f, 30.f, 120.f, left);
@@ -226,12 +229,14 @@ void StartState::Update(float dt)
 		_data->state.AddState(StateRef(new Level1(_data)), 0);
     if (ui.IsClicked(btnBoids))
         _data->state.AddState(StateRef(new Boids(_data)), 0);
-    if (ui.IsClicked(btnQuit_))
-		_data->quit = true;
     if (ui.IsClicked(btnSPH))
 		_data->state.AddState(StateRef(new SPH(_data)), 0);
     if (ui.IsClicked(btnHeat))
         _data->state.AddState(StateRef(new Heat(_data)), 0);
+    if (ui.IsClicked(btnNBody))
+        _data->state.AddState(StateRef(new NBody(_data)), 0);
+    if (ui.IsClicked(btnQuit_))
+        _data->quit = true;
 }
 
 void StartState::Render(float dt)

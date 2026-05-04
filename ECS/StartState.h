@@ -21,6 +21,7 @@ public:
     UI::NodeHandle tickRateSlider = UI::NULL_HANDLE;
     UI::NodeHandle btnHeat = UI::NULL_HANDLE;
     UI::NodeHandle demoImage = UI::NULL_HANDLE;
+    UI::NodeHandle btnNBody = UI::NULL_HANDLE;
 
     float rotationAngle = 0.0f;
     float x = 400.f;

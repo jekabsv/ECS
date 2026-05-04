@@ -129,6 +129,9 @@
     <ClCompile Include="Heat.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NBody.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECS.h">
@@ -216,6 +219,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Heat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NBody.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

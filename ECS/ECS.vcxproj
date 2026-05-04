@@ -146,6 +146,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="InputSystem.cpp" />
+    <ClCompile Include="NBody.cpp" />
     <ClCompile Include="PhysicsSystem.cpp" />
     <ClCompile Include="PhysicsSystem.h" />
     <ClCompile Include="Renderer.cpp" />
@@ -175,6 +176,7 @@
     <ClInclude Include="Level1.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="MeshComponent.h" />
+    <ClInclude Include="NBody.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RigidBody.h" />
     <ClInclude Include="SharedDataRef.h" />
