@@ -74,6 +74,9 @@ void StartState::Init()
     _data->assets.LoadBMPSurface("player", "../ECS/player.bmp");
     _data->assets.AddTexture("player", _data->renderer.CreateTexture(_data->assets.TryGetSurface("player")));
 
+    _data->assets.LoadBMPSurface("demo", "../ECS/demo.bmp");
+    _data->assets.AddTexture("demo", _data->renderer.CreateTexture(_data->assets.TryGetSurface("demo")));
+
     _data->assets.LoadFont("tnr", "../ECS/times.ttf");
     _data->assets.AddGPUFont("tnr", _data->renderer.CreateFontt("tnr"));
 
@@ -117,11 +120,25 @@ void StartState::Init()
 
     _data->assets.AddMesh(StringId("tri"), verts, indices);
 
-    //Animations
-    _data->animation.AddClip("player_idle_right", { "player", 64, 64, 192, 192, 1, 0.1f });
-    _data->animation.AddClip("player_idle_left", { "player", 64, 64, 192, 192, 3, 0.1f });
-    _data->animation.AddClip("player_run_right", { "player", 64, 64, 0,   448, 0, 0.08f });
-    _data->animation.AddClip("player_run_left", { "player", 64, 64, 0,   448, 2, 0.08f });
+
+
+    _data->animation.AddClip("player_idle_right", { "player", 64, 64, 192, 1, 1, 1, 0.1f });
+    _data->animation.AddClip("player_idle_left", { "player", 64, 64, 192, 3, 1, 1, 0.1f });
+
+    _data->animation.AddClip("player_run_right", { "player", 64, 64, 0, 0, 8, 8, 0.08f });
+    _data->animation.AddClip("player_run_left", { "player", 64, 64, 0, 2, 8, 8, 0.08f });
+
+    _data->animation.AddClip("demo", {
+    .spritesheet = "demo",
+    .frameWidth = 380,
+    .frameHeight = 240,
+    .startX = 0,
+    .startRow = 0,
+    .totalFrames = 326,   // 19*17 + 3
+    .columns = 19,
+    .frameDuration = 0.16666f/2.f });
+
+    _data->animation.Play(anim, "demo");
 
 
     //Inputs
@@ -172,6 +189,10 @@ void StartState::Init()
     UI::NodeHandle left = ui.AddContainer(root);
 	ui.SetSize(left, UI::SizeValue::Px(300), UI::SizeValue::Auto());
 
+	UI::NodeHandle right = ui.AddContainer(root);
+	ui.SetSize(right, UI::SizeValue::Auto(), UI::SizeValue::Auto());
+	//ui.SetFlexBasis(right, UI::SizeValue::Percent(100));
+	ui.SetJustify(right, UI::JustifyContent::Center);
 
     ui.SetFlexDirection(left, UI::FlexDirection::Column);
     ui.SetJustify(left, UI::JustifyContent::Center);
@@ -187,8 +208,6 @@ void StartState::Init()
     btnSPH = ui.AddButton("SPH", left);
     btnHeat = ui.AddButton("Heat", left);
 
-
-
     tickRateLabel = ui.AddLabel("target tick rate: (60)", left);
     tickRateSlider = ui.AddSlider(60.f, 30.f, 120.f, left);
     btnQuit_ = ui.AddButton("Quit", left);
@@ -197,6 +216,7 @@ void StartState::Init()
 
 void StartState::Update(float dt) 
 {
+
     auto x = ui.GetSliderValue(tickRateSlider);
 	_data->TargetTickRate = (int)x;
 	ui.SetText(tickRateLabel, std::format("target tick rate: ({:.0f})", x));
@@ -217,5 +237,6 @@ void StartState::Update(float dt)
 void StartState::Render(float dt)
 {
 
+	//ui.SetImage(demoImage, anim.currentSpritesheet, anim.currentRect);
+	//_data->renderer.SubmitSprite(MaterialInstance("sprite_mat", anim.currentSpritesheet), anim.currentRect, { 400.f, 300.f }, { 1.f, 1.f }, 0.0f, { 1.f, 1.f, 1.f, 1.f });
 }
-

@@ -3,14 +3,14 @@
 #include <unordered_map>
 #include "Struct.h"
 
-struct AnimationClip
-{
+struct AnimationClip {
     StringId spritesheet;
     int frameWidth = 0;
     int frameHeight = 0;
-    int startX = 0;
-    int stopX = 0;
-    int row = 0;
+    int startX = 0;   // pixel x of first frame
+    int startRow = 0;
+    int totalFrames = 0;   // replaces stopX logic
+    int columns = 0;   // how many frames per row
     float frameDuration = 0.1f;
 };
 
@@ -19,10 +19,11 @@ struct AnimationPlayer
     SDL_FRect currentRect = { 0, 0, 0, 0 };
     StringId  currentSpritesheet = "";
     StringId  currentClip = "";
-    float     elapsed = 0.0f;
-    int       currentFrameX = 0;
-    bool      loop = true;
-    bool      playing = false;
+    float elapsed = 0.0f;
+    int currentFrameX = 0;
+    bool loop = true;
+    bool playing = false;
+    int currentFrame = 0;
 };
 
 class AnimationSystem
